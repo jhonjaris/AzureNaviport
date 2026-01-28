@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Editar {{ persona.nombre_completo }} | NaviPort RD{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="content-area">
+    <div class="page-header">
+        <div>
+            <h2 style="color: #2c3e50; margin-bottom: 10px;">✏️ Editar Persona</h2>
+            <p style="color: #7f8c8d;">Modifica la información de {{ persona.nombre_completo }}</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'gestion_personal:detalle_persona' persona.id %}" class="btn btn-info">👁️ Ver Detalle</a>
+            <a href="{% url 'gestion_personal:dashboard' %}" class="btn btn-secondary">← Volver</a>
+        </div>
+    </div>
+
+    <div class="form-container">
+        <form method="post" class="form-card">
+            {% csrf_token %}
+
+            <div class="form-section">
+                <h3>📋 Información Personal</h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cedula">Cédula *</label>
+                        <input type="text" id="cedula" name="cedula" value="{{ persona.cedula }}" placeholder="XXX-XXXXXXX-X" required
+                               pattern="\d{3}-\d{7}-\d{1}" title="Formato: XXX-XXXXXXX-X">
+                        <small class="form-help">Formato: XXX-XXXXXXX-X (ej: 001-1234567-1)</small>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Empresa</label>
+                        <div class="form-control" style="background-color: #f8f9fa; border: 1px solid #e9ecef;">
+                            <span class="badge bg-primary">
+                                {{ persona.empresa.empresa.nombre|default:'Sin empresa' }}
+                            </span>
+                        </div>
+                        <small class="form-help">La empresa no se puede modificar</small>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nombre">Nombre *</label>
+                        <input type="text" id="nombre" name="nombre" value="{{ persona.nombre }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="apellido">Apellido *</label>
+                        <input type="text" id="apellido" name="apellido" value="{{ persona.apellido }}" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="telefono">Teléfono</label>
+                        <input type="tel" id="telefono" name="telefono" value="{{ persona.telefono|default:'' }}" placeholder="(809) 123-4567">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" value="{{ persona.email|default:'' }}" placeholder="ejemplo@correo.com">
+                    </div>
+                </div>
+
+                <div class="form-info">
+                    <div class="info-item">
+                        <strong>Fecha de Registro:</strong> {{ persona.fecha_registro|date:'d/m/Y H:i' }}
+                    </div>
+                    <div class="info-item">
+                        <strong>Última Actualización:</strong> {{ persona.fecha_actualizacion|date:'d/m/Y H:i' }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success">💾 Guardar Cambios</button>
+                <a href="{% url 'gestion_personal:detalle_persona' persona.id %}" class="btn btn-secondary">Cancelar</a>
+                <a href="{% url 'gestion_personal:eliminar_persona' persona.id %}" class="btn btn-danger" onclick="return confirm('¿Está seguro de que desea eliminar esta persona?')">🗑️ Eliminar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Auto-formatear cédula
+document.getElementById('cedula').addEventListener('keyup', function() {
+    let value = this.value.replace(/\D/g, '');
+    if (value.length >= 3) {
+        value = value.substring(0, 3) + '-' + value.substring(3);
+    }
+    if (value.length >= 11) {
+        value = value.substring(0, 11) + '-' + value.substring(11, 12);
+    }
+    this.value = value;
+});
+
+// Auto-formatear teléfono
+const telefonoInput = document.getElementById('telefono');
+if (telefonoInput) {
+    telefonoInput.addEventListener('keyup', function() {
+        let value = this.value.replace(/\D/g, '');
+
+        if (value.length >= 3) {
+            value = '(' + value.substring(0, 3) + ') ' + value.substring(3);
+        }
+        if (value.length >= 9) {
+            value = value.substring(0, 9) + '-' + value.substring(9, 13);
+        }
+
+        this.value = value;
+    });
+
+    // Validar longitud al perder foco
+    telefonoInput.addEventListener('blur', function() {
+        const digitsOnly = this.value.replace(/\D/g, '');
+        if (digitsOnly.length > 0 && digitsOnly.length < 10) {
+            this.setCustomValidity('El teléfono debe tener 10 dígitos');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+}
+</script>
+{% endblock %}

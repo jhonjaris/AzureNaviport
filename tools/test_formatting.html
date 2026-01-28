@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de Formateo</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-group { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        input { padding: 10px; margin: 5px; width: 200px; }
+        .result { margin-top: 10px; padding: 10px; background: #f5f5f5; }
+    </style>
+</head>
+<body>
+    <h1>Prueba de Formateo Automático</h1>
+    
+    <div class="test-group">
+        <h3>Formateo de Cédula (XXX-XXXXXXX-X)</h3>
+        <input type="text" id="testCedula" placeholder="Ingrese números de cédula">
+        <div class="result">
+            Valor formateado: <span id="resultCedula"></span><br>
+            Valor limpio: <span id="cleanCedula"></span>
+        </div>
+    </div>
+    
+    <div class="test-group">
+        <h3>Formateo de Teléfono (XXX-XXX-XXXX)</h3>
+        <input type="text" id="testTelefono" placeholder="Ingrese números de teléfono">
+        <div class="result">
+            Valor formateado: <span id="resultTelefono"></span><br>
+            Valor limpio: <span id="cleanTelefono"></span>
+        </div>
+    </div>
+
+    <script>
+        function formatCedula(input) {
+            // Remover todo lo que no sea número
+            let value = input.value.replace(/\D/g, '');
+            
+            // Limitar a 11 dígitos máximo
+            if (value.length > 11) {
+                value = value.substring(0, 11);
+            }
+            
+            // Aplicar formato XXX-XXXXXXX-X
+            let formatted = '';
+            if (value.length > 0) {
+                if (value.length <= 3) {
+                    formatted = value;
+                } else if (value.length <= 10) {
+                    formatted = value.substring(0, 3) + '-' + value.substring(3);
+                } else {
+                    formatted = value.substring(0, 3) + '-' + value.substring(3, 10) + '-' + value.substring(10);
+                }
+            }
+            
+            // Actualizar el valor del input
+            input.value = formatted;
+            
+            // Mostrar resultados
+            document.getElementById('resultCedula').textContent = formatted;
+            document.getElementById('cleanCedula').textContent = value;
+        }
+        
+        function formatTelefono(input) {
+            // Remover todo lo que no sea número
+            let value = input.value.replace(/\D/g, '');
+            
+            // Limitar a 10 dígitos máximo
+            if (value.length > 10) {
+                value = value.substring(0, 10);
+            }
+            
+            // Aplicar formato XXX-XXX-XXXX
+            let formatted = '';
+            if (value.length > 0) {
+                if (value.length <= 3) {
+                    formatted = value;
+                } else if (value.length <= 6) {
+                    formatted = value.substring(0, 3) + '-' + value.substring(3);
+                } else {
+                    formatted = value.substring(0, 3) + '-' + value.substring(3, 6) + '-' + value.substring(6);
+                }
+            }
+            
+            // Actualizar el valor del input
+            input.value = formatted;
+            
+            // Mostrar resultados
+            document.getElementById('resultTelefono').textContent = formatted;
+            document.getElementById('cleanTelefono').textContent = value;
+        }
+        
+        function getCleanValue(formattedValue, type) {
+            // Función helper para obtener valor limpio sin guiones
+            if (type === 'cedula' || type === 'telefono') {
+                return formattedValue.replace(/\D/g, '');
+            }
+            return formattedValue;
+        }
+        
+        // Event listeners
+        document.getElementById('testCedula').addEventListener('input', function(e) {
+            formatCedula(e.target);
+        });
+        
+        document.getElementById('testTelefono').addEventListener('input', function(e) {
+            formatTelefono(e.target);
+        });
+        
+        console.log('✅ Pruebas de formateo inicializadas');
+        console.log('📋 Cédula: escriba números y verá formato XXX-XXXXXXX-X');
+        console.log('📞 Teléfono: escriba números y verá formato XXX-XXX-XXXX');
+    </script>
+</body>
+</html>

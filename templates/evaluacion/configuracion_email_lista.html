@@ -1,0 +1,616 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Correo de Notificaciones{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="content-header d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <div class="header-with-back">
+                <a href="{% url 'evaluacion:configuracion' %}" class="back-btn">
+                    🔙 Volver a Configuración
+                </a>
+                <h1>📧 Correo de Notificaciones</h1>
+            </div>
+            <p class="subtitle">
+                {% if configuracion_activa %}
+                    Configuración activa: 
+                    <strong>{{ configuracion_activa.email_host_user }}</strong> 
+                    ({{ configuracion_activa.get_tipo_proveedor_display }})
+                {% else %}
+                    <span class="text-warning">No hay configuración activa</span>
+                {% endif %}
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'evaluacion:crear_configuracion_email' %}" class="btn btn-primary">
+                ➕ Nueva Configuración de Correo
+            </a>
+        </div>
+    </div>
+
+    <!-- Resumen estadístico -->
+    {% if configuracion_activa %}
+    <div class="stats-card mb-4">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value text-success">{{ configuracion_activa.total_emails_sent }}</div>
+                <div class="stat-label">Emails enviados<br><span style="font-size: 0.8em; color: #9ca3af;">(incluye pruebas)</span></div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value text-info">{{ total_configuraciones }}</div>
+                <small class="stat-label">Total configuraciones</small>
+            </div>
+            <div class="stat-item">
+                {% if configuracion_activa.last_test_date %}
+                    <div class="stat-value text-success">✅</div>
+                    <div class="stat-label">
+                        Último test:<br>
+                        <strong>{{ configuracion_activa.last_test_date|date:"d/m/Y H:i" }}</strong>
+                    </div>
+                {% else %}
+                    <div class="stat-value text-warning">⚠️</div>
+                    <div class="stat-label">Sin pruebas realizadas</div>
+                {% endif %}
+            </div>
+            <div class="stat-item">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="mostrarFormularioPrueba({{ configuracion_activa.id }})">
+                    📧 Probar Configuración
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Lista de configuraciones -->
+    <div class="config-grid">
+        {% for config in configuraciones %}
+        <div class="config-card {% if config.email_enabled %}config-active{% endif %}">
+            <div class="config-header">
+                <div class="config-provider">
+                    <span class="provider-icon">{{ config.icono_proveedor }}</span>
+                    <strong>{{ config.get_tipo_proveedor_display }}</strong>
+                </div>
+                <div class="config-actions">
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            ⋮
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'evaluacion:editar_configuracion_email' config.pk %}">
+                                    ✏️ Editar
+                                </a>
+                            </li>
+                            {% if not config.email_enabled %}
+                            <li>
+                                <a class="dropdown-item text-danger" href="{% url 'evaluacion:eliminar_configuracion_email' config.pk %}">
+                                    🗑️ Eliminar
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="config-body">
+                <div class="config-name">
+                    <strong>{{ config.nombre }}</strong>
+                </div>
+                
+                <div class="config-details">
+                    <div class="config-email">{{ config.email_host_user }}</div>
+                    <div class="config-server">
+                        🖥️ {{ config.email_host }}:{{ config.email_port }}
+                        {% if config.email_use_tls %}🔒 TLS{% elif config.email_use_ssl %}🔒 SSL{% else %}🔓 Sin cifrado{% endif %}
+                    </div>
+                </div>
+
+                <!-- Toggle Switch para activar/desactivar -->
+                <div class="config-toggle">
+                    <span class="toggle-label">Activa</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" 
+                               {% if config.email_enabled %}checked{% endif %}
+                               onchange="toggleConfiguracion({{ config.id }}, this.checked)"
+                               id="toggle-{{ config.id }}">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="config-footer">
+                <div class="config-status">
+                    {% if config.last_test_date %}
+                        <span class="badge badge-success">
+                            ✅ Probada
+                        </span>
+                    {% else %}
+                        <span class="badge badge-warning">
+                            ⚠️ Sin probar
+                        </span>
+                    {% endif %}
+                    <span class="emails-count">{{ config.total_emails_sent }} enviados <small style="color: #9ca3af;">(incluye pruebas)</small></span>
+                </div>
+                
+                {% if config.last_test_date %}
+                <div class="last-test">
+                    Última prueba: <strong>{{ config.last_test_date|date:"d/m/Y H:i" }}</strong>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <h3>No hay configuraciones de correo</h3>
+            <p>Crea una nueva configuración para empezar a enviar notificaciones por correo.</p>
+            <a href="{% url 'evaluacion:crear_configuracion_email' %}" class="btn btn-primary">
+                ➕ Crear Primera Configuración de Correo
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Modal para prueba de email -->
+<div id="modalPrueba" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>📧 Enviar Email de Prueba</h3>
+            <span class="close" onclick="cerrarModalPrueba()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <label for="testEmail">Email de destino:</label>
+            <input type="email" id="testEmail" class="form-control" placeholder="test@ejemplo.com">
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="cerrarModalPrueba()">Cancelar</button>
+            <button type="button" class="btn btn-primary" onclick="enviarEmailPrueba()">Enviar Prueba</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.config-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.config-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 2px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.config-card:hover {
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.config-active {
+    border-color: #10b981;
+    background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%);
+}
+
+.config-header {
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: between;
+    align-items: center;
+}
+
+.config-provider {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.provider-icon {
+    font-size: 1.5rem;
+}
+
+.config-body {
+    padding: 1rem;
+}
+
+.config-name {
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.config-details {
+    margin-bottom: 1rem;
+}
+
+.config-email {
+    color: #6b7280;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+.config-server {
+    color: #9ca3af;
+    font-size: 0.85rem;
+}
+
+.config-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+}
+
+.toggle-label {
+    font-weight: 600;
+    color: #374151;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #cbd5e0;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #10b981;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.config-footer {
+    padding: 1rem;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+    border-radius: 0 0 12px 12px;
+}
+
+.config-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.badge-warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.emails-count {
+    color: #6b7280;
+    font-size: 0.85rem;
+}
+
+.last-test {
+    color: #6b7280;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.stats-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    text-align: center;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    color: #6b7280;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+    color: #6b7280;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 15% auto;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.close {
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #aaa;
+}
+
+.close:hover {
+    color: black;
+}
+
+.header-with-back {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.back-btn {
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.2s ease;
+    align-self: flex-start;
+}
+
+.back-btn:hover {
+    color: #374151;
+    text-decoration: none;
+}
+
+@media (max-width: 768px) {
+    .config-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .content-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 1rem;
+    }
+    
+    .header-with-back {
+        gap: 0.75rem;
+    }
+}
+</style>
+
+<script>
+let configuracionActiva = null;
+
+function toggleConfiguracion(configId, isChecked) {
+    if (!isChecked) {
+        alert('Debe haber al menos una configuración activa. Active otra configuración primero.');
+        document.getElementById('toggle-' + configId).checked = true;
+        return;
+    }
+    
+    fetch(`/evaluacion/configuracion/email/${configId}/activar/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Actualizar todas las tarjetas
+            document.querySelectorAll('.config-card').forEach(card => {
+                card.classList.remove('config-active');
+            });
+            document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Activar la seleccionada
+            document.getElementById('toggle-' + configId).checked = true;
+            document.getElementById('toggle-' + configId).closest('.config-card').classList.add('config-active');
+            
+            // Mostrar mensaje de éxito
+            mostrarMensaje('success', data.message);
+            
+            // Recargar página para actualizar estadísticas
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            document.getElementById('toggle-' + configId).checked = !isChecked;
+            mostrarMensaje('error', data.error);
+        }
+    })
+    .catch(error => {
+        document.getElementById('toggle-' + configId).checked = !isChecked;
+        mostrarMensaje('error', 'Error al activar la configuración');
+    });
+}
+
+function mostrarFormularioPrueba(configId) {
+    configuracionActiva = configId;
+    document.getElementById('modalPrueba').style.display = 'block';
+}
+
+function cerrarModalPrueba() {
+    document.getElementById('modalPrueba').style.display = 'none';
+    document.getElementById('testEmail').value = '';
+}
+
+function enviarEmailPrueba() {
+    const email = document.getElementById('testEmail').value;
+    if (!email) {
+        alert('Por favor ingrese un email de destino');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('test_email', email);
+    
+    fetch('/evaluacion/configuracion/email/probar/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            mostrarMensaje('success', data.message);
+            cerrarModalPrueba();
+            // Recargar para actualizar estadísticas
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            mostrarMensaje('error', data.error);
+        }
+    })
+    .catch(error => {
+        mostrarMensaje('error', 'Error al enviar email de prueba');
+    });
+}
+
+function mostrarMensaje(tipo, mensaje) {
+    // Crear elemento del mensaje
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `alert alert-${tipo} alert-dismissible`;
+    messageDiv.innerHTML = `
+        <span>${tipo === 'success' ? '✅' : '❌'} ${mensaje}</span>
+    `;
+    messageDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1100;
+        max-width: 400px;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        background: ${tipo === 'success' ? '#d1fae5' : '#fee2e2'};
+        color: ${tipo === 'success' ? '#065f46' : '#991b1b'};
+        border: 1px solid ${tipo === 'success' ? '#a7f3d0' : '#fecaca'};
+    `;
+    
+    document.body.appendChild(messageDiv);
+    
+    // Remover después de 5 segundos
+    setTimeout(() => {
+        if (messageDiv.parentNode) {
+            messageDiv.parentNode.removeChild(messageDiv);
+        }
+    }, 5000);
+}
+
+// Cerrar modal al hacer clic fuera
+window.onclick = function(event) {
+    const modal = document.getElementById('modalPrueba');
+    if (event.target == modal) {
+        cerrarModalPrueba();
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,397 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }} | NaviPort RD{% endblock %}
+
+{% block content %}
+<!-- Navbar dependiendo del rol -->
+{% if user.role == 'evaluador' or user.role == 'supervisor' or user.role == 'admin_tic' %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li><a href="{% url 'evaluacion:dashboard' %}" style="color: inherit; text-decoration: none;">Dashboard</a></li>
+        <li>Reportes (Futuro)</li>
+        <li><a href="{% url 'evaluacion:gestion_licencias_servicios' %}" style="color: inherit; text-decoration: none;">Licencias y Servicios</a></li>
+        <li><a href="{% url 'evaluacion:configuracion' %}" style="color: inherit; text-decoration: none;">Configuración</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div style="text-align: right; margin-right: 10px;">
+            <div style="font-weight: 500;">{{ user.get_display_name }}</div>
+            <div style="font-size: 14px; color: #7f8c8d;">{{ user.get_role_display_with_admin }}</div>
+        </div>
+        <div class="user-avatar">{{ user.get_display_name|slice:':1'|upper }}{{ user.last_name|slice:':1'|upper }}</div>
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li><a href="{% url 'solicitudes:dashboard' %}" style="color: inherit; text-decoration: none;">Dashboard</a></li>
+        <li><a href="{% url 'solicitudes:mis_solicitudes' %}" style="color: inherit; text-decoration: none;">Solicitudes</a></li>
+        <li><a href="{% url 'solicitudes:mis_autorizaciones' %}" style="color: inherit; text-decoration: none;">Autorizaciones</a></li>
+        <li><a href="{% url 'accounts:gestionar_usuarios' %}" style="color: inherit; text-decoration: none;">Gestión de Usuarios</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div style="text-align: right; margin-right: 10px;">
+            <div style="font-weight: 500;">{{ user.get_display_name }}</div>
+            <div style="font-size: 14px; color: #7f8c8d;">{{ user.get_role_display_with_admin }}</div>
+        </div>
+        <div class="user-avatar">{{ user.get_display_name|slice:':1'|upper }}{{ user.last_name|slice:':1'|upper }}</div>
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="content-area">
+    <!-- Breadcrumb -->
+    <div style="margin-bottom: 20px;">
+        <a href="{% url 'accounts:gestionar_usuarios' %}" style="color: #3498db; text-decoration: none;">← Volver a Gestión de Usuarios</a>
+    </div>
+
+    <!-- Header -->
+    <div class="page-header" style="margin-bottom: 30px;">
+        <h2 style="color: #2c3e50; margin-bottom: 10px;">
+            {% if editando %}✏️{% else %}➕{% endif %} {{ titulo }}
+        </h2>
+        <p style="color: #7f8c8d;">
+            {% if editando %}
+                Modifica la información del usuario {{ usuario.username }}
+            {% else %}
+                Completa la información del nuevo usuario
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- Formulario -->
+    <div class="form-container">
+        <form method="post" class="form-usuario">
+            {% csrf_token %}
+            
+            <div class="form-grid">
+                <!-- Información Personal -->
+                <div class="form-section">
+                    <h3 class="form-section-title">👤 Información Personal</h3>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.username.id_for_label }}">Usuario *</label>
+                        {{ form.username }}
+                        <small class="form-text text-muted">Nombre de usuario único. Generalmente primera letra del nombre + apellido (ejemplo: jperez, mgonzalez)</small>
+                        {% if form.username.errors %}
+                        <div class="error-message">{{ form.username.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.first_name.id_for_label }}">Nombre *</label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}
+                        <div class="error-message">{{ form.first_name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.last_name.id_for_label }}">Apellido *</label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}
+                        <div class="error-message">{{ form.last_name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.cedula_rnc.id_for_label }}">Cédula/RNC *</label>
+                        {{ form.cedula_rnc }}
+                        <small class="form-help">Formato: XXX-XXXXXXX-X para cédula o XXX-XXXXX-X para RNC</small>
+                        {% if form.cedula_rnc.errors %}
+                        <div class="error-message">{{ form.cedula_rnc.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.email.id_for_label }}">Correo Electrónico</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                        <div class="error-message">{{ form.email.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.telefono.id_for_label }}">Teléfono</label>
+                        {{ form.telefono }}
+                        {% if form.telefono.errors %}
+                        <div class="error-message">{{ form.telefono.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Información del Sistema -->
+                <div class="form-section">
+                    <h3 class="form-section-title">⚙️ Configuración del Sistema</h3>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.role.id_for_label }}">Rol *</label>
+                        {{ form.role }}
+                        {% if form.role.errors %}
+                        <div class="error-message">{{ form.role.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    {% if user.role != 'solicitante' %}
+                    <div class="form-group">
+                        <label for="{{ form.empresa.id_for_label }}">Empresa</label>
+                        {{ form.empresa }}
+                        {% if form.empresa.errors %}
+                        <div class="error-message">{{ form.empresa.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    {{ form.empresa.as_hidden }}
+                    <div class="form-group">
+                        <label>Empresa</label>
+                        <div class="readonly-field">{{ user.empresa.nombre }}</div>
+                        <small class="form-help">Los usuarios creados por admins de empresa se asignan automáticamente a la empresa.</small>
+                    </div>
+                    {% endif %}
+
+                    <!-- Checkboxes de permisos -->
+                    {% if user.role == 'evaluador' or user.role == 'supervisor' or user.role == 'admin_tic' %}
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            {{ form.es_admin_empresa }}
+                            Admin de Empresa
+                        </label>
+                        <small class="form-help">Permite al usuario administrar otros usuarios de la empresa</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            {{ form.puede_crear_usuarios }}
+                            Puede Crear Usuarios
+                        </label>
+                        <small class="form-help">Permite crear nuevos usuarios para la empresa</small>
+                    </div>
+                    {% endif %}
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            {{ form.is_active }}
+                            Usuario Activo
+                        </label>
+                        <small class="form-help">Desmarcar para desactivar el acceso al sistema</small>
+                    </div>
+                </div>
+
+                <!-- Contraseña -->
+                <div class="form-section full-width">
+                    <h3 class="form-section-title">🔐 Contraseña</h3>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.password1.id_for_label }}">
+                            {% if editando %}Nueva Contraseña{% else %}Contraseña *{% endif %}
+                        </label>
+                        {{ form.password1 }}
+                        {% if form.password1.help_text %}
+                        <small class="form-help">{{ form.password1.help_text }}</small>
+                        {% endif %}
+                        {% if form.password1.errors %}
+                        <div class="error-message">{{ form.password1.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.password2.id_for_label }}">
+                            Confirmar Contraseña {% if not editando %}*{% endif %}
+                        </label>
+                        {{ form.password2 }}
+                        {% if form.password2.errors %}
+                        <div class="error-message">{{ form.password2.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    {% if editando %}💾 Actualizar Usuario{% else %}➕ Crear Usuario{% endif %}
+                </button>
+                {% if editando and form.instance.es_admin_empresa %}
+                <button type="button" class="btn" style="background: #27ae60; color: white;" onclick="notificarAdmin({{ form.instance.pk }})">
+                    📧 Notificar al Admin
+                </button>
+                {% endif %}
+                <a href="{% url 'accounts:gestionar_usuarios' %}" class="btn btn-secondary">
+                    ❌ Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.form-container {
+    background: white;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.form-section {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.form-section.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-section-title {
+    color: #2c3e50;
+    font-size: 18px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #ecf0f1;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.checkbox-label {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-group input, 
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+}
+
+.form-help {
+    display: block;
+    font-size: 12px;
+    color: #7f8c8d;
+    margin-top: 5px;
+}
+
+.error-message {
+    color: #e74c3c;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.help-text {
+    color: #7f8c8d;
+    font-weight: normal;
+    font-size: 0.9em;
+}
+
+.form-text {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+.text-muted {
+    color: #6c757d !important;
+    font-weight: bold;
+}
+
+.readonly-field {
+    padding: 10px;
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    color: #495057;
+}
+
+.form-actions {
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid #ecf0f1;
+}
+
+.form-actions .btn {
+    margin: 0 10px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .form-container {
+        margin: 0 15px;
+        padding: 20px;
+    }
+}
+</style>
+
+<script>
+function notificarAdmin(userId) {
+    // Usar exactamente el mismo formato que enviarEmailPrueba
+    const formData = new FormData();
+    formData.append('usuario_id', userId);
+
+    fetch('/accounts/notificar-admin/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ ' + data.message);
+        } else {
+            alert('❌ ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('❌ Error al enviar el correo de notificación');
+    });
+}
+</script>
+
+{% endblock %}

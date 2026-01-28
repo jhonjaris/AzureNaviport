@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Detalle de Log - {{ log.evento.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="content-header mb-4">
+        <div class="header-with-back">
+            <a href="{% url 'notificaciones:ver_logs' %}" class="back-btn">
+                🔙 Volver a Logs
+            </a>
+            <h1>📄 Detalle de Notificación</h1>
+        </div>
+        <p class="subtitle">Información completa del log de notificación</p>
+    </div>
+
+    <!-- Información General -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5><i class="fas fa-info-circle"></i> Información General</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Evento:</strong> <span class="badge bg-info">{{ log.evento.nombre }}</span></p>
+                    <p><strong>Código del Evento:</strong> {{ log.evento.codigo }}</p>
+                    <p><strong>Fecha de Creación:</strong> {{ log.fecha_creacion|date:"d/m/Y H:i:s" }}</p>
+                    <p><strong>Fecha de Envío:</strong>
+                        {% if log.fecha_envio %}
+                            {{ log.fecha_envio|date:"d/m/Y H:i:s" }}
+                        {% else %}
+                            <span class="text-muted">No enviado</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Estado:</strong>
+                        {% if log.estado == 'enviado' %}
+                            <span class="badge bg-success"><i class="fas fa-check"></i> Enviado Exitosamente</span>
+                        {% elif log.estado == 'error' %}
+                            <span class="badge bg-danger"><i class="fas fa-times"></i> Error en Envío</span>
+                        {% else %}
+                            <span class="badge bg-warning"><i class="fas fa-clock"></i> Pendiente</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Exitoso:</strong>
+                        {% if log.exitoso %}
+                            <span class="text-success">Sí</span>
+                        {% else %}
+                            <span class="text-danger">No</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Destinatarios -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5><i class="fas fa-users"></i> Destinatarios</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Correos Electrónicos:</strong></p>
+            <div class="alert alert-light">
+                {{ log.destinatarios }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido del Email -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5><i class="fas fa-envelope"></i> Contenido del Email</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Asunto:</strong></p>
+            <div class="alert alert-light">
+                {{ log.asunto }}
+            </div>
+
+            {% if log.mensaje_texto %}
+            <p><strong>Mensaje en Texto Plano:</strong></p>
+            <div class="alert alert-light">
+                <pre style="white-space: pre-wrap; font-family: monospace; font-size: 12px;">{{ log.mensaje_texto }}</pre>
+            </div>
+            {% endif %}
+
+            {% if log.mensaje_html %}
+            <p><strong>Mensaje HTML:</strong></p>
+            <div class="alert alert-light">
+                <details>
+                    <summary class="btn btn-sm btn-outline-secondary mb-2">Ver código HTML</summary>
+                    <pre style="white-space: pre-wrap; font-family: monospace; font-size: 11px; max-height: 300px; overflow-y: auto;">{{ log.mensaje_html }}</pre>
+                </details>
+                <details open>
+                    <summary class="btn btn-sm btn-outline-primary mb-2">Vista previa renderizada</summary>
+                    <div style="border: 1px solid #ddd; padding: 15px; background: white; margin-top: 10px;">
+                        {{ log.mensaje_html|safe }}
+                    </div>
+                </details>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Error (si existe) -->
+    {% if log.mensaje_error %}
+    <div class="card mb-4 border-danger">
+        <div class="card-header bg-danger text-white">
+            <h5><i class="fas fa-exclamation-triangle"></i> Mensaje de Error</h5>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-danger">
+                <pre style="white-space: pre-wrap; font-family: monospace; font-size: 12px;">{{ log.mensaje_error }}</pre>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Metadata -->
+    {% if log.metadata %}
+    <div class="card mb-4">
+        <div class="card-header bg-dark text-white">
+            <h5><i class="fas fa-code"></i> Metadata Adicional</h5>
+        </div>
+        <div class="card-body">
+            <pre style="background: #f8f9fa; padding: 15px; border-radius: 5px; font-size: 12px; max-height: 300px; overflow-y: auto;">{{ log.metadata|pprint }}</pre>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Botones de Acción -->
+    <div class="d-flex gap-2 mb-4">
+        <a href="{% url 'notificaciones:ver_logs' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver a Logs
+        </a>
+        <a href="/admin/notificaciones/lognotificacion/{{ log.id }}/change/" class="btn btn-outline-primary" target="_blank">
+            <i class="fas fa-edit"></i> Ver en Admin
+        </a>
+    </div>
+</div>
+
+<style>
+.header-with-back {
+    margin-bottom: 10px;
+}
+.back-btn {
+    display: inline-block;
+    color: #6c757d;
+    text-decoration: none;
+    margin-bottom: 5px;
+    font-size: 14px;
+}
+.back-btn:hover {
+    color: #495057;
+}
+.subtitle {
+    color: #6c757d;
+    margin-top: 5px;
+}
+details summary {
+    cursor: pointer;
+}
+</style>
+{% endblock %}

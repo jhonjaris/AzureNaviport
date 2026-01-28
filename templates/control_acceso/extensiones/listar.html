@@ -1,0 +1,453 @@
+{% extends 'base.html' %}
+
+{% block title %}Solicitudes de Extensión | NaviPort RD{% endblock %}
+
+{% block content %}
+<!-- Navbar -->
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li><a href="{% url 'evaluacion:dashboard' %}" style="color: inherit; text-decoration: none;">Dashboard</a></li>
+        <li class="active">Extensiones de Validez</li>
+        <li><a href="{% url 'evaluacion:configuracion' %}" style="color: inherit; text-decoration: none;">Configuración</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div style="text-align: right; margin-right: 10px;">
+            <div style="font-weight: 500;">{{ user.get_display_name }}</div>
+            <div style="font-size: 14px; color: #7f8c8d;">{{ user.get_role_display_with_admin }}</div>
+        </div>
+        <div class="user-avatar">{{ user.get_display_name|slice:':1'|upper }}{{ user.last_name|slice:':1'|upper }}</div>
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+
+<div class="content-area">
+    <!-- Header -->
+    <div class="page-header">
+        <h2 style="color: #2c3e50; margin-bottom: 10px;">
+            ⏰ Gestión de Extensiones de Validez
+        </h2>
+        <p style="color: #7f8c8d;">
+            Revisa y procesa solicitudes de extensión del período de validez de autorizaciones
+        </p>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="dashboard-cards" style="margin-bottom: 30px;">
+        <div class="dashboard-card small">
+            <div class="card-header">
+                <div class="card-icon" style="background: #3498db;">📊</div>
+                <div>
+                    <div class="card-title">Total Solicitudes</div>
+                    <div class="card-stat">{{ stats.total }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-card small">
+            <div class="card-header">
+                <div class="card-icon" style="background: #f39c12;">⏳</div>
+                <div>
+                    <div class="card-title">Pendientes</div>
+                    <div class="card-stat">{{ stats.pendientes }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-card small">
+            <div class="card-header">
+                <div class="card-icon" style="background: #27ae60;">✅</div>
+                <div>
+                    <div class="card-title">Aprobadas</div>
+                    <div class="card-stat">{{ stats.aprobadas }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-card small">
+            <div class="card-header">
+                <div class="card-icon" style="background: #e74c3c;">❌</div>
+                <div>
+                    <div class="card-title">Rechazadas</div>
+                    <div class="card-stat">{{ stats.rechazadas }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="toolbar" style="margin-bottom: 20px;">
+        <div class="toolbar-left">
+            <h4 style="color: #2c3e50; margin: 0;">Solicitudes de Extensión</h4>
+        </div>
+
+        <div class="toolbar-right">
+            <form method="get" class="search-form" style="display: flex; gap: 10px;">
+                <input type="search"
+                       name="q"
+                       value="{{ busqueda }}"
+                       placeholder="Buscar por código, empresa..."
+                       class="form-control"
+                       style="width: 250px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
+
+                <select name="estado" class="form-control" style="width: 150px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="todas" {% if estado_filtro == 'todas' %}selected{% endif %}>Todos los estados</option>
+                    <option value="pendiente" {% if estado_filtro == 'pendiente' or not estado_filtro %}selected{% endif %}>Pendientes</option>
+                    <option value="aprobada" {% if estado_filtro == 'aprobada' %}selected{% endif %}>Aprobadas</option>
+                    <option value="rechazada" {% if estado_filtro == 'rechazada' %}selected{% endif %}>Rechazadas</option>
+                </select>
+
+                <button type="submit" class="btn btn-secondary" style="padding: 8px 20px;">🔍</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de Extensiones -->
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Autorización</th>
+                    <th>Empresa</th>
+                    <th>Extensión Solicitada</th>
+                    <th>Estado</th>
+                    <th>Solicitada</th>
+                    <th>Procesada</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for extension in extensiones %}
+                <tr>
+                    <td>
+                        <strong>{{ extension.codigo }}</strong>
+                    </td>
+                    <td>
+                        <a href="{% url 'control_acceso:historial_extensiones' extension.autorizacion.id %}" style="color: #3498db; text-decoration: none;">
+                            {{ extension.autorizacion.codigo }}
+                        </a>
+                    </td>
+                    <td>
+                        <div style="color: #2c3e50; font-weight: 500;">{{ extension.autorizacion.empresa_nombre }}</div>
+                        <small style="color: #7f8c8d;">{{ extension.autorizacion.puerto_nombre }}</small>
+                    </td>
+                    <td>
+                        <div style="color: #7f8c8d; font-size: 13px;">Actual: {{ extension.fecha_vencimiento_actual|date:"d/m/Y H:i" }}</div>
+                        <div style="color: #2c3e50; font-weight: 600;">Nueva: {{ extension.fecha_vencimiento_solicitada|date:"d/m/Y H:i" }}</div>
+                        <div style="color: #3498db; font-size: 13px;">+{{ extension.dias_extension_solicitados }} días</div>
+                    </td>
+                    <td>
+                        <span class="badge badge-{{ extension.estado }}">{{ extension.get_estado_display }}</span>
+                    </td>
+                    <td>
+                        <div style="color: #2c3e50;">{{ extension.solicitada_por.get_full_name|default:extension.solicitada_por.username }}</div>
+                        <small style="color: #7f8c8d;">{{ extension.creada_el|date:"d/m/Y H:i" }}</small>
+                    </td>
+                    <td>
+                        {% if extension.procesada_por %}
+                            <div style="color: #2c3e50;">{{ extension.procesada_por.get_full_name|default:extension.procesada_por.username }}</div>
+                            <small style="color: #7f8c8d;">{{ extension.fecha_procesamiento|date:"d/m/Y H:i" }}</small>
+                        {% else %}
+                            <span style="color: #95a5a6;">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            {% if extension.estado == 'pendiente' %}
+                                <a href="{% url 'control_acceso:aprobar_extension' extension.id %}"
+                                   class="btn btn-sm btn-success"
+                                   title="Aprobar extensión">
+                                    ✅
+                                </a>
+                                <a href="{% url 'control_acceso:rechazar_extension' extension.id %}"
+                                   class="btn btn-sm btn-danger"
+                                   title="Rechazar extensión">
+                                    ❌
+                                </a>
+                            {% else %}
+                                <span style="color: #95a5a6; font-size: 13px;">{{ extension.get_estado_display }}</span>
+                            {% endif %}
+                            <button onclick="verDetalle({{ extension.id }})" class="btn btn-sm btn-info" title="Ver detalle">
+                                👁️
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- Fila expandible con detalles -->
+                <tr id="detalle-{{ extension.id }}" style="display: none;">
+                    <td colspan="8" style="background: #f8f9fa; padding: 20px;">
+                        <div style="max-width: 800px;">
+                            <h4 style="color: #2c3e50; margin-bottom: 15px;">📋 Detalles de la Solicitud</h4>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="color: #7f8c8d; font-weight: 600; display: block; margin-bottom: 5px;">Motivo:</label>
+                                <div style="color: #2c3e50; background: white; padding: 12px; border-radius: 4px; border-left: 3px solid #3498db;">
+                                    {{ extension.motivo }}
+                                </div>
+                            </div>
+
+                            {% if extension.observaciones_respuesta %}
+                            <div style="margin-bottom: 15px;">
+                                <label style="color: #7f8c8d; font-weight: 600; display: block; margin-bottom: 5px;">Observaciones (Aprobación):</label>
+                                <div style="color: #27ae60; background: #eafaf1; padding: 12px; border-radius: 4px; border-left: 3px solid #27ae60;">
+                                    {{ extension.observaciones_respuesta }}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if extension.motivo_rechazo %}
+                            <div style="margin-bottom: 15px;">
+                                <label style="color: #7f8c8d; font-weight: 600; display: block; margin-bottom: 5px;">Motivo del Rechazo:</label>
+                                <div style="color: #e74c3c; background: #fadbd8; padding: 12px; border-radius: 4px; border-left: 3px solid #e74c3c;">
+                                    {{ extension.motivo_rechazo }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 40px; color: #7f8c8d;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">⏰</div>
+                        <h3 style="color: #95a5a6;">No hay solicitudes de extensión</h3>
+                        <p>{% if busqueda or estado_filtro != 'pendiente' %}Intenta ajustar los filtros de búsqueda{% else %}No se han recibido solicitudes de extensión{% endif %}</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginación -->
+    {% if extensiones.has_other_pages %}
+    <div class="pagination-container">
+        <div class="pagination">
+            {% if extensiones.has_previous %}
+                <a href="?page=1{% if busqueda %}&q={{ busqueda }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}" class="page-link">Primera</a>
+                <a href="?page={{ extensiones.previous_page_number }}{% if busqueda %}&q={{ busqueda }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}" class="page-link">Anterior</a>
+            {% endif %}
+
+            <span class="page-info">
+                Página {{ extensiones.number }} de {{ extensiones.paginator.num_pages }}
+            </span>
+
+            {% if extensiones.has_next %}
+                <a href="?page={{ extensiones.next_page_number }}{% if busqueda %}&q={{ busqueda }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}" class="page-link">Siguiente</a>
+                <a href="?page={{ extensiones.paginator.num_pages }}{% if busqueda %}&q={{ busqueda }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}" class="page-link">Última</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.badge-pendiente { background: #f39c12; color: white; }
+.badge-aprobada { background: #27ae60; color: white; }
+.badge-rechazada { background: #e74c3c; color: white; }
+
+.table-container {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table thead {
+    background: #34495e;
+    color: white;
+}
+
+.table th {
+    padding: 15px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+}
+
+.table tbody tr {
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.table td {
+    padding: 15px 12px;
+    color: #2c3e50;
+    font-size: 14px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+.btn {
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    transition: all 0.2s;
+    padding: 6px 12px;
+}
+
+.btn-sm {
+    padding: 6px 10px;
+    font-size: 14px;
+}
+
+.btn-success {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #229954;
+}
+
+.btn-danger {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c0392b;
+}
+
+.btn-info {
+    background: #17a2b8;
+    color: white;
+}
+
+.btn-info:hover {
+    background: #138496;
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+.dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.dashboard-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.card-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.card-title {
+    color: #7f8c8d;
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.card-stat {
+    color: #2c3e50;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    padding: 20px 0;
+}
+
+.pagination {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.page-link {
+    padding: 8px 16px;
+    background: #3498db;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background 0.3s;
+}
+
+.page-link:hover {
+    background: #2980b9;
+}
+
+.page-info {
+    padding: 8px 16px;
+    color: #7f8c8d;
+    font-weight: 500;
+}
+</style>
+
+<script>
+function verDetalle(extensionId) {
+    const detalle = document.getElementById('detalle-' + extensionId);
+    if (detalle.style.display === 'none') {
+        detalle.style.display = 'table-row';
+    } else {
+        detalle.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

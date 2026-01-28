@@ -1,0 +1,585 @@
+{% extends 'solicitudes/wizard/base.html' %}
+
+{% block title %}Paso 4: Servicios - Solicitud Wizard{% endblock %}
+
+{% block wizard_content %}
+<div class="wizard-form-header">
+    <h4 class="wizard-form-title">
+        <i class="fas fa-briefcase"></i>
+        Servicios y Documentos
+    </h4>
+    <p class="wizard-form-subtitle">Seleccione el servicio y adjunte los documentos requeridos</p>
+</div>
+
+<form method="post" class="wizard-form" enctype="multipart/form-data" id="paso4Form">
+    {% csrf_token %}
+
+    <div class="wizard-form-section">
+        <h6 class="wizard-section-title">
+            <i class="fas fa-concierge-bell"></i>
+            Servicio Solicitado
+        </h6>
+        <p class="form-help-text">Seleccione UN servicio de los autorizados para su empresa:</p>
+
+        {% if tipo_licencia %}
+        <div class="licencia-info-box">
+            <div class="licencia-badge">
+                <i class="fas fa-id-card"></i>
+                <span>Licencia: <strong>{{ tipo_licencia.nombre }}</strong></span>
+            </div>
+            {% if tipo_licencia.descripcion %}
+            <p class="licencia-descripcion">{{ tipo_licencia.descripcion }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="servicios-container">
+            {% for servicio in servicios %}
+                <div class="servicio-item" data-servicio-id="{{ servicio.id }}">
+                    <input class="servicio-radio" type="radio" name="servicio_seleccionado"
+                           value="{{ servicio.id }}" id="servicio_{{ servicio.id }}"
+                           {% if servicio.id|stringformat:"s" in datos_previos.servicios_seleccionados %}checked{% endif %}
+                           onchange="cargarDocumentosServicio({{ servicio.id }})">
+                    <label class="servicio-label" for="servicio_{{ servicio.id }}">
+                        <div class="servicio-header">
+                            <strong class="servicio-codigo">{{ servicio.codigo }}</strong>
+                            <span class="servicio-nombre">{{ servicio.nombre }}</span>
+                        </div>
+                        {% if servicio.descripcion %}
+                            <small class="servicio-descripcion">{{ servicio.descripcion }}</small>
+                        {% endif %}
+                    </label>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if servicios|length == 0 %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                {% if not tipo_licencia %}
+                <strong>Su empresa no tiene una licencia asignada.</strong>
+                Comuníquese con el administrador para que le asigne una licencia antes de continuar.
+                {% else %}
+                <strong>La licencia "{{ tipo_licencia.nombre }}" no tiene servicios asociados.</strong>
+                Comuníquese con el administrador para que agregue servicios a su licencia.
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Sección de Documentos Requeridos -->
+    <div class="wizard-form-section" id="seccionDocumentos" style="display: none;">
+        <h6 class="wizard-section-title">
+            <i class="fas fa-file-upload"></i>
+            Documentos Requeridos para el Servicio
+        </h6>
+        <p class="form-help-text" id="instruccionesDocumentos">
+            Adjunte los documentos requeridos para realizar este servicio:
+        </p>
+
+        <div id="documentosContainer">
+            <!-- Los documentos se cargarán dinámicamente aquí -->
+        </div>
+
+        <div id="sinDocumentos" class="alert alert-info" style="display: none;">
+            <i class="fas fa-info-circle"></i>
+            Este servicio no requiere documentos adicionales.
+        </div>
+    </div>
+
+    <div class="wizard-form-actions">
+        <a href="{% url 'solicitudes:wizard_paso3' %}" class="wizard-btn wizard-btn-ghost">
+            <i class="fas fa-arrow-left"></i>
+            Volver
+        </a>
+        <button type="submit" class="wizard-btn wizard-btn-primary" id="btnSiguiente">
+            Siguiente Paso
+            <i class="fas fa-arrow-right"></i>
+        </button>
+    </div>
+</form>
+
+<style>
+/* Estilos consistentes con pasos anteriores */
+.form-help-text {
+    font-size: 1.15rem !important;
+    color: #000000 !important;
+    margin-bottom: 20px !important;
+    font-weight: 500 !important;
+}
+
+/* Estilos para el cuadro de información de licencia */
+.licencia-info-box {
+    background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+    border: 2px solid #0ea5e9;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
+}
+
+.licencia-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.25rem;
+    color: #0369a1;
+}
+
+.licencia-badge i {
+    font-size: 1.5rem;
+    color: #0ea5e9;
+}
+
+.licencia-badge strong {
+    color: #0c4a6e;
+    font-size: 1.35rem;
+}
+
+.licencia-descripcion {
+    margin-top: 10px;
+    font-size: 1rem;
+    color: #475569;
+    font-style: italic;
+    margin-bottom: 0;
+}
+
+/* Badge para servicios adicionales */
+.servicio-extra-badge {
+    display: inline-block;
+    background: #f59e0b;
+    color: white;
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-top: 8px;
+    font-weight: 600;
+}
+
+.servicios-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .servicios-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.servicio-item {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.servicio-item:hover {
+    border-color: #0ea5e9;
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
+    transform: translateY(-2px);
+}
+
+.servicio-radio {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.servicio-radio:checked + .servicio-label {
+    background: linear-gradient(135deg, #e0e7ff 0%, #f5f3ff 100%);
+}
+
+.servicio-radio:checked ~ .servicio-item,
+.servicio-item:has(.servicio-radio:checked) {
+    border-color: #0ea5e9;
+    background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+}
+
+.servicio-label {
+    display: block;
+    cursor: pointer;
+    margin: 0;
+    padding: 10px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.servicio-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 8px;
+}
+
+.servicio-codigo {
+    font-size: 1.3rem !important;
+    font-weight: 700 !important;
+    color: #000000 !important;
+    background: #0ea5e9;
+    color: white !important;
+    padding: 8px 16px;
+    border-radius: 8px;
+    min-width: 100px;
+    text-align: center;
+}
+
+.servicio-nombre {
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+    color: #000000 !important;
+    flex: 1;
+}
+
+.servicio-descripcion {
+    display: block;
+    font-size: 1.05rem !important;
+    color: #000000 !important;
+    margin-top: 8px;
+    margin-left: 10px;
+    font-weight: 400 !important;
+    line-height: 1.5;
+}
+
+/* Indicador visual de radio seleccionado */
+.servicio-item::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 24px;
+    height: 24px;
+    border: 2px solid #cbd5e1;
+    border-radius: 50%;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.servicio-item:has(.servicio-radio:checked)::before {
+    border-color: #0ea5e9;
+    background: #0ea5e9;
+    box-shadow: inset 0 0 0 4px white;
+}
+
+/* Alert styling */
+.alert {
+    padding: 20px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 1.15rem !important;
+}
+
+.alert i {
+    font-size: 1.5rem;
+}
+
+.alert-info {
+    background-color: #e0f2fe;
+    border: 1px solid #0ea5e9;
+    color: #0369a1;
+}
+
+/* Estilos para documentos */
+.documento-item {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+}
+
+.documento-item:hover {
+    border-color: #0ea5e9;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.documento-item.obligatorio {
+    border-left: 4px solid #dc2626;
+}
+
+.documento-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.documento-nombre {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.documento-nombre .badge {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.badge-obligatorio {
+    background-color: #dc2626;
+    color: white;
+}
+
+.badge-opcional {
+    background-color: #6b7280;
+    color: white;
+}
+
+.documento-descripcion {
+    font-size: 0.95rem;
+    color: #64748b;
+    margin-bottom: 15px;
+    font-style: italic;
+}
+
+.documento-input-container {
+    position: relative;
+}
+
+.documento-input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.documento-input:hover {
+    border-color: #0ea5e9;
+    background: #f0f9ff;
+}
+
+.documento-input:focus {
+    outline: none;
+    border-color: #0ea5e9;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+
+.archivo-seleccionado {
+    margin-top: 10px;
+    padding: 10px 15px;
+    background: #dcfce7;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #166534;
+    font-size: 0.95rem;
+}
+
+.archivo-seleccionado i {
+    color: #22c55e;
+}
+
+.archivo-error {
+    margin-top: 10px;
+    padding: 10px 15px;
+    background: #fee2e2;
+    border-radius: 8px;
+    color: #dc2626;
+    font-size: 0.95rem;
+}
+
+/* Loading spinner */
+.loading-documentos {
+    text-align: center;
+    padding: 40px;
+    color: #64748b;
+}
+
+.loading-documentos .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e9ecef;
+    border-top-color: #0ea5e9;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+</style>
+
+<script>
+let documentosRequeridos = [];
+
+function cargarDocumentosServicio(servicioId) {
+    const seccionDocumentos = document.getElementById('seccionDocumentos');
+    const documentosContainer = document.getElementById('documentosContainer');
+    const sinDocumentos = document.getElementById('sinDocumentos');
+
+    // Mostrar sección de documentos
+    seccionDocumentos.style.display = 'block';
+
+    // Mostrar loading
+    documentosContainer.innerHTML = `
+        <div class="loading-documentos">
+            <div class="spinner"></div>
+            <p>Cargando documentos requeridos...</p>
+        </div>
+    `;
+    sinDocumentos.style.display = 'none';
+
+    // Cargar documentos del servicio
+    fetch(`/solicitudes/wizard/api/documentos-servicio/${servicioId}/`)
+        .then(response => response.json())
+        .then(data => {
+            documentosRequeridos = data.documentos;
+
+            if (documentosRequeridos.length === 0) {
+                documentosContainer.innerHTML = '';
+                sinDocumentos.style.display = 'flex';
+            } else {
+                sinDocumentos.style.display = 'none';
+                renderizarDocumentos(documentosRequeridos);
+            }
+        })
+        .catch(error => {
+            console.error('Error cargando documentos:', error);
+            documentosContainer.innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Error al cargar los documentos requeridos. Intente nuevamente.
+                </div>
+            `;
+        });
+}
+
+function renderizarDocumentos(documentos) {
+    const container = document.getElementById('documentosContainer');
+    let html = '';
+
+    documentos.forEach((doc, index) => {
+        const obligatorioClass = doc.obligatorio ? 'obligatorio' : '';
+        const badgeClass = doc.obligatorio ? 'badge-obligatorio' : 'badge-opcional';
+        const badgeText = doc.obligatorio ? 'Obligatorio' : 'Opcional';
+        const requiredAttr = doc.obligatorio ? 'required' : '';
+
+        html += `
+            <div class="documento-item ${obligatorioClass}">
+                <div class="documento-header">
+                    <div class="documento-nombre">
+                        <i class="fas fa-file-alt"></i>
+                        ${doc.nombre}
+                        <span class="badge ${badgeClass}">${badgeText}</span>
+                    </div>
+                </div>
+                ${doc.descripcion ? `<div class="documento-descripcion">${doc.descripcion}</div>` : ''}
+                <div class="documento-input-container">
+                    <input type="file"
+                           name="documento_${doc.id}"
+                           id="documento_${doc.id}"
+                           class="documento-input"
+                           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                           ${requiredAttr}
+                           onchange="mostrarArchivoSeleccionado(this, ${doc.id})">
+                    <div id="archivo_info_${doc.id}"></div>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+function mostrarArchivoSeleccionado(input, docId) {
+    const infoContainer = document.getElementById(`archivo_info_${docId}`);
+
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const fileSize = (file.size / 1024 / 1024).toFixed(2);
+
+        // Validar tamaño (máximo 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            infoContainer.innerHTML = `
+                <div class="archivo-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    El archivo es demasiado grande. Máximo permitido: 10MB
+                </div>
+            `;
+            input.value = '';
+            return;
+        }
+
+        // Validar tipo de archivo
+        const allowedTypes = ['application/pdf', 'application/msword',
+                             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                             'image/jpeg', 'image/png'];
+        const allowedExtensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'];
+
+        const fileName = file.name.toLowerCase();
+        const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+
+        if (!hasValidExtension) {
+            infoContainer.innerHTML = `
+                <div class="archivo-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Tipo de archivo no permitido. Use: PDF, DOC, DOCX, JPG o PNG
+                </div>
+            `;
+            input.value = '';
+            return;
+        }
+
+        infoContainer.innerHTML = `
+            <div class="archivo-seleccionado">
+                <i class="fas fa-check-circle"></i>
+                <span><strong>${file.name}</strong> (${fileSize} MB)</span>
+            </div>
+        `;
+    } else {
+        infoContainer.innerHTML = '';
+    }
+}
+
+// Validar formulario antes de enviar
+document.getElementById('paso4Form').addEventListener('submit', function(e) {
+    const servicioSeleccionado = document.querySelector('input[name="servicio_seleccionado"]:checked');
+
+    if (!servicioSeleccionado) {
+        e.preventDefault();
+        alert('Por favor, seleccione un servicio antes de continuar.');
+        return false;
+    }
+
+    // Validar documentos obligatorios
+    const documentosObligatorios = documentosRequeridos.filter(d => d.obligatorio);
+    for (const doc of documentosObligatorios) {
+        const input = document.getElementById(`documento_${doc.id}`);
+        if (input && !input.files.length) {
+            e.preventDefault();
+            alert(`Por favor, adjunte el documento obligatorio: ${doc.nombre}`);
+            input.focus();
+            return false;
+        }
+    }
+
+    return true;
+});
+
+// Al cargar la página, si ya hay un servicio seleccionado, cargar sus documentos
+document.addEventListener('DOMContentLoaded', function() {
+    const servicioChecked = document.querySelector('input[name="servicio_seleccionado"]:checked');
+    if (servicioChecked) {
+        cargarDocumentosServicio(servicioChecked.value);
+    }
+});
+</script>
+{% endblock %}

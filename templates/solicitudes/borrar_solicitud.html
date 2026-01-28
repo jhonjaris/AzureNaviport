@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Borrar Solicitud #{{ solicitud.id }} | NaviPort RD{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li>Dashboard</li>
+        <li>Solicitudes</li>
+        <li>Autorizaciones</li>
+        <li>Historial</li>
+    </ul>
+    <div class="navbar-user">
+        <span>{{ solicitud.solicitante.get_display_name }}</span>
+        <div class="user-avatar">{{ solicitud.solicitante.get_display_name|slice:':1'|upper }}{{ solicitud.solicitante.last_name|slice:':1'|upper }}</div>
+    
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+<div class="content-area">
+    <div class="form-container" style="max-width: 600px; margin: 40px auto; text-align: center;">
+        <h2 style="color: #e74c3c; margin-bottom: 20px;">¿Estás seguro de que deseas borrar la Solicitud #{{ solicitud.id }}?</h2>
+        <p style="color: #7f8c8d;">Esta acción no se puede deshacer.</p>
+        <form method="post" style="margin-top: 30px;">
+            {% csrf_token %}
+            <a href="{% url 'solicitudes:detalle_solicitud' solicitud.id %}" class="btn" style="background: #95a5a6; color: white;">Cancelar</a>
+            <button type="submit" class="btn btn-danger" style="margin-left: 20px;">🗑️ Borrar Definitivamente</button>
+        </form>
+    </div>
+</div>
+{% endblock %} 

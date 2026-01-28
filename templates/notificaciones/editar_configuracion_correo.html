@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Configurar Correo Electrónico{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="content-header mb-4">
+        <div class="header-with-back">
+            <a href="{% url 'notificaciones:configuracion_correo' %}" class="back-btn">
+                🔙 Volver a Notificaciones
+            </a>
+            <h1>⚙️ {% if tiene_configuracion %}Editar{% else %}Crear{% endif %} Configuración de Correo</h1>
+        </div>
+        <p class="subtitle">Configure el servidor SMTP para el envío de notificaciones</p>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5><i class="fas fa-server"></i> Configuración del Servidor SMTP</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" id="formConfiguracion">
+                {% csrf_token %}
+
+                <!-- Nombre de la Configuración -->
+                <div class="mb-3">
+                    <label for="nombre" class="form-label">Nombre de la Configuración</label>
+                    <input type="text" class="form-control" id="nombre" name="nombre"
+                           value="{{ config.nombre|default:'Configuración Principal' }}" required>
+                    <small class="text-muted">Nombre descriptivo para identificar esta configuración</small>
+                </div>
+
+                <!-- Tipo de Proveedor -->
+                <div class="mb-3">
+                    <label for="tipo_proveedor" class="form-label">Proveedor de Email</label>
+                    <select class="form-select" id="tipo_proveedor" name="tipo_proveedor" required>
+                        <option value="gmail" {% if config.tipo_proveedor == 'gmail' %}selected{% endif %}>Gmail</option>
+                        <option value="outlook" {% if config.tipo_proveedor == 'outlook' %}selected{% endif %}>Outlook / Hotmail</option>
+                        <option value="custom" {% if config.tipo_proveedor == 'custom' or not config %}selected{% endif %}>SMTP Personalizado</option>
+                    </select>
+                    <small class="text-muted">Seleccione su proveedor de correo. Gmail y Outlook se configuran automáticamente.</small>
+                </div>
+
+                <!-- Configuración SMTP Personalizada (solo visible si custom) -->
+                <div id="customConfig" style="display: none;">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="email_host" class="form-label">Servidor SMTP</label>
+                            <input type="text" class="form-control" id="email_host" name="email_host"
+                                   value="{{ config.email_host|default:'smtp.gmail.com' }}" placeholder="smtp.example.com">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="email_port" class="form-label">Puerto</label>
+                            <input type="number" class="form-control" id="email_port" name="email_port"
+                                   value="{{ config.email_port|default:587 }}" placeholder="587">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="email_use_tls" name="email_use_tls"
+                                   {% if config.email_use_tls or not config %}checked{% endif %}>
+                            <label class="form-check-label" for="email_use_tls">
+                                Usar TLS (Puerto 587)
+                            </label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="email_use_ssl" name="email_use_ssl"
+                                   {% if config.email_use_ssl %}checked{% endif %}>
+                            <label class="form-check-label" for="email_use_ssl">
+                                Usar SSL (Puerto 465)
+                            </label>
+                        </div>
+                        <br>
+                        <small class="text-muted">TLS es el más común (puerto 587). SSL usa puerto 465.</small>
+                    </div>
+                </div>
+
+                <!-- Credenciales -->
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="email_host_user" class="form-label">Usuario / Email</label>
+                        <input type="email" class="form-control" id="email_host_user" name="email_host_user"
+                               value="{{ config.email_host_user }}" placeholder="usuario@example.com" required>
+                        <small class="text-muted">Correo electrónico de la cuenta</small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="email_host_password" class="form-label">Contraseña / App Password</label>
+                        <input type="password" class="form-control" id="email_host_password" name="email_host_password"
+                               value="{{ config.email_host_password }}" placeholder="••••••••••••••••" required>
+                        <small class="text-muted">Para Gmail/Outlook: use "Contraseña de Aplicación"</small>
+                    </div>
+                </div>
+
+                <!-- Email de Envío (From) -->
+                <div class="mb-3">
+                    <label for="default_from_email" class="form-label">Email Remitente (From)</label>
+                    <input type="email" class="form-control" id="default_from_email" name="default_from_email"
+                           value="{{ config.default_from_email }}" placeholder="noreply@example.com" required>
+                    <small class="text-muted">Dirección que aparecerá como remitente en los emails</small>
+                </div>
+
+                <!-- Habilitar Email -->
+                <div class="mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="email_enabled" name="email_enabled"
+                               {% if config.email_enabled or not config %}checked{% endif %}>
+                        <label class="form-check-label" for="email_enabled">
+                            <strong>Habilitar envío de emails</strong>
+                        </label>
+                        <br>
+                        <small class="text-muted">Desmarque para deshabilitar temporalmente el envío de notificaciones</small>
+                    </div>
+                </div>
+
+                <!-- Instrucciones para Gmail -->
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle"></i> Instrucciones para Gmail</h6>
+                    <ol class="mb-0">
+                        <li>Ve a tu cuenta de Google: <a href="https://myaccount.google.com/" target="_blank">myaccount.google.com</a></li>
+                        <li>Seguridad → Verificación en 2 pasos (debe estar activa)</li>
+                        <li>Contraseñas de aplicaciones → Genera una nueva contraseña</li>
+                        <li>Copia la contraseña de 16 caracteres y pégala arriba</li>
+                    </ol>
+                </div>
+
+                <!-- Botones -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar Configuración
+                    </button>
+                    <a href="{% url 'notificaciones:configuracion_correo' %}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Prueba de Envío (solo si ya existe configuración) -->
+    {% if tiene_configuracion %}
+    <div class="card mt-4">
+        <div class="card-header bg-success text-white">
+            <h5><i class="fas fa-paper-plane"></i> Enviar Email de Prueba</h5>
+        </div>
+        <div class="card-body">
+            <p>Envíe un email de prueba para verificar que la configuración funciona correctamente.</p>
+            <form id="formPrueba" class="row g-3">
+                {% csrf_token %}
+                <div class="col-md-9">
+                    <input type="email" class="form-control" id="email_destino" name="email_destino"
+                           placeholder="correo@ejemplo.com" required>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-paper-plane"></i> Enviar Prueba
+                    </button>
+                </div>
+            </form>
+            <div id="resultadoPrueba" class="mt-3"></div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.header-with-back {
+    margin-bottom: 10px;
+}
+.back-btn {
+    display: inline-block;
+    color: #6c757d;
+    text-decoration: none;
+    margin-bottom: 5px;
+    font-size: 14px;
+}
+.back-btn:hover {
+    color: #495057;
+}
+.subtitle {
+    color: #6c757d;
+    margin-top: 5px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoProveedor = document.getElementById('tipo_proveedor');
+    const customConfig = document.getElementById('customConfig');
+
+    function toggleCustomConfig() {
+        if (tipoProveedor.value === 'custom') {
+            customConfig.style.display = 'block';
+        } else {
+            customConfig.style.display = 'none';
+        }
+    }
+
+    tipoProveedor.addEventListener('change', toggleCustomConfig);
+    toggleCustomConfig();
+
+    // Envío de email de prueba
+    {% if tiene_configuracion %}
+    const formPrueba = document.getElementById('formPrueba');
+    if (formPrueba) {
+        formPrueba.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const emailDestino = document.getElementById('email_destino').value;
+            const resultadoDiv = document.getElementById('resultadoPrueba');
+
+            resultadoDiv.innerHTML = '<div class="alert alert-info">Enviando email de prueba...</div>';
+
+            fetch('{% url "notificaciones:enviar_email_prueba" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'email_destino=' + encodeURIComponent(emailDestino)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultadoDiv.innerHTML = '<div class="alert alert-success"><i class="fas fa-check"></i> ' + data.message + '</div>';
+                } else {
+                    resultadoDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-times"></i> ' + data.message + '</div>';
+                }
+            })
+            .catch(error => {
+                resultadoDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-times"></i> Error: ' + error + '</div>';
+            });
+        });
+    }
+    {% endif %}
+});
+</script>
+{% endblock %}

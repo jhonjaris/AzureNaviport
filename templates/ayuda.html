@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ayuda - NaviPort RD</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+        .help-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 30px;
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+            min-height: calc(100vh - 140px);
+        }
+
+        /* Sidebar con índice */
+        .help-sidebar {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .help-sidebar h3 {
+            font-size: 18px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .help-index {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .help-index li {
+            margin-bottom: 8px;
+        }
+
+        .help-index a {
+            display: block;
+            padding: 10px 12px;
+            color: #555;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .help-index a:hover {
+            background: #f0f8ff;
+            color: #3498db;
+            padding-left: 16px;
+        }
+
+        .help-index a.active {
+            background: #3498db;
+            color: white;
+            font-weight: 500;
+        }
+
+        .help-index .construction {
+            color: #95a5a6;
+            font-style: italic;
+        }
+
+        /* Contenido principal */
+        .help-content {
+            background: white;
+            border-radius: 8px;
+            padding: 35px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .help-header {
+            margin-bottom: 30px;
+        }
+
+        .help-header h1 {
+            font-size: 32px;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .help-header p {
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+
+        /* Búsqueda */
+        .search-box {
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 14px 45px 14px 18px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .search-box::after {
+            content: "🔍";
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+        }
+
+        .search-results {
+            margin-top: 15px;
+            padding: 12px;
+            background: #fff3cd;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .search-results.active {
+            display: block;
+        }
+
+        /* Secciones de contenido */
+        .help-section {
+            margin-bottom: 40px;
+            scroll-margin-top: 20px;
+        }
+
+        .help-section h2 {
+            font-size: 24px;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .help-section h3 {
+            font-size: 20px;
+            color: #34495e;
+            margin-top: 25px;
+            margin-bottom: 12px;
+        }
+
+        .help-section h4 {
+            font-size: 16px;
+            color: #555;
+            margin-top: 18px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .help-section p {
+            color: #555;
+            line-height: 1.7;
+            margin-bottom: 12px;
+        }
+
+        .help-section ul, .help-section ol {
+            color: #555;
+            line-height: 1.8;
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+
+        .help-section li {
+            margin-bottom: 8px;
+        }
+
+        /* Alertas y notas */
+        .help-note {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px 18px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .help-warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px 18px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .help-tip {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px 18px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .construction-badge {
+            display: inline-block;
+            background: #f39c12;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        /* Pasos numerados */
+        .steps {
+            counter-reset: step-counter;
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .steps li {
+            counter-increment: step-counter;
+            margin-bottom: 20px;
+            padding-left: 50px;
+            position: relative;
+        }
+
+        .steps li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: #3498db;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        /* Highlight para búsqueda */
+        .highlight {
+            background-color: #ffeb3b;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .help-container {
+                grid-template-columns: 1fr;
+            }
+
+            .help-sidebar {
+                position: static;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <span style="font-size: 28px; margin-right: 12px;">⚓</span>
+            <span style="font-size: 20px; font-weight: 600;">NaviPort RD</span>
+        </div>
+        <div class="navbar-menu">
+            <a href="{% url 'accounts:dashboard' %}" class="navbar-item">
+                🏠 Volver al Dashboard
+            </a>
+            <div class="navbar-item dropdown">
+                <span class="dropdown-toggle">👤 {{ user.get_display_name }}</span>
+                <div class="dropdown-menu">
+                    <a href="{% url 'accounts:profile' %}">👤 Mi Perfil</a>
+                    <a href="{% url 'accounts:logout' %}">🚪 Cerrar Sesión</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="help-container">
+        <!-- Sidebar con índice -->
+        <aside class="help-sidebar">
+            <h3>📚 Índice</h3>
+            <ul class="help-index">
+                <li><a href="#introduccion" class="index-link">🏠 Introducción</a></li>
+                <li><a href="#requisitos" class="index-link">💻 Requisitos del Sistema</a></li>
+                <li><a href="#primeros-pasos" class="index-link">🚀 Primeros Pasos</a></li>
+
+                {% if user_role == 'solicitante' %}
+                <li><a href="#solicitante" class="index-link active">👤 Guía del Solicitante</a></li>
+                {% elif user_role == 'evaluador' %}
+                <li><a href="#evaluador" class="index-link active">✅ Guía del Evaluador</a></li>
+                {% elif user_role == 'supervisor' %}
+                <li><a href="#supervisor" class="index-link active">👨‍💼 Guía del Supervisor</a></li>
+                {% elif user_role == 'oficial_acceso' %}
+                <li><a href="#oficial" class="index-link active">👮 Guía del Oficial de Acceso</a></li>
+                {% elif user_role == 'admin_tic' %}
+                <li><a href="#admin" class="index-link active">⚙️ Guía del Admin TIC</a></li>
+                {% elif user_role == 'direccion' %}
+                <li><a href="#direccion" class="index-link active construction">📊 Dirección (En construcción)</a></li>
+                {% endif %}
+
+                <li><a href="#faq" class="index-link">❓ Preguntas Frecuentes</a></li>
+                <li><a href="#soporte" class="index-link">📞 Soporte Técnico</a></li>
+            </ul>
+        </aside>
+
+        <!-- Contenido principal -->
+        <main class="help-content">
+            <div class="help-header">
+                <h1>📘 Manual de Usuario</h1>
+                <p>Bienvenido al manual de ayuda de NaviPort RD - Sistema de Gestión de Accesos Portuarios</p>
+            </div>
+
+            <!-- Búsqueda -->
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Buscar en el manual...">
+                <div id="searchResults" class="search-results"></div>
+            </div>
+
+            <!-- Introducción General -->
+            <section id="introduccion" class="help-section">
+                <h2>🏠 Introducción</h2>
+                <p>
+                    <strong>NaviPort RD</strong> es el Sistema de Gestión de Accesos Portuarios de la República Dominicana,
+                    diseñado para facilitar y controlar el acceso de vehículos y personal a las instalaciones portuarias.
+                </p>
+                <p>
+                    Este sistema permite gestionar el flujo completo desde la solicitud de acceso hasta el control físico
+                    mediante códigos QR, garantizando seguridad, trazabilidad y eficiencia en todos los procesos.
+                </p>
+                <div class="help-note">
+                    <strong>📌 Nota:</strong> Este manual está contextualizado para tu rol de <strong>{{ role_display }}</strong>.
+                    Verás información relevante a tus funciones específicas.
+                </div>
+            </section>
+
+            <!-- Requisitos del Sistema -->
+            <section id="requisitos" class="help-section">
+                <h2>💻 Requisitos del Sistema</h2>
+                <h3>Navegadores Compatibles</h3>
+                <ul>
+                    <li>Google Chrome (versión 90 o superior) - Recomendado</li>
+                    <li>Mozilla Firefox (versión 88 o superior)</li>
+                    <li>Microsoft Edge (versión 90 o superior)</li>
+                    <li>Safari (versión 14 o superior)</li>
+                </ul>
+                <h3>Requisitos Mínimos</h3>
+                <ul>
+                    <li>Conexión a Internet estable</li>
+                    <li>Resolución de pantalla mínima: 1024x768</li>
+                    <li>JavaScript habilitado</li>
+                    <li>Cookies habilitadas</li>
+                </ul>
+                <div class="help-tip">
+                    <strong>💡 Consejo:</strong> Para mejor experiencia, utilice Google Chrome en su versión más reciente.
+                </div>
+            </section>
+
+            <!-- Primeros Pasos -->
+            <section id="primeros-pasos" class="help-section">
+                <h2>🚀 Primeros Pasos</h2>
+                <h3>Acceso al Sistema</h3>
+                <ol class="steps">
+                    <li>
+                        <strong>Ingrese a la página de inicio</strong><br>
+                        Abra su navegador y acceda a la URL del sistema NaviPort RD
+                    </li>
+                    <li>
+                        <strong>Introduzca sus credenciales</strong><br>
+                        Ingrese su nombre de usuario y contraseña proporcionados por el administrador
+                    </li>
+                    <li>
+                        <strong>Inicie sesión</strong><br>
+                        Haga clic en el botón "🔐 Iniciar Sesión"
+                    </li>
+                    <li>
+                        <strong>Acceda a su dashboard</strong><br>
+                        Será redirigido automáticamente a su panel de control según su rol
+                    </li>
+                </ol>
+                <div class="help-warning">
+                    <strong>⚠️ Importante:</strong> Si olvida su contraseña, utilice el enlace "¿Olvidaste tu contraseña?"
+                    en la página de inicio de sesión para restablecerla.
+                </div>
+            </section>
+
+            <!-- Contenido específico por rol -->
+            {% if user_role == 'solicitante' %}
+            <section id="solicitante" class="help-section">
+                <h2>👤 Guía del Solicitante</h2>
+
+                <h3>¿Qué es un Solicitante?</h3>
+                <p>
+                    Como <strong>Solicitante</strong>, usted representa a una empresa que requiere acceso a instalaciones
+                    portuarias. Puede crear solicitudes de acceso, gestionar vehículos y documentos, y dar seguimiento
+                    a sus autorizaciones.
+                </p>
+
+                <h3>Crear una Nueva Solicitud</h3>
+                <ol class="steps">
+                    <li>
+                        <strong>Acceda a "Nueva Solicitud"</strong><br>
+                        Desde su dashboard, haga clic en el botón "➕ Nueva Solicitud"
+                    </li>
+                    <li>
+                        <strong>Complete los datos de la solicitud</strong><br>
+                        Ingrese el puerto de destino, motivo de acceso, fecha solicitada y descripción
+                    </li>
+                    <li>
+                        <strong>Agregue vehículos</strong><br>
+                        Haga clic en "➕ Agregar Vehículo" y complete: tipo, placa, marca, modelo, color y conductor
+                    </li>
+                    <li>
+                        <strong>Adjunte documentos requeridos</strong><br>
+                        Suba los documentos necesarios: licencia, marbete, seguro, cédula del conductor, etc.
+                    </li>
+                    <li>
+                        <strong>Envíe la solicitud</strong><br>
+                        Revise toda la información y haga clic en "📤 Enviar Solicitud"
+                    </li>
+                </ol>
+
+                <h3>Gestión de Vehículos</h3>
+                <h4>Agregar múltiples vehículos</h4>
+                <p>
+                    Puede agregar varios vehículos a una misma solicitud. Cada vehículo debe tener su información completa
+                    y documentos correspondientes.
+                </p>
+                <ul>
+                    <li>Haga clic en "➕ Agregar Vehículo" para añadir más vehículos</li>
+                    <li>Use "🗑️ Eliminar" para remover un vehículo antes de enviar</li>
+                    <li>Verifique que todos los campos estén completos</li>
+                </ul>
+
+                <h3>Documentos Requeridos</h3>
+                <h4>Tipos de documentos por vehículo:</h4>
+                <ul>
+                    <li><strong>Licencia de Conducir:</strong> Del conductor asignado (formato PDF o imagen)</li>
+                    <li><strong>Marbete:</strong> Vigente del vehículo</li>
+                    <li><strong>Seguro:</strong> Póliza vigente del vehículo</li>
+                    <li><strong>Cédula:</strong> Del conductor</li>
+                    <li><strong>Registro Vehículo:</strong> Documentación del vehículo</li>
+                </ul>
+                <div class="help-note">
+                    <strong>📌 Formatos aceptados:</strong> PDF, JPG, PNG (Tamaño máximo: 5MB por archivo)
+                </div>
+
+                <h3>Estados de Solicitudes</h3>
+                <p>Sus solicitudes pueden tener los siguientes estados:</p>
+                <ul>
+                    <li><strong>🟡 Pendiente:</strong> En espera de evaluación</li>
+                    <li><strong>🔵 En Revisión:</strong> Siendo evaluada por un oficial</li>
+                    <li><strong>🟢 Aprobada:</strong> Solicitud aprobada - se generará autorización automáticamente</li>
+                    <li><strong>🔴 Rechazada:</strong> Solicitud denegada (ver comentarios del evaluador)</li>
+                    <li><strong>🟠 Documentos Solicitados:</strong> Se requieren documentos adicionales</li>
+                    <li><strong>🟣 Escalada:</strong> Enviada a supervisor para revisión especial</li>
+                </ul>
+
+                <h3>Ver Autorizaciones Activas</h3>
+                <p>
+                    Una vez aprobada su solicitud, se genera automáticamente una <strong>Autorización</strong> con código QR.
+                    Puede verla en la sección "Autorizaciones Activas".
+                </p>
+                <ol class="steps">
+                    <li>Vaya a "Autorizaciones Activas" en el menú</li>
+                    <li>Localice su autorización aprobada</li>
+                    <li>Descargue o imprima el código QR</li>
+                    <li>Presente el código QR al oficial de acceso en el puerto</li>
+                </ol>
+
+                <div class="help-tip">
+                    <strong>💡 Consejo:</strong> Mantenga una copia digital del código QR en su dispositivo móvil
+                    para facilitar el acceso.
+                </div>
+            </section>
+
+            {% elif user_role == 'evaluador' %}
+            <section id="evaluador" class="help-section">
+                <h2>✅ Guía del Evaluador</h2>
+
+                <h3>¿Qué es un Evaluador?</h3>
+                <p>
+                    Como <strong>Evaluador</strong>, usted es responsable de revisar, aprobar o rechazar las solicitudes
+                    de acceso portuario. También puede solicitar documentación adicional o escalar casos complejos a supervisores.
+                </p>
+
+                <h3>Evaluar una Solicitud</h3>
+                <ol class="steps">
+                    <li>
+                        <strong>Acceda a "Solicitudes Pendientes"</strong><br>
+                        Desde su dashboard, vea la lista de solicitudes pendientes de evaluación
+                    </li>
+                    <li>
+                        <strong>Revise la solicitud</strong><br>
+                        Haga clic en "Ver Detalles" para revisar toda la información
+                    </li>
+                    <li>
+                        <strong>Verifique documentos</strong><br>
+                        Revise que todos los documentos estén completos, vigentes y legibles
+                    </li>
+                    <li>
+                        <strong>Tome una decisión</strong><br>
+                        Elija entre: Aprobar, Rechazar, Solicitar Documentos o Escalar
+                    </li>
+                    <li>
+                        <strong>Agregue comentarios</strong><br>
+                        Proporcione observaciones o motivos de su decisión
+                    </li>
+                </ol>
+
+                <h3>Acciones Disponibles</h3>
+
+                <h4>✅ Aprobar Solicitud</h4>
+                <p>
+                    Cuando todos los requisitos están cumplidos:
+                </p>
+                <ul>
+                    <li>Haga clic en "✅ Aprobar"</li>
+                    <li>Agregue comentarios si es necesario</li>
+                    <li>Confirme la aprobación</li>
+                    <li>Se generará automáticamente la autorización con código QR</li>
+                </ul>
+
+                <h4>❌ Rechazar Solicitud</h4>
+                <p>
+                    Cuando la solicitud no cumple requisitos:
+                </p>
+                <ul>
+                    <li>Haga clic en "❌ Rechazar"</li>
+                    <li>Especifique el motivo del rechazo (obligatorio)</li>
+                    <li>Confirme la acción</li>
+                    <li>El solicitante será notificado</li>
+                </ul>
+
+                <h4>📄 Solicitar Documentos</h4>
+                <p>
+                    Cuando faltan documentos o hay inconsistencias:
+                </p>
+                <ul>
+                    <li>Haga clic en "📄 Solicitar Documentos"</li>
+                    <li>Especifique qué documentos se requieren</li>
+                    <li>La solicitud volverá al solicitante</li>
+                    <li>Recibirá notificación cuando se actualice</li>
+                </ul>
+
+                <h4>⬆️ Escalar a Supervisor</h4>
+                <p>
+                    Para casos que requieren autorización especial:
+                </p>
+                <ul>
+                    <li>Haga clic en "⬆️ Escalar"</li>
+                    <li>Explique el motivo de la escalación</li>
+                    <li>El supervisor revisará el caso</li>
+                    <li>Recibirá notificación de la resolución</li>
+                </ul>
+
+                <h3>Buenas Prácticas</h3>
+                <div class="help-tip">
+                    <ul>
+                        <li>Revise todas las secciones de la solicitud antes de decidir</li>
+                        <li>Verifique la vigencia de documentos (licencias, seguros, marbetes)</li>
+                        <li>Agregue comentarios claros y específicos</li>
+                        <li>Escale casos dudosos en lugar de rechazar directamente</li>
+                        <li>Mantenga comunicación profesional en los comentarios</li>
+                    </ul>
+                </div>
+
+                <div class="help-warning">
+                    <strong>⚠️ Importante:</strong> Una vez aprobada una solicitud, se genera automáticamente
+                    una autorización. Asegúrese de verificar toda la información antes de aprobar.
+                </div>
+            </section>
+
+            {% elif user_role == 'supervisor' %}
+            <section id="supervisor" class="help-section">
+                <h2>👨‍💼 Guía del Supervisor</h2>
+
+                <h3>¿Qué es un Supervisor?</h3>
+                <p>
+                    Como <strong>Supervisor</strong>, usted gestiona casos escalados por evaluadores, resuelve discrepancias
+                    reportadas por oficiales de acceso, y supervisa el funcionamiento general del sistema.
+                </p>
+
+                <h3>Gestionar Escalamientos</h3>
+                <ol class="steps">
+                    <li>
+                        <strong>Revise escalamientos pendientes</strong><br>
+                        En su dashboard, vea los casos escalados por evaluadores
+                    </li>
+                    <li>
+                        <strong>Analice el caso</strong><br>
+                        Revise la solicitud, documentos y comentarios del evaluador
+                    </li>
+                    <li>
+                        <strong>Tome una decisión</strong><br>
+                        Apruebe, rechace o devuelva al evaluador con instrucciones
+                    </li>
+                    <li>
+                        <strong>Documente su decisión</strong><br>
+                        Agregue comentarios explicando su resolución
+                    </li>
+                </ol>
+
+                <h3>Gestionar Discrepancias</h3>
+                <p>
+                    Los oficiales de acceso pueden reportar discrepancias cuando encuentran irregularidades al validar
+                    autorizaciones en el punto de control.
+                </p>
+                <h4>Tipos de discrepancias comunes:</h4>
+                <ul>
+                    <li>Vehículo no coincide con autorización</li>
+                    <li>Conductor diferente al registrado</li>
+                    <li>Documentos vencidos</li>
+                    <li>Código QR no válido o alterado</li>
+                </ul>
+                <ol class="steps">
+                    <li>Revise el reporte de discrepancia</li>
+                    <li>Verifique evidencias (fotos, comentarios)</li>
+                    <li>Investigue el caso</li>
+                    <li>Tome acción correctiva (suspender autorización, notificar empresa, etc.)</li>
+                    <li>Cierre el caso con resolución documentada</li>
+                </ol>
+
+                <h3>Supervisión y Reportes</h3>
+                <p>Monitoree indicadores clave del sistema:</p>
+                <ul>
+                    <li>Cantidad de solicitudes por estado</li>
+                    <li>Tiempo promedio de evaluación</li>
+                    <li>Tasa de aprobación/rechazo</li>
+                    <li>Escalamientos activos</li>
+                    <li>Discrepancias reportadas</li>
+                </ul>
+
+                <div class="help-note">
+                    <strong>📌 Nota:</strong> Su rol tiene autoridad para tomar decisiones finales en casos complejos.
+                    Use este poder con responsabilidad y documentando siempre sus decisiones.
+                </div>
+            </section>
+
+            {% elif user_role == 'oficial_acceso' %}
+            <section id="oficial" class="help-section">
+                <h2>👮 Guía del Oficial de Acceso</h2>
+
+                <h3>¿Qué es un Oficial de Acceso?</h3>
+                <p>
+                    Como <strong>Oficial de Acceso</strong>, usted controla el acceso físico a las instalaciones portuarias
+                    mediante la validación de códigos QR y autorizaciones. Es la última línea de control de seguridad.
+                </p>
+
+                <h3>Validar Autorización con Código QR</h3>
+                <ol class="steps">
+                    <li>
+                        <strong>Solicite el código QR</strong><br>
+                        Pida al conductor que presente su autorización con código QR
+                    </li>
+                    <li>
+                        <strong>Escanee el código</strong><br>
+                        Use la función "🔍 Escanear QR" en su dashboard o ingrese el código manualmente
+                    </li>
+                    <li>
+                        <strong>Verifique la información</strong><br>
+                        El sistema mostrará los detalles de la autorización: empresa, vehículo, conductor, vigencia
+                    </li>
+                    <li>
+                        <strong>Valide físicamente</strong><br>
+                        Compare la información en pantalla con:
+                        <ul>
+                            <li>Placa del vehículo</li>
+                            <li>Documentos del conductor</li>
+                            <li>Fecha de vigencia</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>Conceda o deniegue acceso</strong><br>
+                        Si todo coincide: "✅ Conceder Acceso"<br>
+                        Si hay irregularidades: "❌ Denegar Acceso"
+                    </li>
+                </ol>
+
+                <h3>Reportar Discrepancias</h3>
+                <p>
+                    Si encuentra irregularidades, debe reportarlas inmediatamente:
+                </p>
+                <ol class="steps">
+                    <li>
+                        <strong>Deniegue el acceso</strong><br>
+                        Haga clic en "❌ Denegar Acceso"
+                    </li>
+                    <li>
+                        <strong>Reporte la discrepancia</strong><br>
+                        Haga clic en "⚠️ Reportar Discrepancia"
+                    </li>
+                    <li>
+                        <strong>Especifique el tipo</strong><br>
+                        Seleccione el tipo de irregularidad encontrada
+                    </li>
+                    <li>
+                        <strong>Agregue detalles</strong><br>
+                        Describa la situación y adjunte evidencia si es posible
+                    </li>
+                    <li>
+                        <strong>Envíe el reporte</strong><br>
+                        El supervisor recibirá notificación inmediata
+                    </li>
+                </ol>
+
+                <h3>Tipos de Irregularidades Comunes</h3>
+                <ul>
+                    <li><strong>Vehículo no coincide:</strong> Placa, marca o modelo diferente</li>
+                    <li><strong>Conductor no autorizado:</strong> Persona diferente a la registrada</li>
+                    <li><strong>Documentos vencidos:</strong> Licencia, marbete o seguro expirados</li>
+                    <li><strong>QR inválido:</strong> Código no reconocido o alterado</li>
+                    <li><strong>Autorización expirada:</strong> Fuera de fecha de vigencia</li>
+                </ul>
+
+                <h3>Registro de Accesos</h3>
+                <p>
+                    Cada validación queda registrada automáticamente con:
+                </p>
+                <ul>
+                    <li>Fecha y hora exacta</li>
+                    <li>Oficial que validó</li>
+                    <li>Punto de acceso</li>
+                    <li>Resultado (concedido/denegado)</li>
+                    <li>Observaciones</li>
+                </ul>
+
+                <div class="help-warning">
+                    <strong>⚠️ Protocolo de Seguridad:</strong>
+                    <ul>
+                        <li>Nunca conceda acceso si hay dudas sobre la validez de la autorización</li>
+                        <li>Verifique siempre los documentos físicos del conductor</li>
+                        <li>Reporte cualquier intento de fraude o alteración</li>
+                        <li>En caso de duda, consulte con su supervisor antes de conceder acceso</li>
+                    </ul>
+                </div>
+            </section>
+
+            {% elif user_role == 'admin_tic' %}
+            <section id="admin" class="help-section">
+                <h2>⚙️ Guía del Administrador TIC</h2>
+
+                <h3>¿Qué es un Administrador TIC?</h3>
+                <p>
+                    Como <strong>Administrador TIC</strong>, usted tiene control total sobre el sistema NaviPort RD.
+                    Gestiona usuarios, configuraciones, puertos, empresas y mantiene el funcionamiento general del sistema.
+                </p>
+
+                <h3>Gestión de Usuarios</h3>
+                <h4>Crear nuevo usuario</h4>
+                <ol class="steps">
+                    <li>Acceda al panel de administración de Django</li>
+                    <li>Vaya a "Users" → "Add User"</li>
+                    <li>Complete los datos requeridos:
+                        <ul>
+                            <li>Nombre de usuario</li>
+                            <li>Contraseña (mínimo 8 caracteres)</li>
+                            <li>Nombre completo</li>
+                            <li>Email</li>
+                            <li>Cédula/RNC</li>
+                            <li>Rol del usuario</li>
+                            <li>Empresa (si aplica)</li>
+                        </ul>
+                    </li>
+                    <li>Marque "Activo" para habilitar el usuario</li>
+                    <li>Guarde los cambios</li>
+                </ol>
+
+                <h4>Roles disponibles en el sistema:</h4>
+                <ul>
+                    <li><strong>Solicitante:</strong> Representante de empresa que crea solicitudes</li>
+                    <li><strong>Evaluador:</strong> Evalúa y aprueba/rechaza solicitudes</li>
+                    <li><strong>Supervisor:</strong> Gestiona escalamientos y discrepancias</li>
+                    <li><strong>Oficial de Acceso:</strong> Controla acceso físico con QR</li>
+                    <li><strong>Admin TIC:</strong> Administrador del sistema</li>
+                    <li><strong>Dirección:</strong> Visualización y reportes (en construcción)</li>
+                </ul>
+
+                <h3>Gestión de Empresas</h3>
+                <ol class="steps">
+                    <li>Acceda a "Empresas" en el panel de admin</li>
+                    <li>Haga clic en "Add Empresa"</li>
+                    <li>Complete:
+                        <ul>
+                            <li>Nombre de la empresa</li>
+                            <li>RNC</li>
+                            <li>Teléfono y email</li>
+                            <li>Dirección</li>
+                            <li>Tipo de empresa</li>
+                        </ul>
+                    </li>
+                    <li>Marque "Activa" para habilitar</li>
+                    <li>Asigne usuarios representantes</li>
+                </ol>
+
+                <h3>Configuración de Puertos</h3>
+                <p>Gestione los puertos disponibles en el sistema:</p>
+                <ul>
+                    <li>Agregue nuevos puertos con nombre, código y ubicación</li>
+                    <li>Active/desactive puertos según disponibilidad</li>
+                    <li>Configure capacidades y restricciones</li>
+                </ul>
+
+                <h3>Motivos de Acceso</h3>
+                <p>Configure los motivos de acceso disponibles para solicitudes:</p>
+                <ul>
+                    <li>Carga/Descarga</li>
+                    <li>Mantenimiento</li>
+                    <li>Inspección</li>
+                    <li>Supervisión</li>
+                    <li>Servicios</li>
+                    <li>Otros (personalizable)</li>
+                </ul>
+
+                <h3>Configuración del Sistema</h3>
+                <h4>Parámetros configurables:</h4>
+                <ul>
+                    <li><strong>Vigencia de autorizaciones:</strong> Días de validez por defecto</li>
+                    <li><strong>Tamaño máximo de archivos:</strong> Límite para documentos</li>
+                    <li><strong>Tipos de documentos:</strong> Documentos requeridos por tipo de vehículo</li>
+                    <li><strong>Notificaciones:</strong> Configurar emails automáticos</li>
+                    <li><strong>Reportes:</strong> Configurar frecuencia y destinatarios</li>
+                </ul>
+
+                <h3>Mantenimiento</h3>
+                <div class="help-tip">
+                    <strong>💡 Tareas de mantenimiento recomendadas:</strong>
+                    <ul>
+                        <li>Revisar logs del sistema semanalmente</li>
+                        <li>Limpiar autorizaciones expiradas mensualmente</li>
+                        <li>Auditar usuarios inactivos</li>
+                        <li>Verificar espacio de almacenamiento para documentos</li>
+                        <li>Realizar respaldos periódicos de la base de datos</li>
+                    </ul>
+                </div>
+
+                <h3>Soporte a Usuarios</h3>
+                <p>Como administrador, también es responsable del soporte técnico:</p>
+                <ul>
+                    <li>Resetear contraseñas de usuarios</li>
+                    <li>Desbloquear cuentas bloqueadas</li>
+                    <li>Resolver problemas de acceso</li>
+                    <li>Asistir con errores del sistema</li>
+                    <li>Capacitar nuevos usuarios</li>
+                </ul>
+            </section>
+
+            {% elif user_role == 'direccion' %}
+            <section id="direccion" class="help-section">
+                <h2>📊 Dirección Logística <span class="construction-badge">EN CONSTRUCCIÓN</span></h2>
+
+                <div class="help-warning">
+                    <strong>⚠️ Módulo en Desarrollo</strong>
+                    <p>
+                        El módulo de Dirección Logística se encuentra actualmente en construcción.
+                        Próximamente contará con las siguientes funcionalidades:
+                    </p>
+                </div>
+
+                <h3>Funcionalidades Planificadas</h3>
+                <ul>
+                    <li>📊 Dashboard ejecutivo con KPIs principales</li>
+                    <li>📈 Reportes estadísticos y gráficas en tiempo real</li>
+                    <li>📉 Análisis de tendencias de solicitudes</li>
+                    <li>🏢 Reportes por empresa y puerto</li>
+                    <li>⏱️ Tiempos promedio de evaluación y aprobación</li>
+                    <li>📋 Exportación de reportes en Excel y PDF</li>
+                    <li>🔔 Alertas de incidencias y discrepancias</li>
+                    <li>👥 Monitoreo de desempeño de evaluadores</li>
+                </ul>
+
+                <div class="help-note">
+                    <strong>📌 Nota:</strong> Mientras tanto, puede acceder a reportes básicos a través del
+                    panel de administración o contactar al Administrador TIC para solicitudes específicas.
+                </div>
+
+                <h3>Acceso Temporal</h3>
+                <p>
+                    Actualmente puede consultar información básica del sistema. Para reportes personalizados,
+                    contacte al departamento de TIC.
+                </p>
+            </section>
+            {% endif %}
+
+            <!-- Preguntas Frecuentes -->
+            <section id="faq" class="help-section">
+                <h2>❓ Preguntas Frecuentes (FAQ)</h2>
+
+                <h3>Preguntas Generales</h3>
+
+                <h4>¿Qué hago si olvidé mi contraseña?</h4>
+                <p>
+                    En la página de inicio de sesión, haga clic en "¿Olvidaste tu contraseña?". Ingrese su correo
+                    electrónico registrado y recibirá un enlace para restablecer su contraseña.
+                </p>
+
+                <h4>¿Por qué mi cuenta está bloqueada?</h4>
+                <p>
+                    El sistema bloquea automáticamente las cuentas después de 5 intentos fallidos de inicio de sesión
+                    por seguridad. El bloqueo dura 30 minutos. Si necesita acceso inmediato, contacte al administrador.
+                </p>
+
+                <h4>¿Puedo cambiar mi contraseña?</h4>
+                <p>
+                    Sí. Acceda a "Mi Perfil" desde el menú de usuario (esquina superior derecha) y seleccione
+                    "Cambiar Contraseña". Necesitará su contraseña actual.
+                </p>
+
+                <h4>¿Cuánto tiempo es válida una autorización?</h4>
+                <p>
+                    Las autorizaciones son válidas según la fecha especificada en la solicitud aprobada. Generalmente
+                    entre 1 y 30 días. Verifique la vigencia en el código QR generado.
+                </p>
+
+                <h3>Problemas Técnicos</h3>
+
+                <h4>No puedo subir documentos</h4>
+                <p>Verifique que:</p>
+                <ul>
+                    <li>El archivo sea PDF, JPG o PNG</li>
+                    <li>El tamaño no exceda 5MB</li>
+                    <li>Su conexión a Internet sea estable</li>
+                    <li>Su navegador permita la subida de archivos</li>
+                </ul>
+
+                <h4>El código QR no se puede escanear</h4>
+                <p>Intente:</p>
+                <ul>
+                    <li>Aumentar el brillo de la pantalla</li>
+                    <li>Imprimir el código en papel</li>
+                    <li>Limpiar la cámara del dispositivo</li>
+                    <li>Ingresar el código manualmente</li>
+                </ul>
+
+                <h4>La página no carga correctamente</h4>
+                <p>Soluciones comunes:</p>
+                <ul>
+                    <li>Actualice la página (F5 o Ctrl+F5)</li>
+                    <li>Limpie el caché del navegador</li>
+                    <li>Pruebe en otro navegador</li>
+                    <li>Verifique su conexión a Internet</li>
+                </ul>
+
+                <h4>Error CSRF al iniciar sesión</h4>
+                <p>Este error puede ocurrir si:</p>
+                <ul>
+                    <li>Las cookies están deshabilitadas en su navegador</li>
+                    <li>Tiene varias pestañas de login abiertas</li>
+                    <li>La página quedó cacheada por mucho tiempo</li>
+                </ul>
+                <p><strong>Solución:</strong> Refresque la página (Ctrl+F5) y vuelva a intentar.</p>
+            </section>
+
+            <!-- Soporte Técnico -->
+            <section id="soporte" class="help-section">
+                <h2>📞 Soporte Técnico</h2>
+
+                <h3>Canales de Soporte</h3>
+
+                <div class="help-note">
+                    <strong>📧 Email:</strong> soporte@naviportrd.com<br>
+                    <strong>📱 Teléfono:</strong> +1 (809) 555-0100<br>
+                    <strong>⏰ Horario:</strong> Lunes a Viernes, 8:00 AM - 5:00 PM<br>
+                    <strong>🏢 Ubicación:</strong> Autoridad Portuaria Dominicana, Santo Domingo
+                </div>
+
+                <h3>Antes de Contactar Soporte</h3>
+                <p>Para agilizar su solicitud, tenga a mano:</p>
+                <ul>
+                    <li>Su nombre de usuario</li>
+                    <li>Descripción del problema</li>
+                    <li>Capturas de pantalla del error (si aplica)</li>
+                    <li>Navegador y versión que está usando</li>
+                    <li>Pasos que realizó antes del error</li>
+                </ul>
+
+                <h3>Tiempo de Respuesta</h3>
+                <ul>
+                    <li><strong>Urgente:</strong> 2 horas</li>
+                    <li><strong>Alta:</strong> 4 horas</li>
+                    <li><strong>Normal:</strong> 24 horas</li>
+                    <li><strong>Baja:</strong> 48 horas</li>
+                </ul>
+
+                <div class="help-tip">
+                    <strong>💡 Consejo:</strong> Antes de contactar soporte, revise este manual y la sección de
+                    Preguntas Frecuentes. Muchas dudas comunes ya están respondidas.
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Navegación suave al hacer clic en el índice
+        document.querySelectorAll('.index-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetSection = document.querySelector(targetId);
+
+                if (targetSection) {
+                    targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                    // Actualizar link activo
+                    document.querySelectorAll('.index-link').forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            });
+        });
+
+        // Funcionalidad de búsqueda
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('searchResults');
+        const sections = document.querySelectorAll('.help-section');
+
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+
+            // Limpiar highlights anteriores
+            sections.forEach(section => {
+                const content = section.innerHTML;
+                section.innerHTML = content.replace(/<span class="highlight">(.*?)<\/span>/g, '$1');
+            });
+
+            if (searchTerm.length < 3) {
+                searchResults.classList.remove('active');
+                searchResults.innerHTML = '';
+                return;
+            }
+
+            let resultsCount = 0;
+            let resultsHTML = '<strong>Resultados de búsqueda:</strong><br>';
+
+            sections.forEach(section => {
+                const sectionText = section.textContent.toLowerCase();
+                if (sectionText.includes(searchTerm)) {
+                    resultsCount++;
+                    const sectionTitle = section.querySelector('h2').textContent;
+                    const sectionId = section.id;
+                    resultsHTML += `<a href="#${sectionId}" style="display: block; margin: 5px 0; color: #3498db;">📄 ${sectionTitle}</a>`;
+
+                    // Highlight en el contenido
+                    const regex = new RegExp(`(${searchTerm})`, 'gi');
+                    section.innerHTML = section.innerHTML.replace(regex, '<span class="highlight">$1</span>');
+                }
+            });
+
+            if (resultsCount > 0) {
+                searchResults.innerHTML = resultsHTML;
+                searchResults.classList.add('active');
+            } else {
+                searchResults.innerHTML = '<strong>No se encontraron resultados para:</strong> "' + searchTerm + '"';
+                searchResults.classList.add('active');
+            }
+        });
+
+        // Detectar sección visible al hacer scroll
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.3
+        };
+
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.id;
+                    const correspondingLink = document.querySelector(`.index-link[href="#${id}"]`);
+
+                    if (correspondingLink) {
+                        document.querySelectorAll('.index-link').forEach(link => {
+                            link.classList.remove('active');
+                        });
+                        correspondingLink.classList.add('active');
+                    }
+                }
+            });
+        }, observerOptions);
+
+        sections.forEach(section => observer.observe(section));
+    </script>
+</body>
+</html>

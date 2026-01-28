@@ -1,0 +1,514 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Vehículos | NaviPort RD{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        {% if user.role == 'solicitante' %}
+            <li><a href="{% url 'solicitudes:dashboard' %}" style="color: inherit; text-decoration: none;">🏠 Dashboard</a></li>
+            <li><a href="{% url 'solicitudes:mis_solicitudes' %}" style="color: inherit; text-decoration: none;">Solicitudes</a></li>
+            <li><a href="{% url 'gestion_personal:dashboard' %}" style="color: inherit; text-decoration: none;">👥 Personal</a></li>
+            <li class="active">🚚 Vehículos</li>
+            <li><a href="{% url 'solicitudes:mis_autorizaciones' %}" style="color: inherit; text-decoration: none;">Autorizaciones</a></li>
+            {% if user.es_admin_empresa %}
+            <li><a href="{% url 'accounts:gestionar_usuarios' %}" style="color: inherit; text-decoration: none;">Gestión de Usuarios</a></li>
+            {% endif %}
+        {% elif user.role == 'oficial_acceso' %}
+            <li><a href="{% url 'control_acceso:dashboard' %}" style="color: inherit; text-decoration: none;">🏠 Dashboard</a></li>
+            <li><a href="{% url 'gestion_personal:dashboard' %}" style="color: inherit; text-decoration: none;">👥 Personal</a></li>
+            <li class="active">🚚 Vehículos</li>
+        {% else %}
+            <li><a href="{% url 'gestion_personal:dashboard' %}" style="color: inherit; text-decoration: none;">👥 Personal</a></li>
+            <li class="active">🚚 Vehículos</li>
+        {% endif %}
+    </ul>
+    <div class="navbar-user">
+        <div style="text-align: right; margin-right: 10px;">
+            <div class="user-name">{{ user.get_display_name }}</div>
+            <div style="font-size: 14px; color: #7f8c8d;">{{ user.get_role_display_with_admin }}</div>
+        </div>
+        <div class="user-avatar">{{ user.get_display_name|slice:':1'|upper }}{{ user.last_name|slice:':1'|upper }}</div>
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+
+<div class="content-area">
+    <div class="page-header">
+        <div>
+            <h2 style="color: #2c3e50; margin-bottom: 10px;">🚗 Gestión de Vehículos</h2>
+            <p style="color: #7f8c8d;">Administre los vehículos de su empresa</p>
+        </div>
+    </div>
+
+    <!-- Búsqueda -->
+    <div class="search-container">
+        <div class="search-bar">
+            <input type="text" id="buscarVehiculoInput" placeholder="🔍 Buscar por placa, marca, modelo o color..." value="{{ query }}">
+            <button id="btnBuscarVehiculo" class="btn btn-primary">Buscar</button>
+        </div>
+    </div>
+
+    <!-- Tabla de vehículos -->
+    <div class="table-container">
+        <!-- Header de tabla con botón agregar -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h4 style="color: #2c3e50; margin: 0;">Lista de Vehículos</h4>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'gestion_vehiculos:vehiculos_inhabilitados' %}" class="btn btn-outline-secondary">
+                    Inhabilitados
+                </a>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarVehiculo">
+                    Agregar Vehículo
+                </button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover table-bordered" id="tablaVehiculos">
+                <thead style="background: #2c3e50; color: white;">
+                    <tr>
+                        <th>Placa</th>
+                        <th>Marca</th>
+                        <th>Modelo</th>
+                        <th>Año</th>
+                        <th>Color</th>
+                        <th>Empresa</th>
+                        <th>Documentos</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for vehiculo in vehiculos_recientes %}
+                    <tr data-vehiculo-id="{{ vehiculo.id }}">
+                        <td><strong>{{ vehiculo.placa }}</strong></td>
+                        <td>{{ vehiculo.marca }}</td>
+                        <td>{{ vehiculo.modelo }}</td>
+                        <td>{{ vehiculo.ano }}</td>
+                        <td>{{ vehiculo.color }}</td>
+                        <td>
+                            <span class="badge bg-primary" title="{{ vehiculo.empresa_propietaria.empresa.nombre }}">
+                                {{ vehiculo.empresa_propietaria.empresa.nombre|default:'Sin empresa' }}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                                {% with matricula_doc=vehiculo.get_documento_matricula %}
+                                    {% if matricula_doc %}
+                                        <a href="{% url 'gestion_vehiculos:descargar_documento_vehiculo' matricula_doc.id %}"
+                                           class="btn btn-sm btn-success" title="Ver Matrícula - {{ matricula_doc.get_estado_validacion_display }}" target="_blank">
+                                            🆔 ✅
+                                        </a>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-outline-info" onclick="subirDocumento({{ vehiculo.id }}, 'matricula')" title="Subir Matrícula">
+                                            🆔 ➕
+                                        </button>
+                                    {% endif %}
+                                {% endwith %}
+
+                                {% with seguro_doc=vehiculo.get_documento_seguro %}
+                                    {% if seguro_doc %}
+                                        <a href="{% url 'gestion_vehiculos:descargar_documento_vehiculo' seguro_doc.id %}"
+                                           class="btn btn-sm btn-success" title="Ver Seguro - {{ seguro_doc.get_estado_validacion_display }}" target="_blank">
+                                            🛡️ ✅
+                                        </a>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-outline-warning" onclick="subirDocumento({{ vehiculo.id }}, 'seguro')" title="Subir Seguro">
+                                            🛡️ ➕
+                                        </button>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 5px;">
+                                <a href="{% url 'gestion_vehiculos:detalle_vehiculo' vehiculo.id %}" class="btn btn-sm btn-info">👁️ Ver</a>
+                                <button class="btn btn-sm btn-warning" onclick="editarVehiculo({{ vehiculo.id }})">✏️ Editar</button>
+                                <button class="btn btn-sm btn-danger" onclick="eliminarVehiculo({{ vehiculo.id }})">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr id="emptyRow">
+                        <td colspan="8" class="text-center" style="padding: 40px;">
+                            <div style="color: #7f8c8d;">
+                                <div style="font-size: 48px; margin-bottom: 15px;">🚗</div>
+                                <h4>No hay vehículos registrados</h4>
+                                <p>Comience agregando el primer vehículo usando el botón "Agregar Vehículo"</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Agregar Vehículo -->
+<div class="modal fade" id="modalAgregarVehiculo" tabindex="-1" aria-labelledby="modalAgregarVehiculoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAgregarVehiculoLabel">🚗 Agregar Vehículo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formAgregarVehiculo">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="placa" class="form-label">Placa *</label>
+                                <input type="text" class="form-control" id="placa" name="placa" required placeholder="A123456 o AB123456" style="text-transform: uppercase;">
+                                <div class="form-text">Formato: A123456 o AB123456</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="tipo_vehiculo" class="form-label">Tipo de Vehículo *</label>
+                                <select class="form-control" id="tipo_vehiculo" name="tipo_vehiculo" required>
+                                    <option value="">Seleccione un tipo</option>
+                                    <option value="automovil">Automóvil</option>
+                                    <option value="camion">Camión</option>
+                                    <option value="camioneta">Camioneta</option>
+                                    <option value="motocicleta">Motocicleta</option>
+                                    <option value="autobus">Autobús</option>
+                                    <option value="trailer">Trailer</option>
+                                    <option value="montacargas">Montacargas</option>
+                                    <option value="otro">Otro</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="marca" class="form-label">Marca *</label>
+                                <input type="text" class="form-control" id="marca" name="marca" required placeholder="Toyota, Ford, Honda, etc.">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="modelo" class="form-label">Modelo *</label>
+                                <input type="text" class="form-control" id="modelo" name="modelo" required placeholder="Corolla, F-150, Civic, etc.">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="ano" class="form-label">Año *</label>
+                                <input type="number" class="form-control" id="ano" name="ano" required placeholder="2020" min="1900" max="2030">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="color" class="form-label">Color *</label>
+                                <input type="text" class="form-control" id="color" name="color" required placeholder="Blanco, Negro, Rojo, etc.">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="numero_chasis" class="form-label">Número de Chasis (VIN)</label>
+                                <input type="text" class="form-control" id="numero_chasis" name="numero_chasis" placeholder="Opcional">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="numero_motor" class="form-label">Número de Motor</label>
+                                <input type="text" class="form-control" id="numero_motor" name="numero_motor" placeholder="Opcional">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label for="notas_adicionales" class="form-label">Notas Adicionales</label>
+                                <textarea class="form-control" id="notas_adicionales" name="notas_adicionales" rows="2" placeholder="Notas o comentarios adicionales sobre el vehículo (opcional)"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGuardarVehiculo">💾 Guardar Vehículo</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// Variables globales
+let modalAgregarVehiculo;
+let vehiculos = [];
+
+// Inicialización
+document.addEventListener('DOMContentLoaded', function() {
+    // Configurar modal
+    modalAgregarVehiculo = new bootstrap.Modal(document.getElementById('modalAgregarVehiculo'));
+
+    // Configurar botón de guardar
+    document.getElementById('btnGuardarVehiculo').addEventListener('click', guardarVehiculo);
+
+    // Cargar vehículos existentes
+    cargarVehiculos();
+
+    // Configurar búsqueda
+    setupBusqueda();
+
+    // Configurar validación de placa
+    setupPlacaValidation();
+});
+
+// Cargar vehículos existentes
+function cargarVehiculos() {
+    // TODO: Cargar desde el servidor via AJAX
+    console.log('Cargando vehículos...');
+}
+
+// Configurar búsqueda
+function setupBusqueda() {
+    const input = document.getElementById('buscarVehiculoInput');
+    const btn = document.getElementById('btnBuscarVehiculo');
+
+    function buscar() {
+        const query = input.value.trim();
+        // Redirigir con parámetro de búsqueda
+        const url = new URL(window.location);
+        if (query) {
+            url.searchParams.set('q', query);
+        } else {
+            url.searchParams.delete('q');
+        }
+        window.location.href = url.toString();
+    }
+
+    btn.addEventListener('click', buscar);
+    input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            buscar();
+        }
+    });
+}
+
+// Configurar validación de placa
+function setupPlacaValidation() {
+    const placaInput = document.getElementById('placa');
+
+    // Auto-formatear placa (convertir a mayúsculas)
+    placaInput.addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+    });
+}
+
+// Guardar vehículo
+function guardarVehiculo() {
+    const form = document.getElementById('formAgregarVehiculo');
+    const formData = new FormData(form);
+
+    // Validar campos requeridos
+    const placa = formData.get('placa').trim();
+    const marca = formData.get('marca').trim();
+    const modelo = formData.get('modelo').trim();
+    const ano = formData.get('ano').trim();
+    const color = formData.get('color').trim();
+    const tipo_vehiculo = formData.get('tipo_vehiculo').trim();
+
+    if (!placa || !marca || !modelo || !ano || !color || !tipo_vehiculo) {
+        alert('Por favor, complete los campos obligatorios (Placa, Marca, Modelo, Año, Color, Tipo de Vehículo)');
+        return;
+    }
+
+    // Convertir FormData a objeto
+    const data = {};
+    for (let [key, value] of formData.entries()) {
+        data[key] = value;
+    }
+
+    // Mostrar loading en el botón
+    const saveButton = document.getElementById('btnGuardarVehiculo');
+    const originalText = saveButton.innerHTML;
+    saveButton.innerHTML = '⏳ Guardando...';
+    saveButton.disabled = true;
+
+    // Enviar datos al servidor
+    fetch('{% url "gestion_vehiculos:crear_vehiculo_ajax" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            // Agregar a la tabla con los datos del servidor
+            agregarVehiculoATabla(result.vehiculo);
+
+            // Cerrar modal y limpiar formulario
+            modalAgregarVehiculo.hide();
+            form.reset();
+
+            // Mostrar mensaje de éxito
+            showAlert('success', result.message);
+        } else {
+            throw new Error(result.message || 'Error desconocido');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+
+        let errorMessage = 'Error al guardar el vehículo';
+        if (error.errors) {
+            // Manejar errores de validación del formulario
+            const errorList = Object.entries(error.errors)
+                .map(([field, errors]) => `${field}: ${errors.join(', ')}`)
+                .join('\n');
+            errorMessage = 'Errores de validación:\n' + errorList;
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+
+        showAlert('error', errorMessage);
+    })
+    .finally(() => {
+        // Restaurar botón
+        saveButton.innerHTML = originalText;
+        saveButton.disabled = false;
+    });
+}
+
+// Agregar vehículo a la tabla
+function agregarVehiculoATabla(vehiculo) {
+    const tbody = document.querySelector('#tablaVehiculos tbody');
+    const emptyRow = document.getElementById('emptyRow');
+
+    // Remover fila vacía si existe
+    if (emptyRow) {
+        emptyRow.remove();
+    }
+
+    // Crear nueva fila
+    const row = document.createElement('tr');
+    row.setAttribute('data-vehiculo-id', vehiculo.id);
+    row.innerHTML = `
+        <td><strong>${vehiculo.placa}</strong></td>
+        <td>${vehiculo.marca}</td>
+        <td>${vehiculo.modelo}</td>
+        <td>${vehiculo.ano}</td>
+        <td>${vehiculo.color}</td>
+        <td>
+            <span class="badge bg-primary" title="${vehiculo.empresa_nombre || 'Sin empresa'}">
+                ${vehiculo.empresa_nombre || 'Sin empresa'}
+            </span>
+        </td>
+        <td>
+            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                <button class="btn btn-sm btn-outline-info" onclick="subirDocumento(${vehiculo.id}, 'matricula')" title="Subir Matrícula">
+                    🆔 ➕
+                </button>
+                <button class="btn btn-sm btn-outline-warning" onclick="subirDocumento(${vehiculo.id}, 'seguro')" title="Subir Seguro">
+                    🛡️ ➕
+                </button>
+            </div>
+        </td>
+        <td>
+            <div style="display: flex; gap: 5px;">
+                <a href="/gestion_vehiculos/vehiculos/${vehiculo.id}/" class="btn btn-sm btn-info">👁️ Ver</a>
+                <button class="btn btn-sm btn-warning" onclick="editarVehiculo(${vehiculo.id})">✏️ Editar</button>
+                <button class="btn btn-sm btn-danger" onclick="eliminarVehiculo(${vehiculo.id})">🗑️</button>
+            </div>
+        </td>
+    `;
+
+    tbody.appendChild(row);
+
+    // Agregar a la lista de vehículos
+    vehiculos.push(vehiculo);
+}
+
+// Subir documento
+function subirDocumento(vehiculoId, tipoDoc) {
+    // Redirigir a la página de subida de documento con parámetros
+    const url = `{% url 'gestion_vehiculos:subir_documento_vehiculo' 0 %}`.replace('0', vehiculoId) + `?tipo=${tipoDoc}`;
+    window.location.href = url;
+}
+
+// Editar vehículo
+function editarVehiculo(vehiculoId) {
+    // Redirigir a la página de edición
+    const url = `{% url 'gestion_vehiculos:editar_vehiculo' 0 %}`.replace('0', vehiculoId);
+    window.location.href = url;
+}
+
+// Eliminar vehículo
+function eliminarVehiculo(vehiculoId) {
+    if (confirm('¿Está seguro de que desea eliminar este vehículo?')) {
+        // Redirigir a la página de confirmación de eliminación
+        const url = `{% url 'gestion_vehiculos:eliminar_vehiculo' 0 %}`.replace('0', vehiculoId);
+        window.location.href = url;
+    }
+}
+
+// Mostrar alerta
+function showAlert(type, message) {
+    // Crear alerta simple en la parte superior
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
+    alertDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 1050; max-width: 400px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+    document.body.appendChild(alertDiv);
+
+    // Auto-remover después de 5 segundos
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+// Obtener cookie CSRF
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reactivar Vehiculo - {{ vehiculo.placa }} | NaviPort RD</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% load static %}{% static 'css/styles.css' %}">
+    <style>
+        .reactivate-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .success-card {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 0.5rem 1rem rgba(40, 167, 69, 0.25);
+        }
+        .vehicle-info-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+        .success-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        .info-box {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 0.375rem;
+            padding: 1rem;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 0.375rem;
+            padding: 1rem;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'accounts:dashboard' %}">NaviPort RD</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:dashboard' %}">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'gestion_vehiculos:dashboard' %}">Vehiculos</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            {{ user.first_name }} {{ user.last_name }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'accounts:logout' %}">Cerrar Sesion</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="reactivate-container">
+            <!-- Header -->
+            <div class="card success-card mb-4">
+                <div class="card-body text-center">
+                    <div class="success-icon">&#9989;</div>
+                    <h3 class="card-title mb-3">Reactivar Vehiculo</h3>
+                    <p class="card-text">
+                        Este vehiculo esta actualmente inhabilitado. Puede reactivarlo para volver a utilizarlo.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Informacion del Vehiculo -->
+            <div class="card vehicle-info-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Informacion del Vehiculo</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-sm-6 mb-3">
+                            <strong>Placa:</strong><br>
+                            <span class="h5 text-primary">{{ vehiculo.placa }}</span>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <strong>Tipo:</strong><br>
+                            {{ vehiculo.get_tipo_vehiculo_display }}
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <strong>Marca y Modelo:</strong><br>
+                            {{ vehiculo.marca }} {{ vehiculo.modelo }}
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <strong>Ano:</strong><br>
+                            {{ vehiculo.ano }}
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <strong>Color:</strong><br>
+                            {{ vehiculo.color }}
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <strong>Documentos:</strong><br>
+                            <span class="badge bg-info">{{ vehiculo.documentos.count }} documentos</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Informacion de Inhabilitacion -->
+            {% if vehiculo.motivo_inhabilitacion or vehiculo.fecha_inhabilitacion %}
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">Informacion de Inhabilitacion Anterior</h5>
+                </div>
+                <div class="card-body">
+                    <div class="warning-box">
+                        {% if vehiculo.motivo_inhabilitacion %}
+                        <p class="mb-2">
+                            <strong>Motivo:</strong><br>
+                            {{ vehiculo.motivo_inhabilitacion }}
+                        </p>
+                        {% endif %}
+                        {% if vehiculo.fecha_inhabilitacion %}
+                        <p class="mb-2">
+                            <strong>Fecha de Inhabilitacion:</strong><br>
+                            {{ vehiculo.fecha_inhabilitacion|date:"d/m/Y H:i" }}
+                        </p>
+                        {% endif %}
+                        {% if vehiculo.inhabilitado_por %}
+                        <p class="mb-0">
+                            <strong>Inhabilitado por:</strong><br>
+                            {{ vehiculo.inhabilitado_por.first_name }} {{ vehiculo.inhabilitado_por.last_name }}
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Que sucede al reactivar -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Al reactivar este vehiculo</h5>
+                </div>
+                <div class="card-body">
+                    <div class="info-box">
+                        <ul class="mb-0">
+                            <li>El vehiculo volvera a aparecer en la lista de vehiculos activos</li>
+                            <li>Podra ser utilizado en nuevas solicitudes de acceso</li>
+                            <li>Se limpiaran los datos de inhabilitacion (motivo, fecha)</li>
+                            <li>Los documentos asociados permanecen sin cambios</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario de Confirmacion -->
+            <form method="post" id="formReactivarVehiculo">
+                {% csrf_token %}
+
+                <!-- Botones de Accion -->
+                <div class="d-flex justify-content-between align-items-center pt-2">
+                    <a href="{% url 'gestion_vehiculos:vehiculos_inhabilitados' %}"
+                       class="btn btn-outline-secondary">
+                        Volver a Inhabilitados
+                    </a>
+                    <div>
+                        <a href="{% url 'gestion_vehiculos:vehiculos_inhabilitados' %}"
+                           class="btn btn-secondary me-2">
+                            Cancelar
+                        </a>
+                        <button type="submit"
+                                class="btn btn-success"
+                                id="btnReactivar">
+                            Confirmar Reactivacion
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('formReactivarVehiculo');
+            const btnReactivar = document.getElementById('btnReactivar');
+
+            form.addEventListener('submit', function(e) {
+                const confirmacion = confirm(
+                    'Desea reactivar el vehiculo {{ vehiculo.placa }}?\n\n' +
+                    'El vehiculo volvera a estar disponible para su uso.'
+                );
+
+                if (!confirmacion) {
+                    e.preventDefault();
+                    return false;
+                }
+
+                btnReactivar.innerHTML = 'Procesando...';
+                btnReactivar.disabled = true;
+            });
+        });
+    </script>
+</body>
+</html>

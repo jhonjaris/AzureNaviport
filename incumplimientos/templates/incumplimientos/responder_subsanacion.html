@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Responder Subsanación{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <h2>Responder Solicitud de Subsanación</h2>
+    <div class="alert alert-info">
+        <strong>Información Requerida:</strong>
+        <p>{{ subsanacion.informacion_requerida }}</p>
+        <p><strong>Plazo:</strong> {{ subsanacion.fecha_limite|date:"d/m/Y H:i" }}</p>
+    </div>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label>Explicación de Medidas Correctivas:</label>
+            <textarea name="explicacion" class="form-control" rows="5" required></textarea>
+        </div>
+        <div class="mb-3">
+            <label>Medidas Preventivas:</label>
+            <textarea name="medidas_preventivas" class="form-control" rows="3"></textarea>
+        </div>
+        <div class="mb-3">
+            <label>Documentos de Soporte (puede adjuntar múltiples archivos):</label>
+            <div id="documentos-container">
+                <div class="documento-item mb-2">
+                    <select name="tipo_documento[]" class="form-select mb-1">
+                        {% for tipo, nombre in tipos_documento %}
+                        <option value="{{ tipo }}">{{ nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="text" name="nombre_documento[]" class="form-control mb-1" placeholder="Nombre del documento">
+                    <input type="file" name="archivo[]" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="agregarDocumento()">+ Agregar Otro Documento</button>
+        </div>
+        <button type="submit" class="btn btn-primary">Enviar Respuesta</button>
+        <a href="{% url 'incumplimientos:detalle' subsanacion.incumplimiento.pk %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+<script>
+function agregarDocumento() {
+    const container = document.getElementById('documentos-container');
+    const template = container.querySelector('.documento-item').cloneNode(true);
+    template.querySelectorAll('input, select').forEach(el => el.value = '');
+    container.appendChild(template);
+}
+</script>
+{% endblock %}

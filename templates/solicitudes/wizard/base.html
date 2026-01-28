@@ -1,0 +1,509 @@
+{% extends 'base.html' %}
+{% load wizard_extras %}
+
+{% block title %}{{ title|default:'Solicitud Wizard' }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Formulario de Solicitud - Wizard</h3>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    {% if paso_actual is not None and total_pasos %}
+                        <!-- Barra de progreso moderna -->
+                        <div class="wizard-progress-bar mb-5">
+                            <div class="wizard-progress-fill" style="width: {{ porcentaje_progreso|default:0 }}%">
+                                <span class="wizard-progress-text">{{ porcentaje_progreso|default:0 }}%</span>
+                            </div>
+                        </div>
+
+                        <!-- Indicadores de pasos modernos -->
+                        <div class="wizard-steps-container mb-5">
+                            <div class="wizard-steps-wrapper">
+                                {% with step_names="Info Básica,Personal,Vehículos,Servicios,Revisión"|split:"," %}
+                                {% with step_icons="fa-clipboard-list,fa-users,fa-truck,fa-briefcase,fa-check-circle"|split:"," %}
+                                {% for i in "12345"|make_list %}
+                                    <div class="wizard-step-item {% if forloop.counter == paso_actual %}active{% elif forloop.counter < paso_actual %}completed{% endif %}">
+                                        <div class="wizard-step-circle" onclick="{% if forloop.counter < paso_actual %}volverPaso({{ forloop.counter }}){% endif %}">
+                                            {% if forloop.counter < paso_actual %}
+                                                <i class="fas fa-check"></i>
+                                            {% else %}
+                                                <i class="fas {{ step_icons|get_item:forloop.counter0 }}"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="wizard-step-label">
+                                            <span class="wizard-step-number">Paso {{ forloop.counter }}</span>
+                                            <span class="wizard-step-name">{{ step_names|get_item:forloop.counter0 }}</span>
+                                        </div>
+                                        {% if not forloop.last %}
+                                            <div class="wizard-step-line"></div>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                                {% endwith %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {% block wizard_content %}{% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* === TÍTULO DEL CARD === */
+.card-title {
+    color: #000000 !important;
+    font-weight: 600 !important;
+}
+
+/* === BARRA DE PROGRESO MODERNA === */
+.wizard-progress-bar {
+    height: 38px;
+    background: linear-gradient(90deg, #e9ecef 0%, #dee2e6 100%);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.wizard-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0ea5e9 0%, #0284c7 100%);
+    border-radius: 10px;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.4);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.85; }
+}
+
+.wizard-progress-text {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: black;
+    font-size: 1rem;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* === INDICADORES DE PASOS MODERNOS === */
+.wizard-steps-container {
+    padding: 20px 0;
+}
+
+.wizard-steps-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.wizard-step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    flex: 1;
+    z-index: 1;
+}
+
+.wizard-step-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid #dee2e6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #adb5bd;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    position: relative;
+    z-index: 2;
+}
+
+.wizard-step-item.active .wizard-step-circle {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    border-color: #0ea5e9;
+    color: white;
+    transform: scale(1.15);
+    box-shadow: 0 4px 20px rgba(14, 165, 233, 0.4);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 4px 20px rgba(14, 165, 233, 0.4); }
+    50% { box-shadow: 0 4px 30px rgba(14, 165, 233, 0.6); }
+}
+
+.wizard-step-item.completed .wizard-step-circle {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-color: #10b981;
+    color: white;
+    cursor: pointer;
+}
+
+.wizard-step-item.completed .wizard-step-circle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+}
+
+.wizard-step-label {
+    margin-top: 12px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.wizard-step-number {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #000000;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.wizard-step-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #000000;
+}
+
+.wizard-step-item.active .wizard-step-number {
+    color: #0ea5e9;
+}
+
+.wizard-step-item.active .wizard-step-name {
+    color: #0ea5e9;
+}
+
+.wizard-step-item.completed .wizard-step-number {
+    color: #10b981;
+}
+
+.wizard-step-item.completed .wizard-step-name {
+    color: #10b981;
+}
+
+.wizard-step-line {
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    width: 100%;
+    height: 3px;
+    background: #dee2e6;
+    z-index: 0;
+}
+
+.wizard-step-item.completed .wizard-step-line {
+    background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+}
+
+/* === CARDS DE FORMULARIO === */
+.vehicle-item, .personal-item {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vehicle-item:hover, .personal-item:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+    border-color: #0ea5e9;
+}
+
+.duplicate-btn, .remove-btn {
+    margin-left: 5px;
+}
+
+/* === ESTILOS DE FORMULARIO === */
+.wizard-form-header {
+    text-align: center;
+    margin-bottom: 35px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.wizard-form-title {
+    font-size: 2.2rem !important;
+    font-weight: 700 !important;
+    color: #000000 !important;
+    margin-bottom: 12px !important;
+}
+
+.wizard-form-subtitle {
+    font-size: 1.35rem !important;
+    color: #000000 !important;
+}
+
+.wizard-form-section {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.wizard-section-title {
+    font-size: 1.4rem !important;
+    font-weight: 700 !important;
+    color: #0c4a6e !important;
+    margin-bottom: 25px !important;
+    padding-bottom: 15px !important;
+    border-bottom: 3px solid #0ea5e9 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+}
+
+.wizard-section-title i {
+    color: #0ea5e9 !important;
+    font-size: 1.3rem !important;
+}
+
+.wizard-form-group {
+    margin-bottom: 20px;
+}
+
+.wizard-label {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    font-weight: 600 !important;
+    color: #2d3748 !important;
+    margin-bottom: 12px !important;
+    font-size: 1.1rem !important;
+}
+
+.wizard-label i {
+    color: #0ea5e9 !important;
+    font-size: 1.1rem !important;
+}
+
+.wizard-input {
+    width: 100% !important;
+    padding: 18px 24px !important;
+    border: 2px solid #000000 !important;
+    border-radius: 10px !important;
+    font-size: 1.15rem !important;
+    color: #000000 !important;
+    background: white !important;
+    transition: all 0.3s ease !important;
+    min-height: 60px !important;
+    font-weight: 500 !important;
+}
+
+.wizard-input:focus {
+    outline: none !important;
+    border-color: #0ea5e9 !important;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1) !important;
+}
+
+.wizard-input::placeholder {
+    color: #6b7280 !important;
+    font-weight: 400 !important;
+}
+
+.wizard-help-text {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-top: 8px !important;
+    font-size: 1rem !important;
+    color: #718096 !important;
+}
+
+.wizard-help-text i {
+    color: #f59e0b !important;
+    font-size: 1rem !important;
+}
+
+/* === LAYOUT FECHA/HORA === */
+.wizard-datetime-row {
+    display: flex !important;
+    gap: 20px !important;
+    margin-bottom: 15px !important;
+}
+
+.wizard-date-field {
+    flex: 2 !important;
+}
+
+.wizard-time-field {
+    flex: 1 !important;
+}
+
+/* === BOTONES DEL WIZARD === */
+.wizard-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 18px 40px !important;
+    border-radius: 12px !important;
+    font-size: 1.2rem !important;
+    font-weight: 700 !important;
+    text-decoration: none !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    border: none !important;
+    cursor: pointer !important;
+    min-height: 60px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.wizard-btn-primary {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important;
+    color: white !important;
+    border: 3px solid #0ea5e9 !important;
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4) !important;
+}
+
+.wizard-btn-primary:hover {
+    background: linear-gradient(135deg, #0284c7 0%, #0c4a6e 100%) !important;
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 25px rgba(14, 165, 233, 0.6) !important;
+}
+
+.wizard-btn-ghost {
+    background: white !important;
+    color: #e74c3c !important;
+    border: 3px solid #e74c3c !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+.wizard-btn-ghost:hover {
+    background: #e74c3c !important;
+    color: white !important;
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+}
+
+.wizard-form-actions {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 20px !important;
+    margin-top: 40px !important;
+    padding-top: 30px !important;
+    border-top: 3px solid #e9ecef !important;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .wizard-steps-wrapper {
+        flex-direction: column;
+        gap: 30px;
+    }
+
+    .wizard-step-line {
+        display: none;
+    }
+
+    .wizard-step-circle {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
+
+    .wizard-form-title {
+        font-size: 1.5rem !important;
+    }
+
+    .wizard-section-title {
+        font-size: 1.2rem !important;
+    }
+
+    .wizard-label {
+        font-size: 1rem !important;
+    }
+
+    .wizard-input {
+        font-size: 1rem !important;
+        padding: 14px 18px !important;
+        min-height: 50px !important;
+    }
+
+    /* Apilar fecha y hora en móviles */
+    .wizard-datetime-row {
+        flex-direction: column !important;
+        gap: 0 !important;
+    }
+
+    .wizard-date-field,
+    .wizard-time-field {
+        flex: 1 !important;
+    }
+}
+
+/* Responsive para columnas de 3 - en pantallas pequeñas apila los campos */
+@media (max-width: 991px) {
+    .wizard-form-section .row .col-md-3 {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+        margin-bottom: 0 !important;
+    }
+}
+
+/* En tablets, 2 columnas para col-md-3 */
+@media (min-width: 768px) and (max-width: 991px) {
+    .wizard-form-section .row .col-md-3 {
+        flex: 0 0 50% !important;
+        max-width: 50% !important;
+    }
+}
+
+/* Mantener col-md-8 y col-md-4 en la misma fila en desktop */
+@media (min-width: 768px) {
+    .wizard-form-section .row .col-md-8 {
+        flex: 0 0 66.666667% !important;
+        max-width: 66.666667% !important;
+    }
+
+    .wizard-form-section .row .col-md-4 {
+        flex: 0 0 33.333333% !important;
+        max-width: 33.333333% !important;
+    }
+}
+
+/* En móviles, apilar fecha y hora */
+@media (max-width: 767px) {
+    .wizard-form-section .row .col-md-8,
+    .wizard-form-section .row .col-md-4 {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+}
+</style>
+{% endblock %}

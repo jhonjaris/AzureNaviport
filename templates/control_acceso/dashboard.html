@@ -1,0 +1,379 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard Control de Acceso | NaviPort RD{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD - Control Físico
+    </div>
+    <ul class="navbar-menu">
+        <li class="active">Scanner QR</li>
+        <li>Registros</li>
+        <li>Alertas</li>
+        <li>Reportes</li>
+        <li><a href="{% url 'accounts:ayuda' %}" style="color: inherit; text-decoration: none;">❓ Ayuda</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div style="text-align: right; margin-right: 10px;">
+            <div class="user-name">{{ user.get_display_name }}</div>
+            <div style="font-size: 14px; color: #7f8c8d;">{{ user.get_role_display_with_admin }}</div>
+        </div>
+        <div class="user-avatar">{{ user.get_display_name|slice:':1'|upper }}{{ user.last_name|slice:':1'|upper }}</div>
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <h2 style="color: #2c3e50; margin-bottom: 10px;">Control de Acceso Físico</h2>
+        <p style="color: #7f8c8d;">{{ user.get_display_name }} • Oficial de Acceso</p>
+    </div>
+    {% if stats.vencen_pronto > 0 %}
+    <div class="notification-bar">
+        <span style="font-size: 20px;">⏰</span>
+        <div>
+            <strong>{{ stats.vencen_pronto }} autorización{{ stats.vencen_pronto|pluralize:"es" }} vence{{ stats.vencen_pronto|pluralize:"n" }} en las próximas 2 horas</strong>
+            <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">Verifica las autorizaciones para evitar inconvenientes.</p>
+        </div>
+    </div>
+    {% endif %}
+    <div class="dashboard-cards" style="margin-bottom: 30px;">
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #27ae60;">🎫</div>
+                <div>
+                    <div class="card-title">Autorizaciones Activas</div>
+                    <div class="card-subtitle">{{ stats.autorizaciones_activas }} disponibles</div>
+                </div>
+            </div>
+            <p style="color: #7f8c8d; margin-bottom: 20px;">Autorizaciones válidas para acceso al puerto.</p>
+            <a href="{% url 'control_acceso:listar_autorizaciones' %}" class="btn btn-success">Ver Todas</a>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #3498db;">📊</div>
+                <div>
+                    <div class="card-title">Accesos Hoy</div>
+                    <div class="card-subtitle">{{ stats.accesos_procesados_hoy }} procesados</div>
+                </div>
+            </div>
+            <div style="margin: 15px 0;">
+                <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px;">
+                    <span>Autorizados</span>
+                    <span>{{ stats.ingresos_autorizados_hoy }}+{{ stats.salidas_registradas_hoy }}</span>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar blue" style="width: {{ stats.porcentaje_autorizacion }}%;"></div>
+                </div>
+            </div>
+            <button class="btn btn-primary">Ver Registros</button>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #e74c3c;">⚠️</div>
+                <div>
+                    <div class="card-title">Accesos Denegados</div>
+                    <div class="card-subtitle">{{ stats.accesos_denegados_hoy }} hoy</div>
+                </div>
+            </div>
+            <p style="color: #7f8c8d; margin-bottom: 20px;">Intentos de acceso que fueron rechazados por seguridad.</p>
+            <button class="btn btn-danger">Revisar</button>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #f39c12;">📋</div>
+                <div>
+                    <div class="card-title">Discrepancias</div>
+                    <div class="card-subtitle">{{ stats.discrepancias_reportadas }} reportadas</div>
+                </div>
+            </div>
+            <p style="color: #7f8c8d; margin-bottom: 20px;">Problemas reportados durante verificación de acceso.</p>
+            <button class="btn btn-warning">Gestionar</button>
+        </div>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; height: calc(100vh - 200px);">
+        <div>
+            <h3 style="color: #2c3e50; margin-bottom: 20px;">📱 Scanner de Autorizaciones</h3>
+
+            <!-- Contenedor del escáner -->
+            <div id="scanner-container" style="background: #2c3e50; border-radius: 12px; height: 350px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; margin-bottom: 20px; position: relative; overflow: hidden;">
+                <!-- Estado inicial -->
+                <div id="scanner-idle" style="text-align: center;">
+                    <div style="width: 200px; height: 200px; border: 3px solid #3498db; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                        <div>
+                            <div style="font-size: 48px; margin-bottom: 10px;">📱</div>
+                            <p>Posicione el QR aquí</p>
+                        </div>
+                    </div>
+                    <p style="opacity: 0.8;">Presione "Activar Cámara" para comenzar</p>
+                </div>
+
+                <!-- Contenedor del lector QR -->
+                <div id="qr-reader" style="width: 100%; display: none;"></div>
+
+                <!-- Mensajes de estado -->
+                <div id="scanner-status" style="position: absolute; bottom: 10px; left: 0; right: 0; text-align: center; padding: 10px; font-weight: 500; display: none;"></div>
+            </div>
+
+            <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                <button id="btn-activar-camara" class="btn btn-primary" style="flex: 1;" onclick="activarCamara()">📷 Activar Cámara</button>
+                <button id="btn-detener-camara" class="btn btn-danger" style="flex: 1; display: none;" onclick="detenerCamara()">🛑 Detener Cámara</button>
+            </div>
+
+            <div class="form-group">
+                <label>Búsqueda Manual</label>
+                <form id="form-busqueda-manual" onsubmit="buscarPorCodigo(event)" style="display: flex; gap: 10px;">
+                    <input type="text" id="input-codigo-manual" placeholder="Ingrese código de autorización" style="flex: 1;" class="form-control">
+                    <button type="submit" class="btn btn-primary">🔍</button>
+                </form>
+            </div>
+        </div>
+        <div>
+            <h3 style="color: #2c3e50; margin-bottom: 20px;">✅ Autorización Verificada</h3>
+            {% for a in autorizaciones %}
+            <div class="form-container" style="margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                    <div style="width: 60px; height: 60px; background: {% if a.estado == 'activa' %}#27ae60{% else %}#e74c3c{% endif %}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; margin-right: 15px;">{% if a.estado == 'activa' %}✓{% else %}✗{% endif %}</div>
+                    <div>
+                        <h4 style="color: {% if a.estado == 'activa' %}#27ae60{% else %}#e74c3c{% endif %}; margin-bottom: 5px;">Autorización {{ a.get_estado_display }}</h4>
+                        <p style="color: #7f8c8d;">{{ a.codigo }}</p>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div><strong>Empresa:</strong><p>{{ a.empresa_nombre }}</p></div>
+                    <div><strong>Representante:</strong><p>{{ a.representante_nombre }}</p></div>
+                    <div><strong>Válida hasta:</strong><p style="color: {% if a.valida_hasta|date:'Y-m-d' == today %}#e74c3c{% else %}#27ae60{% endif %};">{{ a.valida_hasta|date:'d/m/Y H:i' }}</p></div>
+                    <div><strong>RNC:</strong><p>{{ a.empresa_rnc }}</p></div>
+                    <div><strong>Motivo:</strong><p>{{ a.motivo_acceso }}</p></div>
+                    <div><strong>Puerto:</strong><p>{{ a.puerto_nombre }}</p></div>
+                </div>
+                {% if a.estado == 'activa' %}
+                <form method="post" action="{% url 'control_acceso:autorizar_ingreso' a.codigo %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success" style="width: 100%; padding: 15px;">✅ Autorizar Ingreso</button>
+                </form>
+                {% else %}
+                <button class="btn" style="width: 100%; padding: 15px; background: #95a5a6; color: white;" disabled>❌ Autorización {{ a.get_estado_display }}</button>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <div class="pagination" style="text-align:center; margin: 20px 0;">
+                {% if autorizaciones.has_previous %}
+                    <a href="?aut_page={{ autorizaciones.previous_page_number }}" class="btn btn-primary">Anterior</a>
+                {% endif %}
+                <span style="margin: 0 10px;">Página {{ autorizaciones.number }} de {{ autorizaciones.paginator.num_pages }}</span>
+                {% if autorizaciones.has_next %}
+                    <a href="?aut_page={{ autorizaciones.next_page_number }}" class="btn btn-primary">Siguiente</a>
+                {% endif %}
+            </div>
+            <div class="data-table" style="font-size: 12px;">
+                <div class="table-header">
+                    <div class="table-title">Últimos Registros de Acceso</div>
+                </div>
+                <div class="table-content">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Hora</th>
+                                <th>Tipo</th>
+                                <th>Vehículo</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for registro in ultimos_registros %}
+                            <tr>
+                                <td>{{ registro.timestamp|date:'H:i' }}</td>
+                                <td>{{ registro.get_tipo_acceso_display }}</td>
+                                <td>{{ registro.vehiculo_placa }}</td>
+                                <td><span class="status-badge {% if registro.estado == 'autorizado' %}status-approved{% elif registro.estado == 'denegado' %}status-rejected{% else %}status-pending{% endif %}">{{ registro.get_estado_display }}</span></td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="4" style="text-align:center;">No hay registros recientes.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="pagination" style="text-align:center; margin: 20px 0;">
+                {% if ultimos_registros.has_previous %}
+                    <a href="?reg_page={{ ultimos_registros.previous_page_number }}" class="btn btn-primary">Anterior</a>
+                {% endif %}
+                <span style="margin: 0 10px;">Página {{ ultimos_registros.number }} de {{ ultimos_registros.paginator.num_pages }}</span>
+                {% if ultimos_registros.has_next %}
+                    <a href="?reg_page={{ ultimos_registros.next_page_number }}" class="btn btn-primary">Siguiente</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Librería para escaneo QR -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<script>
+let html5QrCode = null;
+let isScanning = false;
+
+// Función para activar la cámara
+async function activarCamara() {
+    try {
+        // Ocultar mensaje inicial
+        document.getElementById('scanner-idle').style.display = 'none';
+
+        // Mostrar contenedor del lector
+        document.getElementById('qr-reader').style.display = 'block';
+
+        // Cambiar botones
+        document.getElementById('btn-activar-camara').style.display = 'none';
+        document.getElementById('btn-detener-camara').style.display = 'block';
+
+        // Mostrar estado
+        mostrarEstado('Iniciando cámara...', '#3498db');
+
+        // Inicializar escáner
+        html5QrCode = new Html5Qrcode("qr-reader");
+
+        // Configuración del escáner
+        const config = {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0
+        };
+
+        // Iniciar escaneo
+        await html5QrCode.start(
+            { facingMode: "environment" }, // Usar cámara trasera en móviles
+            config,
+            onScanSuccess,
+            onScanError
+        );
+
+        isScanning = true;
+        mostrarEstado('Cámara activa - Escanee el código QR', '#27ae60');
+
+    } catch (err) {
+        console.error('Error al activar cámara:', err);
+        mostrarEstado('Error: No se pudo acceder a la cámara', '#e74c3c');
+        document.getElementById('scanner-idle').style.display = 'block';
+        document.getElementById('qr-reader').style.display = 'none';
+        document.getElementById('btn-activar-camara').style.display = 'block';
+        document.getElementById('btn-detener-camara').style.display = 'none';
+    }
+}
+
+// Función para detener la cámara
+async function detenerCamara() {
+    if (html5QrCode && isScanning) {
+        try {
+            await html5QrCode.stop();
+            html5QrCode.clear();
+            isScanning = false;
+
+            // Restaurar UI
+            document.getElementById('scanner-idle').style.display = 'block';
+            document.getElementById('qr-reader').style.display = 'none';
+            document.getElementById('btn-activar-camara').style.display = 'block';
+            document.getElementById('btn-detener-camara').style.display = 'none';
+            ocultarEstado();
+
+        } catch (err) {
+            console.error('Error al detener cámara:', err);
+        }
+    }
+}
+
+// Callback cuando se escanea exitosamente un QR
+function onScanSuccess(decodedText, decodedResult) {
+    console.log('QR escaneado:', decodedText);
+
+    // Mostrar mensaje de éxito
+    mostrarEstado('✅ Código detectado - Procesando...', '#27ae60');
+
+    // Detener el escaneo
+    detenerCamara();
+
+    // Pequeño delay para que el usuario vea el mensaje
+    setTimeout(() => {
+        buscarAutorizacion(decodedText);
+    }, 500);
+}
+
+// Callback para errores de escaneo (se ejecuta constantemente cuando no hay QR)
+function onScanError(errorMessage) {
+    // No mostrar errores continuos para evitar spam en consola
+}
+
+// Función para buscar autorización por código
+function buscarAutorizacion(codigo) {
+    mostrarEstado('Buscando autorización...', '#3498db');
+
+    // Extraer código si es JSON
+    let codigoFinal = codigo;
+    try {
+        const jsonData = JSON.parse(codigo);
+        if (jsonData.codigo) {
+            codigoFinal = jsonData.codigo;
+        }
+    } catch (e) {
+        // No es JSON, usar el código directo
+    }
+
+    // Redirigir a la página con el código buscado
+    window.location.href = `{% url 'control_acceso:verificar_qr' %}?codigo=${encodeURIComponent(codigoFinal)}`;
+}
+
+// Función para buscar por código manual
+function buscarPorCodigo(event) {
+    event.preventDefault();
+    const codigo = document.getElementById('input-codigo-manual').value.trim();
+
+    if (codigo) {
+        buscarAutorizacion(codigo);
+    } else {
+        alert('Por favor ingrese un código de autorización');
+    }
+}
+
+// Funciones auxiliares para mensajes de estado
+function mostrarEstado(mensaje, color) {
+    const status = document.getElementById('scanner-status');
+    status.textContent = mensaje;
+    status.style.backgroundColor = color;
+    status.style.display = 'block';
+}
+
+function ocultarEstado() {
+    document.getElementById('scanner-status').style.display = 'none';
+}
+
+// Limpiar al salir de la página
+window.addEventListener('beforeunload', () => {
+    if (html5QrCode && isScanning) {
+        html5QrCode.stop();
+    }
+});
+</script>
+
+<style>
+#qr-reader video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+#qr-reader__dashboard {
+    display: none !important;
+}
+
+#qr-reader__scan_region {
+    border-radius: 8px !important;
+}
+</style>
+
+{% endblock %} 

@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autorización {{ autorizacion.codigo }} - NaviPort RD</title>
+    <style>
+        @media print {
+            @page {
+                size: letter portrait;
+                margin: 0.4in;
+            }
+            .no-print {
+                display: none !important;
+            }
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            .autorizacion-container {
+                border: 2px solid #2c3e50;
+                page-break-inside: avoid;
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            background: #f5f5f5;
+            padding: 15px;
+        }
+
+        .autorizacion-container {
+            width: 8.5in;
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            border: 3px solid #2c3e50;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            border-bottom: 4px solid #3498db;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .header .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .codigo-autorizacion {
+            background: #3498db;
+            color: white;
+            padding: 12px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .estado-badge {
+            display: inline-block;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        .estado-activa {
+            background: #27ae60;
+            color: white;
+        }
+
+        .estado-vencida {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .estado-revocada {
+            background: #c0392b;
+            color: white;
+        }
+
+        .content {
+            padding: 15px 20px;
+        }
+
+        .qr-section {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .qr-code {
+            width: 180px;
+            height: 180px;
+            margin: 10px auto;
+            border: 3px solid #2c3e50;
+            border-radius: 8px;
+            background: white;
+            padding: 8px;
+        }
+
+        .qr-code img {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .qr-instructions {
+            font-size: 12px;
+            color: #2c3e50;
+            margin-top: 8px;
+            font-weight: bold;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .info-item {
+            border-left: 3px solid #3498db;
+            padding-left: 10px;
+        }
+
+        .info-item.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .info-label {
+            font-size: 9px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .info-value {
+            font-size: 12px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .section-title {
+            font-size: 14px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 6px;
+            margin: 15px 0 10px 0;
+            font-weight: bold;
+        }
+
+        .vehiculos-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+
+        .vehiculos-table th,
+        .vehiculos-table td {
+            padding: 6px 8px;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+            font-size: 11px;
+        }
+
+        .vehiculos-table th {
+            background: #34495e;
+            color: white;
+            font-weight: bold;
+            font-size: 10px;
+        }
+
+        .vehiculos-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .footer {
+            background: #ecf0f1;
+            padding: 12px 15px;
+            text-align: center;
+            border-top: 2px solid #3498db;
+            font-size: 9px;
+            color: #7f8c8d;
+            line-height: 1.4;
+        }
+
+        .footer-warning {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 10px;
+            margin: 12px 0;
+            border-radius: 5px;
+            color: #856404;
+            font-weight: bold;
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+        .print-button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 20px;
+            font-weight: bold;
+        }
+
+        .print-button:hover {
+            background: #2980b9;
+        }
+
+        .volver-button {
+            background: #95a5a6;
+            color: white;
+            text-decoration: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 20px;
+            font-weight: bold;
+        }
+
+        .volver-button:hover {
+            background: #7f8c8d;
+        }
+
+        .vigencia-box {
+            background: #e8f5e9;
+            border: 2px solid #27ae60;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 12px 0;
+        }
+
+        .vigencia-box.vencida {
+            background: #ffebee;
+            border-color: #e74c3c;
+        }
+
+        @media print {
+            .qr-section {
+                padding: 10px;
+                margin-bottom: 10px;
+            }
+            .qr-code {
+                width: 160px;
+                height: 160px;
+            }
+            .section-title {
+                margin: 10px 0 8px 0;
+            }
+            .info-grid {
+                gap: 10px;
+                margin-bottom: 10px;
+            }
+            .vigencia-box {
+                margin: 10px 0;
+                padding: 8px;
+            }
+            .footer-warning {
+                margin: 10px 0;
+                padding: 8px;
+                font-size: 9px;
+            }
+            .footer {
+                padding: 10px 15px;
+                font-size: 8px;
+            }
+            .content {
+                padding: 12px 18px;
+            }
+            .header {
+                padding: 12px 15px;
+            }
+            .header h1 {
+                font-size: 20px;
+            }
+            .codigo-autorizacion {
+                padding: 10px;
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="text-align: center; margin-bottom: 20px;">
+        <button onclick="window.print()" class="print-button">🖨️ Imprimir Autorización</button>
+        {% if user.role == 'solicitante' %}
+        <a href="{% url 'solicitudes:mis_solicitudes' %}" class="volver-button">← Volver a Mis Solicitudes</a>
+        {% else %}
+        <a href="{% url 'evaluacion:dashboard' %}" class="volver-button">← Volver al Dashboard</a>
+        {% endif %}
+    </div>
+
+    <div class="autorizacion-container">
+        <div class="header">
+            <h1>🏛️ AUTORIDAD PORTUARIA DOMINICANA</h1>
+            <div class="subtitle">AUTORIZACIÓN DE ACCESO PORTUARIO</div>
+        </div>
+
+        <div class="codigo-autorizacion">
+            {{ autorizacion.codigo }}
+            <div style="margin-top: 10px;">
+                {% if autorizacion.estado == 'activa' %}
+                    <span class="estado-badge estado-activa">✅ ACTIVA</span>
+                {% elif autorizacion.estado == 'vencida' %}
+                    <span class="estado-badge estado-vencida">⏰ VENCIDA</span>
+                {% elif autorizacion.estado == 'revocada' %}
+                    <span class="estado-badge estado-revocada">🚫 REVOCADA</span>
+                {% else %}
+                    <span class="estado-badge">{{ autorizacion.get_estado_display|upper }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Sección QR -->
+            <div class="qr-section">
+                <h3 style="color: #2c3e50; margin-bottom: 5px; font-size: 13px;">CÓDIGO QR DE VERIFICACIÓN</h3>
+                <div class="qr-code">
+                    {% if autorizacion.qr_code %}
+                        <img src="{{ autorizacion.qr_code.url }}" alt="Código QR">
+                    {% else %}
+                        <div style="padding: 30px; background: #ecf0f1; color: #7f8c8d; font-size: 11px;">
+                            Código QR no disponible
+                        </div>
+                    {% endif %}
+                </div>
+                <p class="qr-instructions">
+                    Escanee este código para verificar la autenticidad
+                </p>
+            </div>
+
+            <!-- Información de Vigencia -->
+            <div class="vigencia-box {% if autorizacion.estado == 'vencida' %}vencida{% endif %}">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">📅 Válida Desde</div>
+                        <div class="info-value">{{ autorizacion.valida_desde|date:"d/m/Y H:i" }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">⏰ Válida Hasta</div>
+                        <div class="info-value">{{ autorizacion.valida_hasta|date:"d/m/Y H:i" }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de la Empresa -->
+            <h2 class="section-title">📊 Información de la Empresa</h2>
+            <div class="info-grid">
+                <div class="info-item full-width">
+                    <div class="info-label">🏢 Empresa</div>
+                    <div class="info-value">{{ autorizacion.empresa_nombre }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">📋 RNC</div>
+                    <div class="info-value">{{ autorizacion.empresa_rnc }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">👤 Representante Legal</div>
+                    <div class="info-value">{{ autorizacion.representante_nombre }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">🆔 Cédula</div>
+                    <div class="info-value">{{ autorizacion.representante_cedula }}</div>
+                </div>
+            </div>
+
+            <!-- Información del Acceso -->
+            <h2 class="section-title">🚢 Detalles del Acceso</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">⚓ Puerto de Destino</div>
+                    <div class="info-value">{{ autorizacion.puerto_nombre }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">📝 Motivo de Acceso</div>
+                    <div class="info-value">{{ autorizacion.motivo_acceso }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">📄 Solicitud No.</div>
+                    <div class="info-value">{{ solicitud.codigo|default:solicitud.id }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">📅 Fecha de Aprobación</div>
+                    <div class="info-value">{{ solicitud.fecha_evaluacion|date:"d/m/Y"|default:"N/D" }}</div>
+                </div>
+            </div>
+
+            <!-- Vehículos Autorizados -->
+            <h2 class="section-title">🚗 Vehículos Autorizados</h2>
+            {% if autorizacion.vehiculos_autorizados %}
+                <table class="vehiculos-table">
+                    <thead>
+                        <tr>
+                            <th>Placa</th>
+                            <th>Tipo</th>
+                            <th>Conductor</th>
+                            <th>Licencia</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vehiculo in autorizacion.vehiculos_autorizados %}
+                        <tr>
+                            <td><strong>{{ vehiculo.placa }}</strong></td>
+                            <td>{{ vehiculo.tipo|upper }}</td>
+                            <td>{{ vehiculo.conductor }}</td>
+                            <td>{{ vehiculo.licencia }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p style="color: #7f8c8d; font-style: italic;">No hay vehículos registrados</p>
+            {% endif %}
+
+            <!-- Advertencia -->
+            <div class="footer-warning">
+                <strong>IMPORTANTE:</strong> Presentar con documentos de identificación del conductor y documentos del vehículo. El oficial verificará autenticidad mediante código QR.
+            </div>
+        </div>
+
+        <div class="footer">
+            <p><strong>Autoridad Portuaria Dominicana - NaviPort RD</strong></p>
+            <p>Sistema de Gestión de Acceso Portuario</p>
+            <p>Documento generado el: {{ fecha_impresion|date:"d/m/Y H:i" }}</p>
+            <p style="margin-top: 5px; font-size: 8px;">
+                Este documento es válido únicamente para las fechas indicadas y debe ser verificado mediante el código QR
+            </p>
+        </div>
+    </div>
+
+    <div class="no-print" style="text-align: center; margin-top: 20px; margin-bottom: 40px;">
+        <button onclick="window.print()" class="print-button">🖨️ Imprimir Autorización</button>
+        {% if user.role == 'solicitante' %}
+        <a href="{% url 'solicitudes:mis_solicitudes' %}" class="volver-button">← Volver a Mis Solicitudes</a>
+        {% else %}
+        <a href="{% url 'evaluacion:dashboard' %}" class="volver-button">← Volver al Dashboard</a>
+        {% endif %}
+    </div>
+</body>
+</html>

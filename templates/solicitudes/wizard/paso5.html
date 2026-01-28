@@ -1,0 +1,859 @@
+{% extends 'solicitudes/wizard/base.html' %}
+
+{% block title %}Paso 5: Confirmación - Solicitud Wizard{% endblock %}
+
+{% block wizard_content %}
+<div class="wizard-form-header">
+    <h4 class="wizard-form-title">
+        <i class="fas fa-check-circle"></i>
+        Confirmación y Resumen
+    </h4>
+    <p class="wizard-form-subtitle">Revise toda la información antes de finalizar</p>
+</div>
+
+<div class="alert-info-custom mb-4">
+    <i class="fas fa-info-circle"></i>
+    <div>
+        <strong>Revise su solicitud</strong>
+        <p>Por favor revise toda la información antes de finalizar. Puede volver a cualquier paso para hacer correcciones.</p>
+    </div>
+</div>
+
+<!-- Información Básica -->
+<div class="resumen-card mb-4">
+    <div class="resumen-card-header">
+        <h5 class="resumen-card-title">
+            <i class="fas fa-clipboard-list"></i>
+            Información Básica
+        </h5>
+        <button class="btn-edit" onclick="volverPaso(1)">
+            <i class="fas fa-edit"></i> Editar
+        </button>
+    </div>
+    <div class="resumen-card-body">
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">Número de IMO:</span>
+                <span class="info-value">{{ datos_totales.paso1.numero_imo|default:"No especificado" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Naviera:</span>
+                <span class="info-value">{{ datos_totales.paso1.naviera|default:"No especificada" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Puerto de Destino:</span>
+                <span class="info-value">{{ puerto_nombre|default:"No especificado" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Lugar de Destino:</span>
+                <span class="info-value">{{ lugar_nombre|default:"No especificado" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Motivo de Acceso:</span>
+                <span class="info-value">{{ motivo_nombre|default:"No especificado" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Prioridad:</span>
+                <span class="info-value">{{ prioridad_nombre|default:"No especificada" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Fecha y Hora de Ingreso:</span>
+                <span class="info-value" data-fecha="{{ datos_totales.paso1.fecha_ingreso|default:'' }}" data-hora="{{ datos_totales.paso1.hora_ingreso|default:'' }}">
+                    {{ datos_totales.paso1.fecha_ingreso|default:"" }} {{ datos_totales.paso1.hora_ingreso|default:"" }}
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Fecha y Hora de Salida:</span>
+                <span class="info-value" data-fecha="{{ datos_totales.paso1.fecha_salida|default:'' }}" data-hora="{{ datos_totales.paso1.hora_salida|default:'' }}">
+                    {{ datos_totales.paso1.fecha_salida|default:"" }} {{ datos_totales.paso1.hora_salida|default:"" }}
+                </span>
+            </div>
+            <div class="info-item full-width">
+                <span class="info-label">Descripción:</span>
+                <span class="info-value">{{ datos_totales.paso1.descripcion|default:"No especificada" }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Personal -->
+<div class="resumen-card mb-4">
+    <div class="resumen-card-header">
+        <h5 class="resumen-card-title">
+            <i class="fas fa-users"></i>
+            Personal
+        </h5>
+        <button class="btn-edit" onclick="volverPaso(2)">
+            <i class="fas fa-edit"></i> Editar
+        </button>
+    </div>
+    <div class="resumen-card-body">
+        {% if datos_totales.paso2.personal %}
+            <div class="table-container">
+                <table class="resumen-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Cédula</th>
+                            <th>Cargo</th>
+                            <th>Teléfono</th>
+                            <th>Rol en Operación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for persona in datos_totales.paso2.personal %}
+                            <tr>
+                                <td>{{ persona.nombre }} {{ persona.apellido }}</td>
+                                <td class="cedula-cell" data-cedula="{{ persona.cedula }}">{{ persona.cedula|default:persona.pasaporte }}</td>
+                                <td>{{ persona.cargo|default:"No especificado" }}</td>
+                                <td class="telefono-cell" data-telefono="{{ persona.telefono|default:'' }}">{{ persona.telefono|default:"No especificado" }}</td>
+                                <td>{{ persona.rol_operacion|default:"No especificado" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="empty-message">No se ha agregado personal.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Vehículos -->
+<div class="resumen-card mb-4">
+    <div class="resumen-card-header">
+        <h5 class="resumen-card-title">
+            <i class="fas fa-truck"></i>
+            Vehículos
+        </h5>
+        <button class="btn-edit" onclick="volverPaso(3)">
+            <i class="fas fa-edit"></i> Editar
+        </button>
+    </div>
+    <div class="resumen-card-body">
+        {% if datos_totales.paso3.vehiculos %}
+            <div class="table-container">
+                <table class="resumen-table">
+                    <thead>
+                        <tr>
+                            <th>Placa</th>
+                            <th>Tipo</th>
+                            <th>Conductor</th>
+                            <th>Licencia</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vehiculo in datos_totales.paso3.vehiculos %}
+                            <tr>
+                                <td>{{ vehiculo.placa }}</td>
+                                <td>{{ vehiculo.tipo_vehiculo|title }}</td>
+                                <td>{{ vehiculo.conductor_nombre|default:"No especificado" }}</td>
+                                <td>{{ vehiculo.conductor_licencia|default:"No especificada" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="empty-message">No se han agregado vehículos.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Servicios -->
+<div class="resumen-card mb-4">
+    <div class="resumen-card-header">
+        <h5 class="resumen-card-title">
+            <i class="fas fa-briefcase"></i>
+            Servicios Solicitados
+        </h5>
+        <button class="btn-edit" onclick="volverPaso(4)">
+            <i class="fas fa-edit"></i> Editar
+        </button>
+    </div>
+    <div class="resumen-card-body">
+        {% if servicios_nombres %}
+            <div class="servicios-list">
+                {% for servicio_nombre in servicios_nombres %}
+                    <div class="servicio-badge">
+                        <i class="fas fa-check-circle"></i>
+                        {{ servicio_nombre }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="empty-message">No se han seleccionado servicios.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Documentos Adjuntos -->
+{% if documentos_info %}
+<div class="resumen-card mb-4">
+    <div class="resumen-card-header">
+        <h5 class="resumen-card-title">
+            <i class="fas fa-file-upload"></i>
+            Documentos Adjuntos
+        </h5>
+        <button class="btn-edit" onclick="volverPaso(4)">
+            <i class="fas fa-edit"></i> Editar
+        </button>
+    </div>
+    <div class="resumen-card-body">
+        <div class="documentos-adjuntos-list">
+            {% for doc in documentos_info %}
+                <div class="documento-adjunto-item">
+                    <div class="documento-adjunto-header">
+                        <div class="documento-adjunto-nombre">
+                            <i class="fas fa-file-alt"></i>
+                            <span class="doc-tipo">{{ doc.nombre_requerido }}</span>
+                            {% if doc.obligatorio %}
+                                <span class="badge badge-obligatorio">Obligatorio</span>
+                            {% else %}
+                                <span class="badge badge-opcional">Opcional</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="documento-adjunto-archivo">
+                        <i class="fas fa-check-circle text-success"></i>
+                        <span class="archivo-nombre">{{ doc.nombre_archivo }}</span>
+                        <span class="archivo-size">({{ doc.tamaño_mb }} MB)</span>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="wizard-form-actions">
+    <a href="{% url 'solicitudes:wizard_paso4' %}" class="wizard-btn wizard-btn-ghost">
+        <i class="fas fa-arrow-left"></i>
+        Volver
+    </a>
+    <div class="actions-right">
+        <a href="{% url 'solicitudes:solicitud_wizard_inicio' %}" class="wizard-btn wizard-btn-secondary">
+            <i class="fas fa-redo"></i>
+            Reiniciar
+        </a>
+        <form method="post" action="{% url 'solicitudes:wizard_finalizar' %}" class="d-inline" id="form-finalizar">
+            {% csrf_token %}
+            <button type="button" class="wizard-btn wizard-btn-success" onclick="confirmarEnvio()">
+                <i class="fas fa-paper-plane"></i>
+                Enviar Solicitud
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div class="modal-overlay" id="modal-confirmacion">
+    <div class="modal-confirmacion">
+        <div class="modal-header-confirmacion">
+            <i class="fas fa-question-circle"></i>
+            <h3>Confirmar Envío de Solicitud</h3>
+        </div>
+        <div class="modal-body-confirmacion">
+            <p>¿Está seguro que desea enviar esta solicitud?</p>
+            <p class="modal-warning">
+                <i class="fas fa-info-circle"></i>
+                Una vez enviada, la solicitud será revisada por el equipo de evaluación.
+            </p>
+        </div>
+        <div class="modal-footer-confirmacion">
+            <button type="button" class="wizard-btn wizard-btn-ghost" onclick="cerrarModal()">
+                <i class="fas fa-times"></i>
+                Cancelar
+            </button>
+            <button type="button" class="wizard-btn wizard-btn-success" onclick="enviarSolicitud()">
+                <i class="fas fa-paper-plane"></i>
+                Sí, Enviar
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Alert Info Custom */
+.alert-info-custom {
+    background: linear-gradient(135deg, #fef9c3 0%, #fef3c7 100%);
+    border: 2px solid #fbbf24;
+    border-radius: 16px;
+    padding: 25px;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.15);
+}
+
+.alert-info-custom i {
+    font-size: 2rem;
+    color: #d97706;
+    margin-top: 5px;
+}
+
+.alert-info-custom strong {
+    font-size: 1.3rem;
+    color: #000000;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.alert-info-custom p {
+    font-size: 1.1rem;
+    color: #000000;
+    margin: 0;
+}
+
+/* Resumen Cards */
+.resumen-card {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.resumen-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+.resumen-card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-bottom: 2px solid #e9ecef;
+    padding: 20px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.resumen-card-title {
+    font-size: 1.4rem !important;
+    font-weight: 700 !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.resumen-card-title i {
+    color: #87CEEB;
+    font-size: 1.3rem;
+}
+
+.btn-edit {
+    background: white;
+    border: 2px solid #87CEEB;
+    color: #87CEEB;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-edit:hover {
+    background: #87CEEB;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(135, 206, 235, 0.3);
+}
+
+.resumen-card-body {
+    padding: 25px;
+    background: white;
+}
+
+/* Info Grid */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.info-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.info-label {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #6b7280;
+}
+
+.info-value {
+    font-size: 1.15rem;
+    font-weight: 500;
+    color: #000000;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+/* Table Container */
+.table-container {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+}
+
+.resumen-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1.1rem;
+}
+
+.resumen-table thead {
+    background: linear-gradient(135deg, #87CEEB 0%, #b3d9ff 100%);
+}
+
+.resumen-table thead th {
+    padding: 15px 20px;
+    text-align: left;
+    font-weight: 700;
+    color: white;
+    font-size: 1.1rem;
+}
+
+.resumen-table tbody tr {
+    border-bottom: 1px solid #e9ecef;
+    transition: background 0.2s ease;
+}
+
+.resumen-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.resumen-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.resumen-table tbody td {
+    padding: 15px 20px;
+    color: #000000;
+    font-weight: 500;
+}
+
+/* Empty Message */
+.empty-message {
+    font-size: 1.15rem;
+    color: #6b7280;
+    text-align: center;
+    padding: 30px;
+    font-style: italic;
+}
+
+/* Servicios List */
+.servicios-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.servicio-badge {
+    background: linear-gradient(135deg, #e0e7ff 0%, #f5f3ff 100%);
+    border: 2px solid #87CEEB;
+    border-radius: 12px;
+    padding: 15px 20px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #000000;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.servicio-badge i {
+    color: #10b981;
+    font-size: 1.3rem;
+}
+
+/* Documentos Adjuntos */
+.documentos-adjuntos-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.documento-adjunto-item {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 18px 20px;
+    transition: all 0.3s ease;
+}
+
+.documento-adjunto-item:hover {
+    border-color: #87CEEB;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.documento-adjunto-header {
+    margin-bottom: 10px;
+}
+
+.documento-adjunto-nombre {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.documento-adjunto-nombre i {
+    color: #87CEEB;
+    font-size: 1.2rem;
+}
+
+.documento-adjunto-nombre .doc-tipo {
+    flex: 1;
+}
+
+.documento-adjunto-nombre .badge {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.badge-obligatorio {
+    background-color: #dc2626;
+    color: white;
+}
+
+.badge-opcional {
+    background-color: #6b7280;
+    color: white;
+}
+
+.documento-adjunto-archivo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    background: #dcfce7;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.documento-adjunto-archivo i {
+    color: #22c55e;
+}
+
+.archivo-nombre {
+    font-weight: 500;
+    color: #166534;
+}
+
+.archivo-size {
+    color: #4ade80;
+    font-size: 0.9rem;
+}
+
+.text-success {
+    color: #22c55e !important;
+}
+
+/* Actions Right */
+.actions-right {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+/* Button Secondary */
+.wizard-btn-secondary {
+    background: white !important;
+    color: #6b7280 !important;
+    border: 2px solid #6b7280 !important;
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.2) !important;
+}
+
+.wizard-btn-secondary:hover {
+    background: #6b7280 !important;
+    color: white !important;
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 25px rgba(107, 114, 128, 0.4) !important;
+}
+
+/* Button Success */
+.wizard-btn-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    color: white !important;
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4) !important;
+}
+
+.wizard-btn-success:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5) !important;
+}
+
+/* Modal de Confirmación */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-confirmacion {
+    background: white;
+    border-radius: 20px;
+    max-width: 550px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+    overflow: hidden;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header-confirmacion {
+    background: linear-gradient(135deg, #87CEEB 0%, #b3d9ff 100%);
+    color: white;
+    padding: 30px;
+    text-align: center;
+}
+
+.modal-header-confirmacion i {
+    font-size: 3.5rem;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.modal-header-confirmacion h3 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.modal-body-confirmacion {
+    padding: 35px 30px;
+    text-align: center;
+}
+
+.modal-body-confirmacion p {
+    font-size: 1.25rem;
+    color: #000000;
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+.modal-warning {
+    background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%);
+    border: 2px solid #ffc107;
+    border-radius: 12px;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.1rem !important;
+    color: #856404 !important;
+    margin-top: 20px;
+}
+
+.modal-warning i {
+    font-size: 1.5rem;
+    color: #ffc107;
+}
+
+.modal-footer-confirmacion {
+    padding: 25px 30px;
+    background: #f8f9fa;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.modal-footer-confirmacion .wizard-btn {
+    min-width: 160px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .info-item.full-width {
+        grid-column: 1;
+    }
+
+    .resumen-card-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+
+    .btn-edit {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .wizard-form-actions {
+        flex-direction: column;
+    }
+
+    .actions-right {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .actions-right .wizard-btn,
+    .actions-right form {
+        width: 100%;
+    }
+
+    .modal-confirmacion {
+        width: 95%;
+        margin: 20px;
+    }
+
+    .modal-footer-confirmacion {
+        flex-direction: column;
+    }
+
+    .modal-footer-confirmacion .wizard-btn {
+        width: 100%;
+    }
+}
+</style>
+
+<script>
+// Función para volver a un paso específico
+function volverPaso(paso) {
+    window.location.href = `/solicitudes/wizard/paso${paso}/`;
+}
+
+// Función para mostrar el modal de confirmación
+function confirmarEnvio() {
+    const modal = document.getElementById('modal-confirmacion');
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+// Función para cerrar el modal
+function cerrarModal() {
+    const modal = document.getElementById('modal-confirmacion');
+    modal.classList.remove('active');
+    document.body.style.overflow = 'auto';
+}
+
+// Función para enviar la solicitud
+function enviarSolicitud() {
+    const form = document.getElementById('form-finalizar');
+    form.submit();
+}
+
+// ========== FORMATEO DE DATOS ==========
+
+// Función para formatear fecha de YYYY-MM-DD a DD/MM/YYYY
+function formatearFecha(fechaStr) {
+    if (!fechaStr) return '';
+    const partes = fechaStr.split('-');
+    if (partes.length === 3) {
+        return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+    return fechaStr;
+}
+
+// Función para formatear cédula
+function formatearCedula(cedula) {
+    if (!cedula) return '';
+    const numeros = cedula.replace(/\D/g, '');
+    if (numeros.length === 11) {
+        return `${numeros.slice(0, 3)}-${numeros.slice(3, 10)}-${numeros.slice(10, 11)}`;
+    }
+    return cedula;
+}
+
+// Función para formatear teléfono
+function formatearTelefono(telefono) {
+    if (!telefono) return '';
+    const numeros = telefono.replace(/\D/g, '');
+    if (numeros.length === 10) {
+        return `${numeros.slice(0, 3)}-${numeros.slice(3, 6)}-${numeros.slice(6, 10)}`;
+    }
+    return telefono;
+}
+
+// Cerrar modal al hacer clic fuera de él
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('modal-confirmacion');
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            cerrarModal();
+        }
+    });
+
+    // Formatear fechas y horas
+    document.querySelectorAll('[data-fecha][data-hora]').forEach(element => {
+        const fecha = element.getAttribute('data-fecha');
+        const hora = element.getAttribute('data-hora');
+
+        if (fecha && hora) {
+            const fechaFormateada = formatearFecha(fecha);
+            element.textContent = `${fechaFormateada}, ${hora}`;
+        } else if (fecha) {
+            const fechaFormateada = formatearFecha(fecha);
+            element.textContent = fechaFormateada;
+        }
+    });
+
+    // Formatear cédulas
+    document.querySelectorAll('.cedula-cell').forEach(cell => {
+        const cedula = cell.getAttribute('data-cedula');
+        if (cedula) {
+            cell.textContent = formatearCedula(cedula);
+        }
+    });
+
+    // Formatear teléfonos
+    document.querySelectorAll('.telefono-cell').forEach(cell => {
+        const telefono = cell.getAttribute('data-telefono');
+        if (telefono) {
+            cell.textContent = formatearTelefono(telefono);
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Mis Reportes - NaviPort RD{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4" style="background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); min-height: 100vh;">
+    <div class="content-wrapper">
+        <div class="header-section mb-4">
+            <a href="{% url 'control_acceso:dashboard' %}" class="back-link">
+                <i class="fas fa-arrow-left"></i> Volver al Dashboard
+            </a>
+            <h1 class="page-title">Mis Reportes de Incumplimientos</h1>
+            <p class="page-subtitle">Incumplimientos reportados por mí</p>
+        </div>
+
+        <div class="stats-container mb-4" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+            <div class="stat-card">
+                <i class="fas fa-list" style="font-size: 30px; color: #667eea;"></i>
+                <h3>{{ stats.total }}</h3>
+                <p>Total Reportados</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-clock" style="font-size: 30px; color: #f39c12;"></i>
+                <h3>{{ stats.en_revision }}</h3>
+                <p>En Revisión</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-check-circle" style="font-size: 30px; color: #27ae60;"></i>
+                <h3>{{ stats.subsanados }}</h3>
+                <p>Subsanados</p>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <a href="{% url 'incumplimientos:reportar' %}" class="btn-add">
+                <i class="fas fa-plus"></i> Reportar Nuevo Incumplimiento
+            </a>
+        </div>
+
+        <div class="table-card">
+            <div class="table-header">
+                <i class="fas fa-list"></i> Incumplimientos Reportados
+            </div>
+            <div class="table-body">
+                {% if incumplimientos %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Empresa</th>
+                            <th>Tipo</th>
+                            <th>Puerto</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inc in incumplimientos %}
+                        <tr>
+                            <td>{{ inc.fecha_incumplimiento|date:"d/m/Y H:i" }}</td>
+                            <td>{{ inc.solicitud.empresa.nombre }}</td>
+                            <td><span class="type-badge">{{ inc.get_tipo_display }}</span></td>
+                            <td>{{ inc.puerto.nombre }}</td>
+                            <td><span class="status-badge status-{{ inc.estado }}">{{ inc.get_estado_display }}</span></td>
+                            <td>
+                                <a href="{% url 'incumplimientos:detalle' inc.pk %}" class="btn-view">
+                                    <i class="fas fa-eye"></i> Ver
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>No has reportado incumplimientos aún</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.header-section { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-radius: 15px; padding: 25px; border: 1px solid rgba(255, 255, 255, 0.2); }
+.back-link { display: inline-block; color: #fff; text-decoration: none; padding: 8px 15px; background: rgba(255, 255, 255, 0.2); border-radius: 8px; margin-bottom: 15px; }
+.page-title { color: #fff; font-size: 32px; font-weight: 700; margin: 0 0 10px 0; }
+.page-subtitle { color: rgba(255, 255, 255, 0.9); font-size: 16px; }
+.stat-card { background: white; border-radius: 15px; padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
+.stat-card h3 { font-size: 36px; font-weight: 700; color: #2c3e50; margin: 10px 0 5px 0; }
+.stat-card p { color: #7f8c8d; margin: 0; }
+.btn-add { display: inline-block; padding: 12px 25px; background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%); color: white; text-decoration: none; border-radius: 10px; font-weight: 600; }
+.table-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
+.table-header { background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white; padding: 20px 25px; font-size: 18px; font-weight: 600; }
+.table-body { padding: 0; }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table thead { background: #f8f9fa; }
+.data-table th { padding: 15px; text-align: left; font-weight: 600; color: #2c3e50; border-bottom: 2px solid #e0e0e0; }
+.data-table td { padding: 15px; border-bottom: 1px solid #f0f0f0; }
+.type-badge { padding: 6px 12px; background: #667eea; color: white; border-radius: 8px; font-size: 12px; font-weight: 600; }
+.status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.status-reportado { background: #fff3cd; color: #856404; }
+.status-en_revision { background: #cce5ff; color: #004085; }
+.status-pendiente_subsanacion { background: #f8d7da; color: #721c24; }
+.status-subsanado { background: #d4edda; color: #155724; }
+.btn-view { padding: 8px 15px; background: #667eea; color: white; text-decoration: none; border-radius: 8px; font-size: 13px; }
+.empty-state { text-align: center; padding: 60px 20px; color: #7f8c8d; }
+.empty-state i { font-size: 80px; color: #e0e0e0; }
+</style>
+{% endblock %}

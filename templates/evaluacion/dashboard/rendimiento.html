@@ -1,0 +1,470 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard de Rendimiento | NaviPort RD{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar_evaluador.html' with active_page='rendimiento' %}
+
+<div class="content-area">
+    <!-- Breadcrumb -->
+    <div style="margin-bottom: 20px;">
+        <a href="{% url 'evaluacion:dashboard' %}" style="color: #3498db; text-decoration: none;">← Volver al Dashboard Principal</a>
+    </div>
+
+    <!-- Header -->
+    <div class="page-header">
+        <h2 style="color: #2c3e50; margin-bottom: 10px;">
+            📊 Dashboard de Rendimiento
+        </h2>
+        <p style="color: #7f8c8d;">
+            Métricas, KPIs y estadísticas del sistema de evaluación
+        </p>
+    </div>
+
+    <!-- Quick Links -->
+    <div style="margin-bottom: 30px; display: flex; gap: 15px;">
+        <a href="{% url 'evaluacion:distribucion_evaluadores' %}" class="btn btn-primary" style="padding: 10px 20px; font-size: 14px;">
+            📈 Distribución de Evaluadores
+        </a>
+        <a href="{% url 'evaluacion:gestionar_empresas' %}" class="btn btn-secondary" style="padding: 10px 20px; font-size: 14px;">
+            🏢 Ver Empresas
+        </a>
+    </div>
+
+    <!-- KPI Cards Row 1 - Solicitudes -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px;">
+        <div class="kpi-card" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);">
+            <div class="kpi-icon">📋</div>
+            <div class="kpi-value">{{ total_solicitudes }}</div>
+            <div class="kpi-label">Total Solicitudes</div>
+            <div class="kpi-sublabel">Histórico completo</div>
+        </div>
+
+        <div class="kpi-card" style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);">
+            <div class="kpi-icon">⏳</div>
+            <div class="kpi-value">{{ solicitudes_pendientes }}</div>
+            <div class="kpi-label">Pendientes</div>
+            <div class="kpi-sublabel">Por asignar/evaluar</div>
+        </div>
+
+        <div class="kpi-card" style="background: linear-gradient(135deg, #27ae60 0%, #229954 100%);">
+            <div class="kpi-icon">✅</div>
+            <div class="kpi-value">{{ solicitudes_aprobadas }}</div>
+            <div class="kpi-label">Aprobadas</div>
+            <div class="kpi-sublabel">{{ tasa_aprobacion }}% tasa de aprobación</div>
+        </div>
+
+        <div class="kpi-card" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">
+            <div class="kpi-icon">❌</div>
+            <div class="kpi-value">{{ solicitudes_rechazadas }}</div>
+            <div class="kpi-label">Rechazadas</div>
+            <div class="kpi-sublabel">{{ tasa_rechazo }}% tasa de rechazo</div>
+        </div>
+    </div>
+
+    <!-- KPI Cards Row 2 - Mes Actual -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px;">
+        <div class="kpi-card-secondary">
+            <div style="font-size: 12px; color: #7f8c8d; margin-bottom: 5px;">MES ACTUAL</div>
+            <div style="font-size: 24px; font-weight: bold; color: #3498db;">{{ solicitudes_mes }}</div>
+            <div style="font-size: 13px; color: #7f8c8d;">Solicitudes recibidas</div>
+        </div>
+
+        <div class="kpi-card-secondary">
+            <div style="font-size: 12px; color: #7f8c8d; margin-bottom: 5px;">EMPRESAS</div>
+            <div style="font-size: 24px; font-weight: bold; color: #27ae60;">{{ total_empresas }}</div>
+            <div style="font-size: 13px; color: #7f8c8d;">{{ empresas_activas }} activas</div>
+        </div>
+
+        <div class="kpi-card-secondary">
+            <div style="font-size: 12px; color: #7f8c8d; margin-bottom: 5px;">EVALUADORES</div>
+            <div style="font-size: 24px; font-weight: bold; color: #9b59b6;">{{ total_evaluadores }}</div>
+            <div style="font-size: 13px; color: #7f8c8d;">Activos en el sistema</div>
+        </div>
+
+        <div class="kpi-card-secondary">
+            <div style="font-size: 12px; color: #7f8c8d; margin-bottom: 5px;">PROMEDIO</div>
+            <div style="font-size: 24px; font-weight: bold; color: #f39c12;">{{ promedio_evaluador }}</div>
+            <div style="font-size: 13px; color: #7f8c8d;">Solicitudes por evaluador</div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 30px;">
+        <!-- Solicitudes por Estado -->
+        <div class="chart-card">
+            <h3 style="color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+                📊 Solicitudes por Estado
+            </h3>
+            <canvas id="chartEstados" height="250"></canvas>
+        </div>
+
+        <!-- Solicitudes por Mes -->
+        <div class="chart-card">
+            <h3 style="color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #27ae60; padding-bottom: 10px;">
+                📈 Solicitudes Últimos 6 Meses
+            </h3>
+            <canvas id="chartMeses" height="250"></canvas>
+        </div>
+    </div>
+
+    <!-- Top Evaluadores -->
+    <div class="chart-card" style="margin-bottom: 30px;">
+        <h3 style="color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #9b59b6; padding-bottom: 10px;">
+            🏆 Top Evaluadores por Rendimiento
+        </h3>
+
+        {% if top_evaluadores %}
+        <div style="overflow-x: auto;">
+            <table class="table-modern">
+                <thead>
+                    <tr>
+                        <th>Posición</th>
+                        <th>Evaluador</th>
+                        <th>Total Asignadas</th>
+                        <th>Evaluadas</th>
+                        <th>Pendientes</th>
+                        <th>Tasa Completada</th>
+                        <th>Rendimiento</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for evaluador in top_evaluadores %}
+                    <tr>
+                        <td style="text-align: center; font-weight: bold; color: #3498db;">
+                            {% if forloop.counter == 1 %}🥇
+                            {% elif forloop.counter == 2 %}🥈
+                            {% elif forloop.counter == 3 %}🥉
+                            {% else %}{{ forloop.counter }}
+                            {% endif %}
+                        </td>
+                        <td style="font-weight: 600;">{{ evaluador.nombre }}</td>
+                        <td style="text-align: center;">{{ evaluador.total_asignadas }}</td>
+                        <td style="text-align: center; color: #27ae60; font-weight: 600;">{{ evaluador.evaluadas }}</td>
+                        <td style="text-align: center; color: #f39c12;">{{ evaluador.pendientes }}</td>
+                        <td style="text-align: center;">
+                            <span class="badge" style="background: {% if evaluador.tasa_completada >= 80 %}#27ae60{% elif evaluador.tasa_completada >= 50 %}#f39c12{% else %}#e74c3c{% endif %}; color: white; padding: 4px 10px; border-radius: 4px;">
+                                {{ evaluador.tasa_completada }}%
+                            </span>
+                        </td>
+                        <td style="text-align: center;">
+                            <div class="progress-bar" style="width: 100%; height: 20px; background: #ecf0f1; border-radius: 10px; overflow: hidden;">
+                                <div style="height: 100%; background: linear-gradient(90deg, #3498db, #9b59b6); width: {{ evaluador.tasa_completada }}%; transition: width 0.3s;"></div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 40px; color: #7f8c8d;">
+            <div style="font-size: 48px; margin-bottom: 15px;">📊</div>
+            <p>No hay datos de evaluadores disponibles</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Top Empresas -->
+    <div class="chart-card">
+        <h3 style="color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #e74c3c; padding-bottom: 10px;">
+            🏢 Empresas con Más Solicitudes
+        </h3>
+
+        {% if top_empresas %}
+        <div style="overflow-x: auto;">
+            <table class="table-modern">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Empresa</th>
+                        <th>RNC</th>
+                        <th>Total Solicitudes</th>
+                        <th>Aprobadas</th>
+                        <th>Rechazadas</th>
+                        <th>Tasa Aprobación</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for empresa in top_empresas %}
+                    <tr>
+                        <td style="text-align: center; font-weight: bold;">{{ forloop.counter }}</td>
+                        <td style="font-weight: 600;">{{ empresa.nombre }}</td>
+                        <td>{{ empresa.rnc }}</td>
+                        <td style="text-align: center; color: #3498db; font-weight: bold;">{{ empresa.total_solicitudes }}</td>
+                        <td style="text-align: center; color: #27ae60;">{{ empresa.aprobadas }}</td>
+                        <td style="text-align: center; color: #e74c3c;">{{ empresa.rechazadas }}</td>
+                        <td style="text-align: center;">
+                            <span class="badge" style="background: {% if empresa.tasa_aprobacion >= 70 %}#27ae60{% elif empresa.tasa_aprobacion >= 40 %}#f39c12{% else %}#e74c3c{% endif %}; color: white; padding: 4px 10px; border-radius: 4px;">
+                                {{ empresa.tasa_aprobacion }}%
+                            </span>
+                        </td>
+                        <td style="text-align: center;">
+                            <a href="{% url 'evaluacion:historial_evaluaciones_empresa' empresa.id %}" class="btn-small btn-info" style="padding: 5px 12px; font-size: 13px;">
+                                📊 Ver Historial
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 40px; color: #7f8c8d;">
+            <div style="font-size: 48px; margin-bottom: 15px;">🏢</div>
+            <p>No hay datos de empresas disponibles</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.kpi-card {
+    padding: 25px;
+    border-radius: 12px;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.kpi-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+}
+
+.kpi-icon {
+    font-size: 36px;
+    margin-bottom: 10px;
+}
+
+.kpi-value {
+    font-size: 42px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.kpi-label {
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0.95;
+}
+
+.kpi-sublabel {
+    font-size: 12px;
+    opacity: 0.8;
+    margin-top: 5px;
+}
+
+.kpi-card-secondary {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    text-align: center;
+    transition: transform 0.3s;
+}
+
+.kpi-card-secondary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.chart-card {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.table-modern {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.table-modern thead {
+    background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+    color: white;
+}
+
+.table-modern th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+}
+
+.table-modern tbody tr {
+    border-bottom: 1px solid #ecf0f1;
+    transition: background 0.2s;
+}
+
+.table-modern tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.table-modern td {
+    padding: 12px;
+    font-size: 14px;
+}
+
+.btn {
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+.btn-small {
+    padding: 4px 10px;
+    font-size: 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s;
+}
+
+.btn-info {
+    background: #3498db;
+    color: white;
+}
+
+.btn-info:hover {
+    background: #2980b9;
+}
+</style>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+// Chart: Solicitudes por Estado
+const ctxEstados = document.getElementById('chartEstados').getContext('2d');
+new Chart(ctxEstados, {
+    type: 'doughnut',
+    data: {
+        labels: {{ labels_estados|safe }},
+        datasets: [{
+            data: {{ data_estados|safe }},
+            backgroundColor: [
+                '#3498db',  // recibida
+                '#f39c12',  // en_evaluacion
+                '#27ae60',  // aprobada
+                '#e74c3c',  // rechazada
+                '#95a5a6'   // otros
+            ],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 15,
+                    font: {
+                        size: 13
+                    }
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        let label = context.label || '';
+                        let value = context.parsed || 0;
+                        let total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        let percentage = ((value / total) * 100).toFixed(1);
+                        return label + ': ' + value + ' (' + percentage + '%)';
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Chart: Solicitudes por Mes
+const ctxMeses = document.getElementById('chartMeses').getContext('2d');
+new Chart(ctxMeses, {
+    type: 'line',
+    data: {
+        labels: {{ labels_meses|safe }},
+        datasets: [{
+            label: 'Solicitudes',
+            data: {{ data_meses|safe }},
+            borderColor: '#27ae60',
+            backgroundColor: 'rgba(39, 174, 96, 0.1)',
+            tension: 0.4,
+            fill: true,
+            borderWidth: 3,
+            pointRadius: 5,
+            pointBackgroundColor: '#27ae60',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            pointHoverRadius: 7
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                backgroundColor: 'rgba(44, 62, 80, 0.9)',
+                padding: 12,
+                titleFont: {
+                    size: 14
+                },
+                bodyFont: {
+                    size: 13
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                },
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

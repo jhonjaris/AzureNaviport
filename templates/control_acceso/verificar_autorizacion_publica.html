@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificación de Autorización - NaviPort RD</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .status-section {
+            padding: 40px;
+            text-align: center;
+        }
+
+        .status-icon {
+            font-size: 120px;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .status-message {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .status-valida {
+            background: #d4edda;
+            color: #155724;
+            border: 3px solid #28a745;
+        }
+
+        .status-invalida {
+            background: #f8d7da;
+            color: #721c24;
+            border: 3px solid #dc3545;
+        }
+
+        .status-vencida {
+            background: #fff3cd;
+            color: #856404;
+            border: 3px solid #ffc107;
+        }
+
+        .status-programada {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 3px solid #17a2b8;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 30px;
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .info-row {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .info-value {
+            font-size: 20px;
+            color: #212529;
+            font-weight: 600;
+            display: block;
+        }
+
+        .codigo-box {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 30px 0;
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 3px;
+        }
+
+        .vehiculos-list {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .vehiculo-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #3498db;
+        }
+
+        .vehiculo-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .vehiculo-placa {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .vehiculo-detalle {
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .timestamp {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #dee2e6;
+            font-size: 14px;
+            color: #6c757d;
+            text-align: center;
+        }
+
+        .error-section {
+            padding: 60px 40px;
+            text-align: center;
+        }
+
+        .error-icon {
+            font-size: 100px;
+            margin-bottom: 20px;
+        }
+
+        .error-message {
+            font-size: 24px;
+            color: #721c24;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .error-description {
+            font-size: 16px;
+            color: #6c757d;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .badge-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .badge-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .badge-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        @media (max-width: 600px) {
+            .status-icon {
+                font-size: 80px;
+            }
+
+            .status-message {
+                font-size: 22px;
+            }
+
+            .info-value {
+                font-size: 18px;
+            }
+
+            .codigo-box {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏛️ Autoridad Portuaria Dominicana</h1>
+            <p>Sistema de Verificación de Autorizaciones</p>
+        </div>
+
+        {% if error %}
+        <!-- Mensaje de Error -->
+        <div class="error-section">
+            <div class="error-icon">❌</div>
+            <div class="error-message">Autorización No Encontrada</div>
+            <div class="error-description">
+                {{ mensaje_error }}
+            </div>
+        </div>
+        {% else %}
+        <!-- Información de la Autorización -->
+        <div class="status-section">
+            {% if es_valida %}
+                <div class="status-icon">✅</div>
+                <div class="status-message status-valida">
+                    AUTORIZACIÓN VÁLIDA
+                </div>
+            {% elif autorizacion.estado == 'vencida' %}
+                <div class="status-icon">⏰</div>
+                <div class="status-message status-vencida">
+                    AUTORIZACIÓN VENCIDA
+                </div>
+            {% elif autorizacion.estado == 'revocada' %}
+                <div class="status-icon">🚫</div>
+                <div class="status-message status-invalida">
+                    AUTORIZACIÓN REVOCADA
+                </div>
+            {% else %}
+                <div class="status-icon">⚠️</div>
+                <div class="status-message status-programada">
+                    {{ mensaje_estado }}
+                </div>
+            {% endif %}
+
+            <div class="codigo-box">
+                {{ autorizacion.codigo }}
+            </div>
+
+            <div class="info-box">
+                <div class="info-row">
+                    <span class="info-label">🏢 Empresa Autorizada</span>
+                    <span class="info-value">{{ autorizacion.empresa_nombre }}</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">📋 RNC</span>
+                    <span class="info-value">{{ autorizacion.empresa_rnc }}</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">👤 Representante Legal</span>
+                    <span class="info-value">{{ autorizacion.representante_nombre }}</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">⚓ Puerto de Destino</span>
+                    <span class="info-value">{{ autorizacion.puerto_nombre }}</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">📝 Motivo de Acceso</span>
+                    <span class="info-value">{{ autorizacion.motivo_acceso }}</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">📅 Válida Desde</span>
+                    <span class="info-value">{{ autorizacion.valida_desde|date:"d/m/Y H:i" }}</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">⏰ Válida Hasta</span>
+                    <span class="info-value">{{ autorizacion.valida_hasta|date:"d/m/Y H:i" }}</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">🔰 Estado Actual</span>
+                    <span class="info-value">
+                        {{ autorizacion.get_estado_display }}
+                        {% if es_valida %}
+                            <span class="badge badge-success">VIGENTE</span>
+                        {% else %}
+                            <span class="badge badge-danger">NO VIGENTE</span>
+                        {% endif %}
+                    </span>
+                </div>
+
+                {% if es_valida and dias_restantes > 0 %}
+                <div class="info-row">
+                    <span class="info-label">⏳ Días Restantes</span>
+                    <span class="info-value">{{ dias_restantes }} día{{ dias_restantes|pluralize }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Vehículos Autorizados -->
+            {% if autorizacion.vehiculos_autorizados %}
+            <div class="vehiculos-list">
+                <div class="info-label" style="margin-bottom: 15px;">🚗 Vehículos Autorizados</div>
+                {% for vehiculo in autorizacion.vehiculos_autorizados %}
+                <div class="vehiculo-item">
+                    <div class="vehiculo-placa">🚗 {{ vehiculo.placa }}</div>
+                    <div class="vehiculo-detalle">
+                        <strong>Tipo:</strong> {{ vehiculo.tipo|upper }} •
+                        <strong>Conductor:</strong> {{ vehiculo.conductor }}
+                    </div>
+                    {% if vehiculo.licencia %}
+                    <div class="vehiculo-detalle">
+                        <strong>Licencia:</strong> {{ vehiculo.licencia }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="timestamp">
+                🕐 Verificado el: {{ ahora|date:"d/m/Y H:i:s" }}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="footer">
+            <p><strong>NaviPort RD - Sistema de Gestión de Acceso Portuario</strong></p>
+            <p style="margin-top: 10px;">
+                Esta verificación es válida únicamente en el momento de la consulta.<br>
+                Para acceso oficial, contacte con el oficial de control en el puerto.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

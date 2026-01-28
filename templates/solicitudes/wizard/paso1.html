@@ -1,0 +1,511 @@
+{% extends 'solicitudes/wizard/base.html' %}
+
+{% block title %}Paso 1: Información Básica - Solicitud Wizard{% endblock %}
+
+{% block wizard_content %}
+<div class="wizard-form-header">
+    <h4 class="wizard-form-title">
+        <i class="fas fa-clipboard-list"></i>
+        Información Básica
+    </h4>
+    <p class="wizard-form-subtitle">Complete los datos principales de su solicitud</p>
+</div>
+
+<form method="post" class="wizard-form">
+    {% csrf_token %}
+
+    <div class="wizard-form-section">
+        <h6 class="wizard-section-title">
+            <i class="fas fa-clipboard-list"></i>
+            Información General de la Solicitud
+        </h6>
+        <div class="wizard-datetime-row">
+            <div class="wizard-date-field">
+                <div class="wizard-form-group">
+                    <label for="numero_imo" class="wizard-label">
+                        <i class="fas fa-ship"></i>
+                        Número de IMO
+                    </label>
+                    <input type="text" class="wizard-input" id="numero_imo" name="numero_imo"
+                           value="{{ datos_previos.numero_imo }}"
+                           placeholder="Ej: 1234567"
+                           pattern="[0-9]{7}"
+                           title="El número IMO debe tener 7 dígitos">
+                    <small class="wizard-help-text">
+                        Identificador único de la embarcación (7 dígitos)
+                    </small>
+                </div>
+            </div>
+            <div class="wizard-time-field">
+                <div class="wizard-form-group">
+                    <label for="naviera" class="wizard-label">
+                        <i class="fas fa-building"></i>
+                        Naviera
+                    </label>
+                    <input type="text" class="wizard-input" id="naviera" name="naviera"
+                           value="{{ datos_previos.naviera }}"
+                           placeholder="Nombre de la naviera">
+                    <small class="wizard-help-text">
+                        Empresa propietaria de la embarcación
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="wizard-datetime-row">
+            <div class="wizard-date-field">
+                <div class="wizard-form-group">
+                    <label for="puerto_destino" class="wizard-label">
+                        <i class="fas fa-anchor"></i>
+                        Puerto de Destino *
+                    </label>
+                    <select class="wizard-input" id="puerto_destino" name="puerto_destino" required>
+                        <option value="">Seleccione puerto...</option>
+                        {% for puerto in puertos %}
+                            <option value="{{ puerto.id }}"
+                                {% if datos_previos.puerto_destino == puerto.id|slugify %}selected{% endif %}>
+                                {{ puerto.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="wizard-time-field">
+                <div class="wizard-form-group">
+                    <label for="lugar_destino" class="wizard-label">
+                        <i class="fas fa-warehouse"></i>
+                        Lugar de Destino
+                    </label>
+                    <select class="wizard-input" id="lugar_destino" name="lugar_destino">
+                        <option value="">Seleccione lugar...</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="wizard-datetime-row">
+            <div class="wizard-date-field">
+                <div class="wizard-form-group">
+                    <label for="motivo_acceso" class="wizard-label">
+                        <i class="fas fa-question-circle"></i>
+                        Motivo del Acceso *
+                    </label>
+                    <select class="wizard-input" id="motivo_acceso" name="motivo_acceso" required>
+                        <option value="">Seleccione motivo...</option>
+                        {% for motivo in motivos_acceso %}
+                            <option value="{{ motivo.id }}"
+                                {% if datos_previos.motivo_acceso == motivo.id|slugify %}selected{% endif %}>
+                                {{ motivo.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="wizard-time-field">
+                <div class="wizard-form-group">
+                    <label for="prioridad" class="wizard-label">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Prioridad
+                    </label>
+                    <select class="wizard-input" id="prioridad" name="prioridad">
+                        {% for value, label in prioridades %}
+                            <option value="{{ value }}"
+                                {% if datos_previos.prioridad == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="wizard-form-section">
+        <h6 class="wizard-section-title">
+            <i class="fas fa-clock"></i>
+            Horario de Acceso
+        </h6>
+        <div class="wizard-datetime-row">
+            <div class="wizard-date-field">
+                <div class="wizard-form-group">
+                    <label for="fecha_ingreso" class="wizard-label">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Fecha de Ingreso *
+                    </label>
+                    <input type="date" class="wizard-input fecha-input" id="fecha_ingreso" name="fecha_ingreso"
+                           value="{{ datos_previos.fecha_ingreso }}" required>
+                </div>
+            </div>
+            <div class="wizard-time-field">
+                <div class="wizard-form-group">
+                    <label for="hora_ingreso_hora" class="wizard-label">
+                        <i class="fas fa-clock"></i>
+                        Hora de Ingreso *
+                    </label>
+                    <div class="time-picker-container">
+                        <select class="wizard-input time-select" id="hora_ingreso_hora" name="hora_ingreso_hora" required>
+                            <option value="">HH</option>
+                            <option value="01">01</option>
+                            <option value="02">02</option>
+                            <option value="03">03</option>
+                            <option value="04">04</option>
+                            <option value="05">05</option>
+                            <option value="06">06</option>
+                            <option value="07">07</option>
+                            <option value="08">08</option>
+                            <option value="09">09</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                        </select>
+                        <span class="time-separator">:</span>
+                        <select class="wizard-input time-select" id="hora_ingreso_minuto" name="hora_ingreso_minuto" required>
+                            <option value="">--</option>
+                            <option value="00">00</option>
+                            <option value="15">15</option>
+                            <option value="30">30</option>
+                            <option value="45">45</option>
+                        </select>
+                        <select class="wizard-input time-select period-select" id="hora_ingreso_periodo" name="hora_ingreso_periodo" required>
+                            <option value="">--</option>
+                            <option value="AM">AM</option>
+                            <option value="PM">PM</option>
+                        </select>
+                        <input type="hidden" id="hora_ingreso" name="hora_ingreso" value="{{ datos_previos.hora_ingreso }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="wizard-datetime-row">
+            <div class="wizard-date-field">
+                <div class="wizard-form-group">
+                    <label for="fecha_salida" class="wizard-label">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Fecha de Salida *
+                    </label>
+                    <input type="date" class="wizard-input fecha-input" id="fecha_salida" name="fecha_salida"
+                           value="{{ datos_previos.fecha_salida }}" required>
+                </div>
+            </div>
+            <div class="wizard-time-field">
+                <div class="wizard-form-group">
+                    <label for="hora_salida_hora" class="wizard-label">
+                        <i class="fas fa-clock"></i>
+                        Hora de Salida *
+                    </label>
+                    <div class="time-picker-container">
+                        <select class="wizard-input time-select" id="hora_salida_hora" name="hora_salida_hora" required>
+                            <option value="">HH</option>
+                            <option value="01">01</option>
+                            <option value="02">02</option>
+                            <option value="03">03</option>
+                            <option value="04">04</option>
+                            <option value="05">05</option>
+                            <option value="06">06</option>
+                            <option value="07">07</option>
+                            <option value="08">08</option>
+                            <option value="09">09</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                        </select>
+                        <span class="time-separator">:</span>
+                        <select class="wizard-input time-select" id="hora_salida_minuto" name="hora_salida_minuto" required>
+                            <option value="">--</option>
+                            <option value="00">00</option>
+                            <option value="15">15</option>
+                            <option value="30">30</option>
+                            <option value="45">45</option>
+                        </select>
+                        <select class="wizard-input time-select period-select" id="hora_salida_periodo" name="hora_salida_periodo" required>
+                            <option value="">--</option>
+                            <option value="AM">AM</option>
+                            <option value="PM">PM</option>
+                        </select>
+                        <input type="hidden" id="hora_salida" name="hora_salida" value="{{ datos_previos.hora_salida }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="wizard-form-section">
+        <h6 class="wizard-section-title">
+            <i class="fas fa-align-left"></i>
+            Descripción
+        </h6>
+        <div class="wizard-form-group">
+            <label for="descripcion" class="wizard-label">
+                Descripción Detallada *
+            </label>
+            <textarea class="wizard-input" id="descripcion" name="descripcion" rows="4" required>{{ datos_previos.descripcion }}</textarea>
+            <small class="wizard-help-text">
+                <i class="fas fa-lightbulb"></i>
+                Proporcione una descripción detallada y clara de la visita
+            </small>
+        </div>
+    </div>
+
+    <div class="wizard-form-actions">
+        <a href="{% url 'solicitudes:dashboard' %}" class="wizard-btn wizard-btn-ghost">
+            <i class="fas fa-times"></i>
+            Cancelar
+        </a>
+        <button type="submit" class="wizard-btn wizard-btn-primary">
+            Siguiente Paso
+            <i class="fas fa-arrow-right"></i>
+        </button>
+    </div>
+</form>
+
+<style>
+/* === TIME PICKER STYLES === */
+.time-picker-container {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+}
+
+.time-select {
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
+.period-select {
+    flex: 0.8 !important;
+}
+
+.time-separator {
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    color: #87CEEB !important;
+    padding: 0 5px !important;
+}
+
+/* Ajustar el min-height para los selectores de tiempo */
+.time-picker-container .wizard-input {
+    min-height: 60px !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const puertoSelect = document.getElementById('puerto_destino');
+    const lugarSelect = document.getElementById('lugar_destino');
+
+    // Cargar lugares cuando se selecciona un puerto
+    puertoSelect.addEventListener('change', function() {
+        const puertoId = this.value;
+        if (puertoId) {
+            fetch(`/solicitudes/wizard/api/lugares-puerto/?puerto_id=${puertoId}`)
+                .then(response => response.json())
+                .then(data => {
+                    lugarSelect.innerHTML = '<option value="">Seleccione lugar...</option>';
+                    data.lugares.forEach(lugar => {
+                        const option = document.createElement('option');
+                        option.value = lugar.id;
+                        option.textContent = `${lugar.nombre} (${lugar.tipo_lugar})`;
+                        lugarSelect.appendChild(option);
+                    });
+                });
+        } else {
+            lugarSelect.innerHTML = '<option value="">Seleccione lugar...</option>';
+        }
+    });
+
+    // Cargar lugares si ya hay un puerto seleccionado
+    {% if datos_previos.puerto_destino %}
+        puertoSelect.dispatchEvent(new Event('change'));
+    {% endif %}
+
+    // ========== TIME PICKER WIDGET ==========
+    function setupTimePicker(prefix) {
+        const horaSelect = document.getElementById(prefix + '_hora');
+        const minutoSelect = document.getElementById(prefix + '_minuto');
+        const periodoSelect = document.getElementById(prefix + '_periodo');
+        const hiddenInput = document.getElementById(prefix);
+
+        // Función para actualizar el campo hidden con el valor completo
+        function updateHiddenInput() {
+            const hora = horaSelect.value;
+            const minuto = minutoSelect.value;
+            const periodo = periodoSelect.value;
+
+            // Solo actualizar si todos los campos están seleccionados
+            if (hora && minuto && periodo && hora !== '' && minuto !== '' && periodo !== '') {
+                hiddenInput.value = `${hora}:${minuto} ${periodo}`;
+            } else {
+                hiddenInput.value = '';
+            }
+        }
+
+        // Parsear valor previo si existe
+        if (hiddenInput.value) {
+            const match = hiddenInput.value.match(/(\d{2}):(\d{2})\s(AM|PM)/);
+            if (match) {
+                horaSelect.value = match[1];
+                minutoSelect.value = match[2];
+                periodoSelect.value = match[3];
+            }
+        }
+
+        // Escuchar cambios en los selectores
+        horaSelect.addEventListener('change', updateHiddenInput);
+        minutoSelect.addEventListener('change', updateHiddenInput);
+        periodoSelect.addEventListener('change', updateHiddenInput);
+    }
+
+    // Inicializar time pickers
+    setupTimePicker('hora_ingreso');
+    setupTimePicker('hora_salida');
+
+    // ========== VALIDACIONES DE FECHAS Y HORAS ==========
+    const fechaIngresoInput = document.getElementById('fecha_ingreso');
+    const fechaSalidaInput = document.getElementById('fecha_salida');
+    const horaIngresoHora = document.getElementById('hora_ingreso_hora');
+    const horaIngresoMinuto = document.getElementById('hora_ingreso_minuto');
+    const horaIngresoPeriodo = document.getElementById('hora_ingreso_periodo');
+    const horaSalidaHora = document.getElementById('hora_salida_hora');
+    const horaSalidaMinuto = document.getElementById('hora_salida_minuto');
+    const horaSalidaPeriodo = document.getElementById('hora_salida_periodo');
+
+    // Establecer fecha mínima como hoy
+    const today = new Date().toISOString().split('T')[0];
+    fechaIngresoInput.setAttribute('min', today);
+    fechaSalidaInput.setAttribute('min', today);
+
+    // Validar que fecha de salida sea >= fecha de ingreso
+    fechaIngresoInput.addEventListener('change', function() {
+        fechaSalidaInput.setAttribute('min', this.value);
+        if (fechaSalidaInput.value && fechaSalidaInput.value < this.value) {
+            fechaSalidaInput.value = this.value;
+        }
+        validateTimes();
+    });
+
+    fechaSalidaInput.addEventListener('change', function() {
+        if (this.value < fechaIngresoInput.value) {
+            alert('La fecha de salida no puede ser anterior a la fecha de ingreso');
+            this.value = fechaIngresoInput.value;
+        }
+        validateTimes();
+    });
+
+    // Función para convertir hora 12H a minutos desde medianoche
+    function timeToMinutes(hora, minuto, periodo) {
+        let h = parseInt(hora);
+        const m = parseInt(minuto);
+
+        // Convertir a formato 24H
+        if (periodo === 'AM' && h === 12) {
+            h = 0;
+        } else if (periodo === 'PM' && h !== 12) {
+            h += 12;
+        }
+
+        return h * 60 + m;
+    }
+
+    // Validar que hora de salida sea mayor a hora de ingreso
+    function validateTimes() {
+        // Solo validar si las fechas son iguales
+        if (fechaIngresoInput.value === fechaSalidaInput.value) {
+            const ingresoHora = horaIngresoHora.value;
+            const ingresoMinuto = horaIngresoMinuto.value;
+            const ingresoPeriodo = horaIngresoPeriodo.value;
+            const salidaHora = horaSalidaHora.value;
+            const salidaMinuto = horaSalidaMinuto.value;
+            const salidaPeriodo = horaSalidaPeriodo.value;
+
+            // Solo validar si todos los campos están completos (incluyendo AM/PM)
+            if (ingresoHora && ingresoMinuto && ingresoPeriodo &&
+                salidaHora && salidaMinuto && salidaPeriodo &&
+                ingresoPeriodo !== '' && salidaPeriodo !== '') {
+
+                const ingresoMinutos = timeToMinutes(ingresoHora, ingresoMinuto, ingresoPeriodo);
+                const salidaMinutos = timeToMinutes(salidaHora, salidaMinuto, salidaPeriodo);
+
+                if (salidaMinutos <= ingresoMinutos) {
+                    alert('La hora de salida debe ser posterior a la hora de ingreso cuando las fechas son iguales');
+                    // Resetear hora de salida
+                    horaSalidaHora.value = '';
+                    horaSalidaMinuto.value = '';
+                    horaSalidaPeriodo.value = '';
+                    document.getElementById('hora_salida').value = '';
+                }
+            }
+        }
+    }
+
+    // Escuchar cambios en los selectores de hora
+    horaIngresoHora.addEventListener('change', validateTimes);
+    horaIngresoMinuto.addEventListener('change', validateTimes);
+    horaIngresoPeriodo.addEventListener('change', validateTimes);
+    horaSalidaHora.addEventListener('change', validateTimes);
+    horaSalidaMinuto.addEventListener('change', validateTimes);
+    horaSalidaPeriodo.addEventListener('change', validateTimes);
+
+    // ========== VALIDACIÓN DEL FORMULARIO ANTES DE ENVIAR ==========
+    const form = document.querySelector('.wizard-form');
+    form.addEventListener('submit', function(e) {
+        // Validar que todos los campos obligatorios estén completos
+        const requiredFields = [
+            { element: document.getElementById('puerto_destino'), name: 'Puerto de Destino' },
+            { element: document.getElementById('motivo_acceso'), name: 'Motivo del Acceso' },
+            { element: fechaIngresoInput, name: 'Fecha de Ingreso' },
+            { element: horaIngresoHora, name: 'Hora de Ingreso (hora)' },
+            { element: horaIngresoMinuto, name: 'Hora de Ingreso (minuto)' },
+            { element: horaIngresoPeriodo, name: 'Hora de Ingreso (AM/PM)' },
+            { element: fechaSalidaInput, name: 'Fecha de Salida' },
+            { element: horaSalidaHora, name: 'Hora de Salida (hora)' },
+            { element: horaSalidaMinuto, name: 'Hora de Salida (minuto)' },
+            { element: horaSalidaPeriodo, name: 'Hora de Salida (AM/PM)' },
+            { element: document.getElementById('descripcion'), name: 'Descripción' }
+        ];
+
+        for (const field of requiredFields) {
+            if (!field.element.value || field.element.value === '') {
+                e.preventDefault();
+                alert(`Por favor complete el campo: ${field.name}`);
+                field.element.focus();
+                return false;
+            }
+        }
+
+        // Validar que las fechas no sean pasadas
+        const fechaIngreso = new Date(fechaIngresoInput.value);
+        const fechaSalida = new Date(fechaSalidaInput.value);
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+
+        if (fechaIngreso < hoy) {
+            e.preventDefault();
+            alert('La fecha de ingreso no puede ser una fecha pasada');
+            fechaIngresoInput.focus();
+            return false;
+        }
+
+        // Validar que fecha de salida >= fecha de ingreso
+        if (fechaSalidaInput.value < fechaIngresoInput.value) {
+            e.preventDefault();
+            alert('La fecha de salida debe ser igual o posterior a la fecha de ingreso');
+            fechaSalidaInput.focus();
+            return false;
+        }
+
+        // Validar horas si las fechas son iguales
+        if (fechaIngresoInput.value === fechaSalidaInput.value) {
+            const ingresoMinutos = timeToMinutes(horaIngresoHora.value, horaIngresoMinuto.value, horaIngresoPeriodo.value);
+            const salidaMinutos = timeToMinutes(horaSalidaHora.value, horaSalidaMinuto.value, horaSalidaPeriodo.value);
+
+            if (salidaMinutos <= ingresoMinutos) {
+                e.preventDefault();
+                alert('La hora de salida debe ser posterior a la hora de ingreso cuando las fechas son iguales');
+                horaSalidaHora.focus();
+                return false;
+            }
+        }
+
+        return true;
+    });
+});
+</script>
+{% endblock %}

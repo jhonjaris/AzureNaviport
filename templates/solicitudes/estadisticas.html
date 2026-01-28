@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Estadísticas | NaviPort RD{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'solicitudes/css/solicitudes.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li><a href="{% url 'solicitudes:dashboard' %}" style="color: inherit; text-decoration: none;">🏠 Dashboard</a></li>
+        <li><a href="{% url 'solicitudes:mis_solicitudes' %}" style="color: inherit; text-decoration: none;">📋 Solicitudes</a></li>
+        <li><a href="{% url 'solicitudes:mis_autorizaciones' %}" style="color: inherit; text-decoration: none;">🎫 Autorizaciones</a></li>
+        <li class="active"><a href="{% url 'solicitudes:estadisticas' %}" style="color: inherit; text-decoration: none;">📊 Estadísticas</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div style="text-align: right; margin-right: 10px;">
+            <div style="font-weight: 500;">{{ user.get_display_name }}</div>
+            <div style="font-size: 14px; color: #7f8c8d;">{{ user.get_role_display_with_admin }}</div>
+        </div>
+        <div class="user-avatar">{{ user.get_display_name|slice:':1'|upper }}{{ user.last_name|slice:':1'|upper }}</div>
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <h2 style="color: #2c3e50; margin-bottom: 10px;">📈 Estadísticas Detalladas</h2>
+        <p style="color: #7f8c8d;">{{ user.get_display_name }} • Solicitante • Análisis completo de actividad</p>
+    </div>
+
+    <!-- Resumen General -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px;">
+        <div class="dashboard-card" style="border-left-color: #3498db;">
+            <div class="card-header">
+                <div class="card-icon" style="background: #3498db;">📊</div>
+                <div>
+                    <div class="card-title" style="font-size: 36px;">{{ stats.total_solicitudes }}</div>
+                    <div class="card-subtitle" style="font-size: 16px;">Total Solicitudes</div>
+                </div>
+            </div>
+        </div>
+        <div class="dashboard-card" style="border-left-color: #27ae60;">
+            <div class="card-header">
+                <div class="card-icon" style="background: #27ae60;">✅</div>
+                <div>
+                    <div class="card-title" style="font-size: 36px;">{{ stats.tasa_aprobacion }}%</div>
+                    <div class="card-subtitle" style="font-size: 16px;">Tasa de Éxito</div>
+                </div>
+            </div>
+        </div>
+        <div class="dashboard-card" style="border-left-color: #f39c12;">
+            <div class="card-header">
+                <div class="card-icon" style="background: #f39c12;">⏱️</div>
+                <div>
+                    <div class="card-title" style="font-size: 36px;">{{ stats.tiempo_promedio }}</div>
+                    <div class="card-subtitle" style="font-size: 16px;">Días Promedio</div>
+                </div>
+            </div>
+        </div>
+        <div class="dashboard-card" style="border-left-color: #9b59b6;">
+            <div class="card-header">
+                <div class="card-icon" style="background: #9b59b6;">🔄</div>
+                <div>
+                    <div class="card-title" style="font-size: 36px;">{{ stats.solicitudes_este_mes }}</div>
+                    <div class="card-subtitle" style="font-size: 16px;">Este Mes</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparación Mensual -->
+    <div class="form-container" style="margin-bottom: 30px;">
+        <h3>📅 Comparación Mensual</h3>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px;">
+            <div style="text-align: center;">
+                <div style="font-size: 32px; font-weight: bold; color: #3498db; margin-bottom: 5px;">{{ stats.solicitudes_este_mes }}</div>
+                <div style="color: #7f8c8d;">Solicitudes este mes</div>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 32px; font-weight: bold; color: #95a5a6; margin-bottom: 5px;">{{ stats.solicitudes_mes_pasado }}</div>
+                <div style="color: #7f8c8d;">Mes anterior</div>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 32px; font-weight: bold; {% if stats.cambio_mensual >= 0 %}color: #27ae60;{% else %}color: #e74c3c;{% endif %} margin-bottom: 5px;">
+                    {% if stats.cambio_mensual > 0 %}+{% endif %}{{ stats.cambio_mensual }}
+                </div>
+                <div style="color: #7f8c8d;">
+                    {% if stats.cambio_mensual > 0 %}📈 Crecimiento
+                    {% elif stats.cambio_mensual < 0 %}📉 Reducción
+                    {% else %}➡️ Sin cambio{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estados de Solicitudes -->
+    <div class="form-container" style="margin-bottom: 30px;">
+        <h3>📋 Distribución por Estados</h3>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+            <div style="background: #e8f5e8; padding: 20px; border-radius: 10px; text-align: center;">
+                <div style="font-size: 28px; font-weight: bold; color: #27ae60;">{{ stats.aprobadas }}</div>
+                <div style="color: #27ae60; font-weight: 500;">Aprobadas</div>
+                <small style="color: #7f8c8d;">{{ stats.tasa_aprobacion }}% del total</small>
+            </div>
+            <div style="background: #fff3cd; padding: 20px; border-radius: 10px; text-align: center;">
+                <div style="font-size: 28px; font-weight: bold; color: #f39c12;">{{ stats.pendientes }}</div>
+                <div style="color: #f39c12; font-weight: 500;">En Proceso</div>
+                <small style="color: #7f8c8d;">Pendientes de revisión</small>
+            </div>
+            <div style="background: #f8d7da; padding: 20px; border-radius: 10px; text-align: center;">
+                <div style="font-size: 28px; font-weight: bold; color: #e74c3c;">{{ stats.rechazadas }}</div>
+                <div style="color: #e74c3c; font-weight: 500;">Rechazadas</div>
+                <small style="color: #7f8c8d;">{{ stats.tasa_rechazo }}% del total</small>
+            </div>
+            <div style="background: #d1ecf1; padding: 20px; border-radius: 10px; text-align: center;">
+                <div style="font-size: 28px; font-weight: bold; color: #17a2b8;">{{ stats.autorizaciones_por_vencer }}</div>
+                <div style="color: #17a2b8; font-weight: 500;">Por Vencer</div>
+                <small style="color: #7f8c8d;">Próximas 30 días</small>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+        <!-- Puertos Más Utilizados -->
+        <div class="form-container">
+            <h3>🏭 Puertos Más Utilizados</h3>
+            {% if puertos_frecuentes %}
+                {% for puerto in puertos_frecuentes %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9fa; margin-bottom: 10px; border-radius: 8px;">
+                    <div>
+                        <div style="font-weight: 600; color: #2c3e50;">{{ puerto.puerto_destino__nombre|default:"Puerto no especificado" }}</div>
+                    </div>
+                    <div style="background: #3498db; color: white; padding: 5px 12px; border-radius: 15px; font-size: 14px; font-weight: 600;">
+                        {{ puerto.count }} solicitud{{ puerto.count|pluralize:"es" }}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align: center; color: #7f8c8d; padding: 20px;">
+                    No hay datos de puertos disponibles
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Motivos Más Frecuentes -->
+        <div class="form-container">
+            <h3>🎯 Motivos Más Frecuentes</h3>
+            {% if motivos_frecuentes %}
+                {% for motivo in motivos_frecuentes %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9fa; margin-bottom: 10px; border-radius: 8px;">
+                    <div>
+                        <div style="font-weight: 600; color: #2c3e50;">{{ motivo.motivo_acceso__nombre|default:"Motivo no especificado" }}</div>
+                    </div>
+                    <div style="background: #27ae60; color: white; padding: 5px 12px; border-radius: 15px; font-size: 14px; font-weight: 600;">
+                        {{ motivo.count }} vez{{ motivo.count|pluralize:"es" }}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align: center; color: #7f8c8d; padding: 20px;">
+                    No hay datos de motivos disponibles
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Vehículos Más Utilizados -->
+    <div class="form-container" style="margin-bottom: 30px;">
+        <h3>🚛 Vehículos Más Utilizados</h3>
+        {% if vehiculos_top %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                {% for vehiculo, count in vehiculos_top %}
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 24px; margin-bottom: 10px;">🚛</div>
+                    <div style="font-weight: 600; color: #2c3e50; margin-bottom: 5px;">{{ vehiculo }}</div>
+                    <div style="color: #f39c12; font-weight: 500;">{{ count }} vez{{ count|pluralize:"es" }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div style="text-align: center; color: #7f8c8d; padding: 40px;">
+                <div style="font-size: 48px; margin-bottom: 15px;">🚛</div>
+                <div>No hay datos de vehículos disponibles</div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Botones de Navegación -->
+    <div style="text-align: center; margin-top: 40px;">
+        <a href="{% url 'solicitudes:dashboard' %}" class="btn btn-secondary">← Volver al Dashboard</a>
+        <a href="{% url 'solicitudes:solicitud_wizard_inicio' %}" class="btn btn-primary">+ Nueva Solicitud</a>
+    </div>
+</div>
+{% endblock %}

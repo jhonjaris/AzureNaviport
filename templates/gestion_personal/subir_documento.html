@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Subir Documento - {{ persona.nombre_completo }} | NaviPort RD{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="content-area">
+    <div class="page-header">
+        <div>
+            <h2 style="color: #2c3e50; margin-bottom: 10px;">📄 Subir Documento</h2>
+            <p style="color: #7f8c8d;">Subir documento para {{ persona.nombre_completo }}</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'gestion_personal:detalle_persona' persona.id %}" class="btn btn-secondary">← Volver</a>
+        </div>
+    </div>
+
+    <div class="form-container">
+        <form method="post" enctype="multipart/form-data" class="form-card">
+            {% csrf_token %}
+
+            <div class="form-section">
+                <h3>📋 Información del Documento</h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tipo_documento">Tipo de Documento *</label>
+                        <select id="tipo_documento" name="tipo_documento" class="form-control" required>
+                            <option value="cedula" {% if tipo_documento == 'cedula' %}selected{% endif %}>Cédula de Identidad</option>
+                            <option value="licencia_conducir" {% if tipo_documento == 'licencia_conducir' %}selected{% endif %}>Licencia de Conducir</option>
+                            <option value="pasaporte" {% if tipo_documento == 'pasaporte' %}selected{% endif %}>Pasaporte</option>
+                            <option value="otro" {% if tipo_documento == 'otro' %}selected{% endif %}>Otro Documento</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="numero_documento">Número del Documento</label>
+                        <input type="text" id="numero_documento" name="numero_documento" class="form-control"
+                               placeholder="Número del documento (opcional)">
+                        <small class="form-help">Ejemplo: Para cédula use el formato XXX-XXXXXXX-X</small>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="archivo">Archivo del Documento *</label>
+                        <input type="file" id="archivo" name="archivo" class="form-control" required
+                               accept=".pdf,.jpg,.jpeg,.png">
+                        <small class="form-help">Formatos permitidos: PDF, JPG, PNG (máx. 5MB)</small>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="fecha_vencimiento">Fecha de Vencimiento</label>
+                        <input type="date" id="fecha_vencimiento" name="fecha_vencimiento" class="form-control">
+                        <small class="form-help">Solo para documentos con fecha de vencimiento</small>
+                    </div>
+                </div>
+
+                <!-- Vista previa del archivo -->
+                <div id="preview-container" style="display: none; margin-top: 20px;">
+                    <h4>Vista Previa</h4>
+                    <div id="preview-content"></div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success">📤 Subir Documento</button>
+                <a href="{% url 'gestion_personal:detalle_persona' persona.id %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Vista previa del archivo seleccionado
+document.getElementById('archivo').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const previewContainer = document.getElementById('preview-container');
+    const previewContent = document.getElementById('preview-content');
+
+    if (file) {
+        const fileType = file.type;
+        const fileName = file.name;
+        const fileSize = (file.size / 1024 / 1024).toFixed(2); // MB
+
+        // Verificar tamaño
+        if (file.size > 5 * 1024 * 1024) {
+            alert('El archivo es demasiado grande. Máximo 5MB permitido.');
+            this.value = '';
+            previewContainer.style.display = 'none';
+            return;
+        }
+
+        previewContent.innerHTML = `
+            <div class="file-preview">
+                <div class="file-info">
+                    <strong>📁 ${fileName}</strong><br>
+                    <span style="color: #7f8c8d;">Tamaño: ${fileSize} MB</span><br>
+                    <span style="color: #7f8c8d;">Tipo: ${fileType}</span>
+                </div>
+            </div>
+        `;
+
+        // Si es imagen, mostrar vista previa
+        if (fileType.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewContent.innerHTML += `
+                    <div class="image-preview" style="margin-top: 15px;">
+                        <img src="${e.target.result}" alt="Vista previa"
+                             style="max-width: 300px; max-height: 200px; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                `;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        previewContainer.style.display = 'block';
+    } else {
+        previewContainer.style.display = 'none';
+    }
+});
+
+// Auto-formatear número de cédula si está seleccionada
+document.getElementById('tipo_documento').addEventListener('change', function() {
+    const numeroInput = document.getElementById('numero_documento');
+    if (this.value === 'cedula') {
+        numeroInput.placeholder = 'XXX-XXXXXXX-X';
+        numeroInput.pattern = '\\d{3}-\\d{7}-\\d{1}';
+    } else {
+        numeroInput.placeholder = 'Número del documento (opcional)';
+        numeroInput.removeAttribute('pattern');
+    }
+});
+
+// Auto-formatear cédula en tiempo real
+document.getElementById('numero_documento').addEventListener('keyup', function() {
+    const tipoDoc = document.getElementById('tipo_documento').value;
+    if (tipoDoc === 'cedula') {
+        let value = this.value.replace(/\D/g, '');
+        if (value.length >= 3) {
+            value = value.substring(0, 3) + '-' + value.substring(3);
+        }
+        if (value.length >= 11) {
+            value = value.substring(0, 11) + '-' + value.substring(11, 12);
+        }
+        this.value = value;
+    }
+});
+</script>
+
+<style>
+.file-preview {
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+.file-info {
+    font-size: 14px;
+}
+
+.image-preview img {
+    display: block;
+    margin: 0 auto;
+}
+</style>
+{% endblock %}

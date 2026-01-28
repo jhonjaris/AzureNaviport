@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+
+{% block title %}Solicitar Extensión de Validez | NaviPort RD{% endblock %}
+
+{% block content %}
+<!-- Navbar -->
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li><a href="{% url 'solicitudes:dashboard' %}" style="color: inherit; text-decoration: none;">Dashboard</a></li>
+        <li><a href="{% url 'solicitudes:mis_solicitudes' %}" style="color: inherit; text-decoration: none;">Solicitudes</a></li>
+        <li><a href="{% url 'solicitudes:mis_autorizaciones' %}" style="color: inherit; text-decoration: none;">Autorizaciones</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div style="text-align: right; margin-right: 10px;">
+            <div style="font-weight: 500;">{{ user.get_display_name }}</div>
+            <div style="font-size: 14px; color: #7f8c8d;">{{ user.get_role_display_with_admin }}</div>
+        </div>
+        <div class="user-avatar">{{ user.get_display_name|slice:':1'|upper }}{{ user.last_name|slice:':1'|upper }}</div>
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+
+<div class="content-area">
+    <!-- Breadcrumb -->
+    <div style="margin-bottom: 20px;">
+        <a href="{% url 'solicitudes:mis_autorizaciones' %}" style="color: #3498db; text-decoration: none;">← Volver a Mis Autorizaciones</a>
+    </div>
+
+    <!-- Header -->
+    <div class="page-header">
+        <h2 style="color: #2c3e50; margin-bottom: 10px;">
+            ⏰ Solicitar Extensión de Validez
+        </h2>
+        <p style="color: #7f8c8d;">
+            Solicita una extensión del período de validez de tu autorización
+        </p>
+    </div>
+
+    <!-- Información de la autorización -->
+    <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h3 style="color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+            📄 Información de la Autorización
+        </h3>
+
+        <div class="info-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+            <div class="info-item">
+                <label style="color: #7f8c8d; font-size: 13px; font-weight: 500; display: block; margin-bottom: 5px;">Código</label>
+                <div style="color: #2c3e50; font-size: 16px; font-weight: 600;">{{ autorizacion.codigo }}</div>
+            </div>
+
+            <div class="info-item">
+                <label style="color: #7f8c8d; font-size: 13px; font-weight: 500; display: block; margin-bottom: 5px;">Estado</label>
+                <div>
+                    <span class="badge badge-{{ autorizacion.estado }}">{{ autorizacion.get_estado_display }}</span>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <label style="color: #7f8c8d; font-size: 13px; font-weight: 500; display: block; margin-bottom: 5px;">Empresa</label>
+                <div style="color: #2c3e50; font-size: 15px;">{{ autorizacion.empresa_nombre }}</div>
+            </div>
+
+            <div class="info-item">
+                <label style="color: #7f8c8d; font-size: 13px; font-weight: 500; display: block; margin-bottom: 5px;">Puerto</label>
+                <div style="color: #2c3e50; font-size: 15px;">{{ autorizacion.puerto_nombre }}</div>
+            </div>
+
+            <div class="info-item">
+                <label style="color: #7f8c8d; font-size: 13px; font-weight: 500; display: block; margin-bottom: 5px;">Válida Desde</label>
+                <div style="color: #2c3e50; font-size: 15px;">
+                    {{ autorizacion.valida_desde|date:"d/m/Y H:i" }}
+                </div>
+            </div>
+
+            <div class="info-item">
+                <label style="color: #7f8c8d; font-size: 13px; font-weight: 500; display: block; margin-bottom: 5px;">Válida Hasta</label>
+                <div style="color: {% if dias_restantes > 0 %}#27ae60{% else %}#e74c3c{% endif %}; font-size: 15px; font-weight: 600;">
+                    {{ autorizacion.valida_hasta|date:"d/m/Y H:i" }}
+                    <span style="font-size: 13px; font-weight: normal;">
+                        ({{ dias_restantes }} {% if dias_restantes == 1 %}día restante{% else %}días restantes{% endif %})
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario de Solicitud -->
+    <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h3 style="color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+            📝 Datos de la Solicitud de Extensión
+        </h3>
+
+        <form method="post" onsubmit="return validarFormulario()">
+            {% csrf_token %}
+
+            <div class="form-group" style="margin-bottom: 25px;">
+                <label for="fecha_vencimiento_solicitada" style="display: block; color: #2c3e50; font-weight: 600; margin-bottom: 8px;">
+                    Nueva Fecha de Vencimiento <span style="color: #e74c3c;">*</span>
+                </label>
+                <input
+                    type="datetime-local"
+                    id="fecha_vencimiento_solicitada"
+                    name="fecha_vencimiento_solicitada"
+                    class="form-control"
+                    required
+                    min="{{ autorizacion.valida_hasta|date:'Y-m-d\TH:i' }}"
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 15px;">
+                <small style="color: #7f8c8d; font-size: 13px; display: block; margin-top: 5px;">
+                    La nueva fecha debe ser posterior a: {{ autorizacion.valida_hasta|date:"d/m/Y H:i" }}
+                </small>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 25px;">
+                <label for="motivo" style="display: block; color: #2c3e50; font-weight: 600; margin-bottom: 8px;">
+                    Motivo de la Extensión <span style="color: #e74c3c;">*</span>
+                </label>
+                <textarea
+                    id="motivo"
+                    name="motivo"
+                    class="form-control"
+                    rows="5"
+                    required
+                    minlength="20"
+                    maxlength="500"
+                    placeholder="Explique detalladamente por qué necesita extender el período de validez de esta autorización (mínimo 20 caracteres)"
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 15px; resize: vertical;"></textarea>
+                <small style="color: #7f8c8d; font-size: 13px; display: block; margin-top: 5px;">
+                    Mínimo 20 caracteres - <span id="contador">0</span>/500 caracteres
+                </small>
+            </div>
+
+            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 25px; border-radius: 4px;">
+                <p style="margin: 0; color: #856404; font-size: 14px;">
+                    <strong>⚠️ Importante:</strong> La solicitud de extensión será revisada por un supervisor o miembro de dirección.
+                    Recibirás una notificación por email cuando sea procesada.
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 15px; justify-content: flex-end;">
+                <a href="{% url 'solicitudes:mis_autorizaciones' %}"
+                   class="btn btn-secondary"
+                   style="padding: 12px 30px; font-size: 15px;">
+                    ← Cancelar
+                </a>
+                <button type="submit"
+                        class="btn btn-primary"
+                        style="padding: 12px 30px; font-size: 15px;">
+                    📤 Enviar Solicitud
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.badge-activa { background: #27ae60; color: white; }
+.badge-vencida { background: #e74c3c; color: white; }
+.badge-revocada { background: #95a5a6; color: white; }
+.badge-usada { background: #34495e; color: white; }
+
+.form-control:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.btn {
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+</style>
+
+<script>
+// Contador de caracteres
+const textarea = document.getElementById('motivo');
+const contador = document.getElementById('contador');
+
+textarea.addEventListener('input', function() {
+    contador.textContent = this.value.length;
+});
+
+// Validación del formulario
+function validarFormulario() {
+    const fecha = document.getElementById('fecha_vencimiento_solicitada').value;
+    const motivo = document.getElementById('motivo').value.trim();
+
+    if (!fecha) {
+        alert('Por favor, especifica la nueva fecha de vencimiento.');
+        return false;
+    }
+
+    if (motivo.length < 20) {
+        alert('El motivo debe tener al menos 20 caracteres.');
+        return false;
+    }
+
+    return confirm('¿Estás seguro de que deseas enviar esta solicitud de extensión?');
+}
+</script>
+{% endblock %}

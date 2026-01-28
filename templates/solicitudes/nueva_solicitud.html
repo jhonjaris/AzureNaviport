@@ -1,0 +1,2285 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nueva Solicitud | NaviPort RD{% endblock %}
+
+{% block extra_head %}
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'solicitudes/css/solicitudes.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li><a href="{% url 'solicitudes:dashboard' %}" style="color: inherit; text-decoration: none;">🏠 Dashboard</a></li>
+        <li class="active">➕ Nueva Solicitud</li>
+        <li><a href="{% url 'solicitudes:solicitud_wizard_inicio' %}" style="color: inherit; text-decoration: none;">🧙‍♂️ Wizard</a></li>
+        <li><a href="{% url 'solicitudes:mis_solicitudes' %}" style="color: inherit; text-decoration: none;">📋 Solicitudes</a></li>
+        <li><a href="{% url 'solicitudes:mis_autorizaciones' %}" style="color: inherit; text-decoration: none;">🎫 Autorizaciones</a></li>
+        <li>📊 Historial</li>
+        <li><a href="{% url 'accounts:ayuda' %}" style="color: inherit; text-decoration: none;">❓ Ayuda</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div style="text-align: right; margin-right: 10px;">
+            <div style="font-weight: 500;">{{ user.get_display_name }}</div>
+            <div style="font-size: 14px; color: #7f8c8d;">{{ user.get_role_display_with_admin }}</div>
+        </div>
+        <div class="user-avatar">{{ user.get_display_name|slice:':1'|upper }}{{ user.last_name|slice:':1'|upper }}</div>
+    
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <h2 style="color: #2c3e50; margin-bottom: 10px;">Nueva Solicitud de Acceso</h2>
+        {% if user.empresa %}
+            <h1 style="color: #000000; font-size: 36px; font-weight: bold; margin: 15px 0;">{{ user.empresa.nombre }}</h1>
+        {% endif %}
+        <p style="color: #000000;">Complete todos los campos requeridos para procesar su solicitud</p>
+    </div>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <!-- Información de la Solicitud -->
+        <div class="form-container">
+            <h3 style="color: #2c3e50; margin-bottom: 25px; border-bottom: 2px solid #e9ecef; padding-bottom: 10px;">📋 Información de la Solicitud</h3>
+            
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    {{ form.puerto_destino.label_tag }}
+                    {{ form.puerto_destino }}
+                    {% if form.puerto_destino.errors %}
+                        <div class="error">{{ form.puerto_destino.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.lugar_destino.label_tag }}
+                    {{ form.lugar_destino }}
+                    {% if form.lugar_destino.errors %}
+                        <div class="error">{{ form.lugar_destino.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.servicio_seleccionado.label_tag }}
+                    {{ form.servicio_seleccionado }}
+                    {% if form.servicio_seleccionado.errors %}
+                        <div class="error">{{ form.servicio_seleccionado.errors }}</div>
+                    {% endif %}
+                    {% if form.servicio_seleccionado.help_text %}
+                        <small class="form-help">{{ form.servicio_seleccionado.help_text }}</small>
+                    {% endif %}
+                </div>
+
+                <!-- Campo oculto para motivo_acceso real -->
+                {{ form.motivo_acceso }}
+                
+                <div class="form-group">
+                    {{ form.fecha_ingreso.label_tag }}
+                    {{ form.fecha_ingreso }}
+                    {% if form.fecha_ingreso.errors %}
+                        <div class="error">{{ form.fecha_ingreso.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    {{ form.hora_ingreso.label_tag }}
+                    {{ form.hora_ingreso }}
+                    {% if form.hora_ingreso.errors %}
+                        <div class="error">{{ form.hora_ingreso.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    {{ form.fecha_salida.label_tag }}
+                    {{ form.fecha_salida }}
+                    {% if form.fecha_salida.errors %}
+                        <div class="error">{{ form.fecha_salida.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    {{ form.hora_salida.label_tag }}
+                    {{ form.hora_salida }}
+                    {% if form.hora_salida.errors %}
+                        <div class="error">{{ form.hora_salida.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="form-group">
+                {{ form.descripcion.label_tag }}
+                {{ form.descripcion }}
+                {% if form.descripcion.errors %}
+                    <div class="error">{{ form.descripcion.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        
+        <!-- Personal -->
+        <div class="form-container">
+            <h3 style="color: #2c3e50; margin-bottom: 25px; border-bottom: 2px solid #e9ecef; padding-bottom: 10px;">👥 Personal</h3>
+            
+            <!-- Búsqueda y botón agregar -->
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <input type="text" id="buscarPersonalInput" class="form-control" placeholder="Buscar por nombre o cédula...">
+                        <button class="btn btn-outline-primary" type="button" id="btnBuscarPersonal">🔍 Buscar</button>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarPersonal">
+                        <i class="fas fa-plus"></i> Agregar Personal
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Tabla de personal -->
+            <div class="table-responsive">
+                <table class="table table-striped table-hover table-bordered" id="tablaPersonal">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Nombre Completo</th>
+                            <th>Cédula</th>
+                            <th>Cargo</th>
+                            <th>Teléfono</th>
+                            <th>Rol en Operación</th>
+                            <th>Documentos</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Las filas se agregarán dinámicamente -->
+                    </tbody>
+                </table>
+                
+                <div id="sinPersonalMessage" class="alert alert-info text-center" style="margin-top: 20px;">
+                    <i class="fas fa-users fa-2x mb-2"></i>
+                    <p class="mb-0">No hay personal asignado. Use el botón "Agregar Personal" para comenzar.</p>
+                </div>
+            </div>
+            
+            <!-- Campos ocultos para formulario -->
+            <div id="personalHiddenFields"></div>
+        </div>
+        
+        <!-- Información de Vehículos -->
+        <div class="form-container">
+            <h3 style="color: #2c3e50; margin-bottom: 25px; border-bottom: 2px solid #e9ecef; padding-bottom: 10px;">🚗 Información de Vehículos</h3>
+            
+            <!-- Búsqueda y botón agregar -->
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <input type="text" id="buscarVehiculoInput" class="form-control" placeholder="Buscar por placa...">
+                        <button class="btn btn-outline-primary" type="button" id="btnBuscarVehiculo">🔍 Buscar</button>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarVehiculo">
+                        <i class="fas fa-plus"></i> Agregar Vehículo
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Tabla de vehículos -->
+            <div class="table-responsive">
+                <table class="table table-striped table-hover table-bordered" id="tablaVehiculos">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Placa</th>
+                            <th>Tipo de Vehículo</th>
+                            <th>Conductor</th>
+                            <th>Licencia</th>
+                            <th>Documentos</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Las filas se agregarán dinámicamente -->
+                    </tbody>
+                </table>
+                
+                <div id="sinVehiculosMessage" class="alert alert-info text-center" style="margin-top: 20px;">
+                    <i class="fas fa-car fa-2x mb-2"></i>
+                    <p class="mb-0">No hay vehículos registrados. Use el botón "Agregar Vehículo" para comenzar.</p>
+                </div>
+            </div>
+            
+            <!-- Campos ocultos para formulario -->
+            <div id="vehiculosHiddenFields"></div>
+        </div>
+        
+        <!-- Botones de acción -->
+        <div style="display: flex; gap: 20px; justify-content: center; margin-top: 30px;">
+            <a href="{% url 'solicitudes:dashboard' %}" class="btn btn-secondary" style="padding: 15px 30px;">↩️ Cancelar</a>
+            <button type="submit" name="guardar_borrador" class="btn" style="background: #95a5a6; color: white; padding: 15px 30px;">📄 Guardar Borrador</button>
+            <button type="submit" name="enviar_solicitud" class="btn btn-primary" style="padding: 15px 30px;">🚀 Enviar Solicitud</button>
+        </div>
+    </form>
+</div>
+
+<!-- Modal para Agregar/Editar Personal -->
+<div class="modal fade" id="modalAgregarPersonal" tabindex="-1" aria-labelledby="modalAgregarPersonalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAgregarPersonalLabel">👤 Agregar Personal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Búsqueda de personal existente -->
+                <div class="mb-4">
+                    <h6 class="text-primary">🔍 Buscar Personal Existente</h6>
+                    <div class="input-group mb-2">
+                        <input type="text" class="form-control" id="modalBuscarPersonal" placeholder="Buscar por nombre o cédula...">
+                        <button class="btn btn-outline-primary" type="button" id="modalBtnBuscarPersonal">Buscar</button>
+                    </div>
+                    <div id="modalResultadosBusqueda"></div>
+                </div>
+                
+                <hr>
+                
+                <!-- Formulario nuevo personal -->
+                <div class="mb-4">
+                    <h6 class="text-success">➕ O Registrar Nueva Persona</h6>
+                    <form id="formPersonal">
+                        <input type="hidden" id="personalId" name="personalId">
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="personalNombre" class="form-label">Nombre *</label>
+                                <input type="text" class="form-control" id="personalNombre" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="personalApellido" class="form-label">Apellido *</label>
+                                <input type="text" class="form-control" id="personalApellido" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="personalCedula" class="form-label">Cédula *</label>
+                                <input type="text" class="form-control cedula-input" id="personalCedula" placeholder="XXX-XXXXXXX-X" maxlength="13" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="personalCargo" class="form-label">Cargo</label>
+                                <input type="text" class="form-control" id="personalCargo" placeholder="Conductor, Operador">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="personalLicencia" class="form-label">Licencia</label>
+                                <input type="text" class="form-control" id="personalLicencia" placeholder="Número">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="personalTelefono" class="form-label">Teléfono</label>
+                                <input type="text" class="form-control telefono-input" id="personalTelefono" placeholder="XXX-XXX-XXXX" maxlength="12">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="personalRolOperacion" class="form-label">Rol en Operación</label>
+                                <input type="text" class="form-control" id="personalRolOperacion" placeholder="Conductor Principal">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGuardarPersonal">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Ver/Subir Documentos de Personal -->
+<div class="modal fade" id="modalDocumentosPersonal" tabindex="-1" aria-labelledby="modalDocumentosPersonalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalDocumentosPersonalLabel">📄 Documentos de <span id="nombrePersonalDocs"></span></h5>
+                <div id="zoomControlsPersonal" style="display: none;" class="me-auto ms-3">
+                    <button type="button" class="btn btn-sm btn-outline-secondary me-1" id="btnZoomOutPersonal">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <span id="zoomLevelPersonal">100%</span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary me-1" id="btnZoomInPersonal">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnZoomResetPersonal">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Subir nuevos documentos -->
+                <div class="mb-4">
+                    <h6 class="text-primary">📤 Subir Documentos</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="document-upload-card" style="border: 2px dashed #007bff; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer;" onclick="document.getElementById('cedulaPersonal').click();">
+                                <i class="fas fa-id-card fa-2x text-primary mb-2"></i>
+                                <h6>Cédula de Identidad</h6>
+                                <small class="text-muted">Clic para subir archivo</small>
+                                <input type="file" class="d-none" id="cedulaPersonal" accept=".pdf,.jpg,.jpeg,.png">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="document-upload-card" style="border: 2px dashed #17a2b8; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer;" onclick="document.getElementById('licenciaPersonal').click();">
+                                <i class="fas fa-car fa-2x text-info mb-2"></i>
+                                <h6>Licencia de Conducir</h6>
+                                <small class="text-muted">Clic para subir archivo</small>
+                                <input type="file" class="d-none" id="licenciaPersonal" accept=".pdf,.jpg,.jpeg,.png">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div id="uploadedFilesPreview" class="mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- Vista previa de documentos -->
+                <div class="text-center position-relative" id="modalBodyPersonal" style="min-height: 300px;">
+                    <!-- Botones de navegación -->
+                    <button type="button" class="btn btn-primary position-absolute" id="btnAnteriorPersonal" 
+                            style="left: 10px; top: 50%; transform: translateY(-50%); z-index: 20; display: none;">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button type="button" class="btn btn-primary position-absolute" id="btnSiguientePersonal"
+                            style="right: 10px; top: 50%; transform: translateY(-50%); z-index: 20; display: none;">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    
+                    <!-- Indicador de posición -->
+                    <div class="position-absolute" id="indicadorPosicionPersonal" 
+                         style="top: 10px; left: 50%; transform: translateX(-50%); z-index: 20; display: none;">
+                        <span class="badge bg-dark"></span>
+                    </div>
+                    
+                    <div id="previewContainerPersonal">
+                        <div class="alert alert-info">
+                            <i class="fas fa-upload fa-3x mb-3"></i>
+                            <p>Sube documentos para visualizarlos aquí</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="btn btn-primary" id="btnDescargarArchivoPersonal" download style="display: none;">
+                    <i class="fas fa-download"></i> Descargar
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Agregar/Editar Vehículo -->
+<div class="modal fade" id="modalAgregarVehiculo" tabindex="-1" aria-labelledby="modalAgregarVehiculoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAgregarVehiculoLabel">🚗 Agregar Vehículo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Búsqueda de vehículo existente -->
+                <div class="mb-4">
+                    <h6 class="text-primary">🔍 Buscar Vehículo Existente</h6>
+                    <div class="input-group mb-2">
+                        <input type="text" class="form-control" id="modalBuscarVehiculo" placeholder="Buscar por placa...">
+                        <button class="btn btn-outline-primary" type="button" id="modalBtnBuscarVehiculo">Buscar</button>
+                    </div>
+                    <div id="modalResultadosBusquedaVehiculo"></div>
+                </div>
+                
+                <hr>
+                
+                <!-- Formulario nuevo vehículo -->
+                <div class="mb-4">
+                    <h6 class="text-success">➕ O Registrar Nuevo Vehículo</h6>
+                    <form id="formVehiculo">
+                        <input type="hidden" id="vehiculoId" name="vehiculoId">
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="vehiculoPlaca" class="form-label">Placa *</label>
+                                <input type="text" class="form-control placa-input" id="vehiculoPlaca" placeholder="A123456" maxlength="7" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="vehiculoTipo" class="form-label">Tipo de Vehículo *</label>
+                                <select class="form-select" id="vehiculoTipo" required>
+                                    <option value="">Seleccione tipo...</option>
+                                    <option value="camion">Camión</option>
+                                    <option value="trailer">Tráiler</option>
+                                    <option value="camioneta">Camioneta</option>
+                                    <option value="vehiculo_ligero">Vehículo Ligero</option>
+                                    <option value="motocicleta">Motocicleta</option>
+                                    <option value="grua">Grúa</option>
+                                    <option value="montacargas">Montacargas</option>
+                                    <option value="otros">Otros</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="vehiculoConductor" class="form-label">Nombre del Conductor</label>
+                                <input type="text" class="form-control" id="vehiculoConductor" placeholder="Nombre completo">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="vehiculoLicencia" class="form-label">Licencia de Conducir</label>
+                                <input type="text" class="form-control cedula-input" id="vehiculoLicencia" placeholder="XXX-XXXXXXX-X" maxlength="13">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGuardarVehiculo">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Ver/Subir Documentos de Vehículo -->
+<div class="modal fade" id="modalDocumentosVehiculo" tabindex="-1" aria-labelledby="modalDocumentosVehiculoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalDocumentosVehiculoLabel">📄 Documentos de <span id="placaVehiculoDocs"></span></h5>
+                <div id="zoomControlsVehiculo" style="display: none;" class="me-auto ms-3">
+                    <button type="button" class="btn btn-sm btn-outline-secondary me-1" id="btnZoomOutVehiculo">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <span id="zoomLevelVehiculo">100%</span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary me-1" id="btnZoomInVehiculo">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnZoomResetVehiculo">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Subir documentos de vehículo -->
+                <div class="mb-4">
+                    <h6 class="text-primary">📤 Subir Documentos</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="document-upload-card" style="border: 2px dashed #28a745; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer;" onclick="document.getElementById('registroVehiculo').click();">
+                                <i class="fas fa-file-alt fa-2x text-success mb-2"></i>
+                                <h6>Registro</h6>
+                                <small class="text-muted">Clic para subir</small>
+                                <input type="file" class="d-none" id="registroVehiculo" accept=".pdf,.jpg,.jpeg,.png">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="document-upload-card" style="border: 2px dashed #ffc107; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer;" onclick="document.getElementById('seguroVehiculo').click();">
+                                <i class="fas fa-shield-alt fa-2x text-warning mb-2"></i>
+                                <h6>Seguro</h6>
+                                <small class="text-muted">Clic para subir</small>
+                                <input type="file" class="d-none" id="seguroVehiculo" accept=".pdf,.jpg,.jpeg,.png">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="document-upload-card" style="border: 2px dashed #17a2b8; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer;" onclick="document.getElementById('inspeccionVehiculo').click();">
+                                <i class="fas fa-search fa-2x text-info mb-2"></i>
+                                <h6>Inspección</h6>
+                                <small class="text-muted">Clic para subir</small>
+                                <input type="file" class="d-none" id="inspeccionVehiculo" accept=".pdf,.jpg,.jpeg,.png">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div id="uploadedFilesPreviewVehiculo" class="mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- Vista previa de documentos -->
+                <div class="text-center position-relative" id="modalBodyVehiculo" style="min-height: 300px;">
+                    <!-- Botones de navegación -->
+                    <button type="button" class="btn btn-primary position-absolute" id="btnAnteriorVehiculo" 
+                            style="left: 10px; top: 50%; transform: translateY(-50%); z-index: 20; display: none;">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button type="button" class="btn btn-primary position-absolute" id="btnSiguienteVehiculo"
+                            style="right: 10px; top: 50%; transform: translateY(-50%); z-index: 20; display: none;">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    
+                    <!-- Indicador de posición -->
+                    <div class="position-absolute" id="indicadorPosicionVehiculo" 
+                         style="top: 10px; left: 50%; transform: translateX(-50%); z-index: 20; display: none;">
+                        <span class="badge bg-dark"></span>
+                    </div>
+                    
+                    <div id="previewContainerVehiculo">
+                        <div class="alert alert-info">
+                            <i class="fas fa-upload fa-3x mb-3"></i>
+                            <p>Sube documentos para visualizarlos aquí</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="btn btn-primary" id="btnDescargarArchivoVehiculo" download style="display: none;">
+                    <i class="fas fa-download"></i> Descargar
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Eliminar Elemento -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-labelledby="modalEliminarLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEliminarLabel">🗑️ Eliminar <span id="tipoElementoTexto"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Qué desea hacer con <strong id="elementoInfo"></strong>?</p>
+                
+                <div class="d-grid gap-3">
+                    <!-- Opción 1: Quitar de la lista -->
+                    <div class="border rounded p-3" style="background-color: #f8f9fa;">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-list text-primary me-2"></i>
+                            <strong>Quitar de la lista actual</strong>
+                        </div>
+                        <p class="mb-2 text-muted small">Solo se removará de esta solicitud. Los datos permanecen en el sistema.</p>
+                        <button type="button" class="btn btn-primary btn-sm" id="btnQuitarDeLista">Sí, quitar de la lista</button>
+                    </div>
+                    
+                    <!-- Opción 2: Eliminar permanentemente -->
+                    <div class="border rounded p-3" style="background-color: #fff5f5; border-color: #fed7d7;">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-trash text-danger me-2"></i>
+                            <strong class="text-danger">Eliminar permanentemente del sistema</strong>
+                        </div>
+                        <p class="mb-2 text-muted small">⚠️ Esta acción no se puede deshacer. Se eliminará completamente del sistema.</p>
+                        
+                        <div class="mb-2">
+                            <input type="text" class="form-control form-control-sm" id="confirmacionEliminarPermanente" placeholder="Escriba 'eliminar' para confirmar">
+                        </div>
+                        <button type="button" class="btn btn-danger btn-sm" id="btnEliminarPermanente" disabled>Eliminar Permanentemente</button>
+                    </div>
+                </div>
+                
+                <input type="hidden" id="eliminarTipoElemento" value="">
+                <input type="hidden" id="eliminarIndexElemento" value="">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Validación de Solicitud -->
+{% if show_validation_modal %}
+<div class="modal fade show" id="modalValidacionSolicitud" tabindex="-1" aria-labelledby="modalValidacionSolicitudLabel" style="display: block; background: rgba(0,0,0,0.5);" aria-modal="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: #f39c12; color: white;">
+                <h5 class="modal-title" id="modalValidacionSolicitudLabel">⚠️ Solicitud Incompleta</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning" style="border-left: 4px solid #f39c12;">
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <div style="font-size: 48px; margin-right: 15px;">📋</div>
+                        <div>
+                            <h6 style="margin: 0; font-weight: bold;">Complete todos los elementos faltantes</h6>
+                            <small>Para enviar la solicitud, debe completar la siguiente información:</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="background: #fff3cd; padding: 20px; border-radius: 8px; border-left: 4px solid #f39c12;">
+                    <h6 style="color: #856404; margin-bottom: 15px;">📝 Elementos faltantes:</h6>
+                    <ul style="color: #856404; margin: 0; padding-left: 20px;">
+                        {% for elemento in elementos_faltantes %}
+                        <li style="margin-bottom: 8px;">
+                            <strong>{{ elemento }}</strong>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #e9ecef; border-radius: 8px;">
+                    <h6 style="color: #495057; margin-bottom: 10px;">💡 Opciones disponibles:</h6>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div style="padding: 15px; background: white; border-radius: 8px; border-left: 4px solid #6c757d;">
+                            <strong style="color: #6c757d;">📄 Guardar como borrador</strong>
+                            <br><small style="color: #6c757d;">Continúe completando más tarde</small>
+                        </div>
+                        <div style="padding: 15px; background: white; border-radius: 8px; border-left: 4px solid #3498db;">
+                            <strong style="color: #3498db;">✏️ Continuar editando</strong>
+                            <br><small style="color: #3498db;">Complete ahora los elementos faltantes</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <form method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <!-- Incluir todos los datos del formulario como campos ocultos -->
+                    {% if solicitud_id %}
+                        <input type="hidden" name="solicitud_id" value="{{ solicitud_id }}">
+                    {% endif %}
+                    
+                    <!-- Copiar datos del formulario principal -->
+                    <input type="hidden" name="puerto_destino" value="{{ form.puerto_destino.value|default_if_none:'' }}">
+                    <input type="hidden" name="lugar_destino" value="{{ form.lugar_destino.value|default_if_none:'' }}">
+                    <input type="hidden" name="motivo_acceso" value="{{ form.motivo_acceso.value|default_if_none:'' }}">
+                    <input type="hidden" name="fecha_ingreso" value="{{ form.fecha_ingreso.value|default_if_none:'' }}">
+                    <input type="hidden" name="hora_ingreso" value="{{ form.hora_ingreso.value|default_if_none:'' }}">
+                    <input type="hidden" name="fecha_salida" value="{{ form.fecha_salida.value|default_if_none:'' }}">
+                    <input type="hidden" name="hora_salida" value="{{ form.hora_salida.value|default_if_none:'' }}">
+                    <input type="hidden" name="descripcion" value="{{ form.descripcion.value|default_if_none:'' }}">
+                    
+                    <button type="submit" name="guardar_borrador_modal" class="btn btn-secondary">
+                        📄 Guardar como Borrador
+                    </button>
+                </form>
+                
+                <button type="button" class="btn btn-primary" onclick="cerrarModalValidacion()">
+                    ✏️ Continuar Editando
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Nueva Solicitud scripts cargados - VERSIÓN ACTUALIZADA v2.0');
+
+    // Variables globales para personal
+    let personalData = [];
+    let personalFormCount = 0;
+    let currentZoomPersonal = 100;
+    let currentImagePersonal = null;
+    let personalDocuments = [];
+    let currentDocumentIndex = 0;
+    
+    // Variables globales para vehículos
+    let vehiculosData = [];
+    let vehiculoFormCount = 0;
+    let currentZoomVehiculo = 100;
+    let currentImageVehiculo = null;
+    let vehiculoDocuments = [];
+    let currentVehiculoDocumentIndex = 0;
+    
+    // Inicializar tablas (con manejo de errores)
+    try {
+        updatePersonalTable();
+        updateVehiculosTable();
+    } catch (error) {
+        console.log('⚠️ Error inicializando tablas (elementos no encontrados):', error.message);
+    }
+    
+    // Event listeners para búsqueda (con manejo de errores)
+    try {
+        const btnBuscarPersonal = document.getElementById('btnBuscarPersonal');
+        if (btnBuscarPersonal) {
+            btnBuscarPersonal.addEventListener('click', function() {
+                buscarPersonalTabla();
+            });
+        }
+
+        const buscarPersonalInput = document.getElementById('buscarPersonalInput');
+        if (buscarPersonalInput) {
+            buscarPersonalInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    buscarPersonalTabla();
+                }
+            });
+        }
+    } catch (error) {
+        console.log('⚠️ Error configurando event listeners de búsqueda personal:', error.message);
+    }
+    
+    // Event listeners para modal de personal (con manejo de errores)
+    try {
+        const modalBtnBuscarPersonal = document.getElementById('modalBtnBuscarPersonal');
+        if (modalBtnBuscarPersonal) {
+            modalBtnBuscarPersonal.addEventListener('click', function() {
+                buscarPersonalModal();
+            });
+        }
+
+        const btnGuardarPersonal = document.getElementById('btnGuardarPersonal');
+        if (btnGuardarPersonal) {
+            btnGuardarPersonal.addEventListener('click', function() {
+                guardarPersonal();
+            });
+        }
+    } catch (error) {
+        console.log('⚠️ Error configurando event listeners de modal personal:', error.message);
+    }
+    
+    // Remover cualquier listener duplicado del botón agregar personal
+    // (se manejará en el bloque extra_js)
+    
+    // Limpiar modal al cerrarse
+    document.getElementById('modalAgregarPersonal').addEventListener('hidden.bs.modal', function() {
+        limpiarModalPersonal();
+    });
+    
+    // Event listeners para subida de archivos
+    document.getElementById('cedulaPersonal').addEventListener('change', function(e) {
+        handleFileUpload(e, 'cedula');
+    });
+    
+    document.getElementById('licenciaPersonal').addEventListener('change', function(e) {
+        handleFileUpload(e, 'licencia');
+    });
+    
+    // Event listeners para vehículos
+    document.getElementById('btnBuscarVehiculo').addEventListener('click', function() {
+        buscarVehiculoTabla();
+    });
+    
+    document.getElementById('buscarVehiculoInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            buscarVehiculoTabla();
+        }
+    });
+    
+    // Event listeners para modal de vehículo
+    document.getElementById('modalBtnBuscarVehiculo').addEventListener('click', function() {
+        buscarVehiculoModal();
+    });
+    
+    document.getElementById('btnGuardarVehiculo').addEventListener('click', function() {
+        guardarVehiculo();
+    });
+    
+    // Limpiar modal de vehículo al cerrarse
+    document.getElementById('modalAgregarVehiculo').addEventListener('hidden.bs.modal', function() {
+        limpiarModalVehiculo();
+    });
+    
+    // Event listeners para modal de eliminación
+    document.getElementById('confirmacionEliminarPermanente').addEventListener('input', function(e) {
+        const btnEliminar = document.getElementById('btnEliminarPermanente');
+        if (e.target.value.toLowerCase() === 'eliminar') {
+            btnEliminar.disabled = false;
+            btnEliminar.textContent = 'Eliminar Permanentemente';
+        } else {
+            btnEliminar.disabled = true;
+            btnEliminar.textContent = 'Escriba "eliminar" para continuar';
+        }
+    });
+    
+    document.getElementById('btnQuitarDeLista').addEventListener('click', function() {
+        quitarDeLista();
+    });
+    
+    document.getElementById('btnEliminarPermanente').addEventListener('click', function() {
+        eliminarPermanentemente();
+    });
+    
+    // Event listeners para formateo automático
+    setupAutoFormatting();
+    
+    // Configurar validación de fechas
+    setupDateValidation();
+    
+    // ===== FUNCIONES DE FORMATEO AUTOMÁTICO =====
+    
+    function setupAutoFormatting() {
+        // Formateo de cédula en modal de personal
+        const cedulaInput = document.getElementById('personalCedula');
+        if (cedulaInput) {
+            cedulaInput.addEventListener('input', function(e) {
+                formatCedula(e.target);
+            });
+        }
+        
+        // Formateo de teléfono en modal de personal
+        const telefonoInput = document.getElementById('personalTelefono');
+        if (telefonoInput) {
+            telefonoInput.addEventListener('input', function(e) {
+                formatTelefono(e.target);
+            });
+        }
+        
+        // Formateo de placa en modal de vehículo
+        const placaInput = document.getElementById('vehiculoPlaca');
+        if (placaInput) {
+            placaInput.addEventListener('input', function(e) {
+                formatPlaca(e.target);
+            });
+        }
+        
+        // Formateo de licencia en modal de vehículo (mismo formato que cédula)
+        const licenciaInput = document.getElementById('vehiculoLicencia');
+        if (licenciaInput) {
+            licenciaInput.addEventListener('input', function(e) {
+                formatCedula(e.target);
+            });
+        }
+    }
+    
+    function formatCedula(input) {
+        // Remover todo lo que no sea número
+        let value = input.value.replace(/\D/g, '');
+        
+        // Limitar a 11 dígitos máximo
+        if (value.length > 11) {
+            value = value.substring(0, 11);
+        }
+        
+        // Aplicar formato XXX-XXXXXXX-X
+        let formatted = '';
+        if (value.length > 0) {
+            if (value.length <= 3) {
+                formatted = value;
+            } else if (value.length <= 10) {
+                formatted = value.substring(0, 3) + '-' + value.substring(3);
+            } else {
+                formatted = value.substring(0, 3) + '-' + value.substring(3, 10) + '-' + value.substring(10);
+            }
+        }
+        
+        // Actualizar el valor del input
+        input.value = formatted;
+    }
+    
+    function formatTelefono(input) {
+        // Remover todo lo que no sea número
+        let value = input.value.replace(/\D/g, '');
+        
+        // Limitar a 10 dígitos máximo
+        if (value.length > 10) {
+            value = value.substring(0, 10);
+        }
+        
+        // Aplicar formato XXX-XXX-XXXX
+        let formatted = '';
+        if (value.length > 0) {
+            if (value.length <= 3) {
+                formatted = value;
+            } else if (value.length <= 6) {
+                formatted = value.substring(0, 3) + '-' + value.substring(3);
+            } else {
+                formatted = value.substring(0, 3) + '-' + value.substring(3, 6) + '-' + value.substring(6);
+            }
+        }
+        
+        // Actualizar el valor del input
+        input.value = formatted;
+    }
+    
+    function formatPlaca(input) {
+        // Remover espacios y caracteres especiales, mantener letras y números
+        let value = input.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+        
+        // Limitar a 7 caracteres máximo (1 letra + 6 números)
+        if (value.length > 7) {
+            value = value.substring(0, 7);
+        }
+        
+        // Validar formato: debe empezar con letra
+        if (value.length > 0) {
+            const firstChar = value.charAt(0);
+            if (!/[A-Z]/.test(firstChar)) {
+                // Si el primer carácter no es una letra, no permitir la entrada
+                value = '';
+            } else {
+                // Verificar que el resto sean números
+                if (value.length > 1) {
+                    const restOfValue = value.substring(1);
+                    const onlyNumbers = restOfValue.replace(/\D/g, '');
+                    value = value.charAt(0) + onlyNumbers;
+                }
+            }
+        }
+        
+        // Actualizar el valor del input
+        input.value = value;
+    }
+    
+    function getCleanValue(formattedValue, type) {
+        // Función helper para obtener valor limpio sin guiones
+        if (type === 'cedula' || type === 'telefono') {
+            return formattedValue.replace(/\D/g, '');
+        } else if (type === 'placa') {
+            // Para placas, mantener tal como está (ya está limpia)
+            return formattedValue.toUpperCase();
+        }
+        return formattedValue;
+    }
+    
+    // ===== FUNCIONES DE VALIDACIÓN DE FECHAS =====
+    
+    function setupDateValidation() {
+        // Obtener la fecha actual en formato YYYY-MM-DD
+        const today = new Date();
+        const todayString = today.toISOString().split('T')[0];
+        
+        console.log('Configurando validación de fechas. Fecha mínima:', todayString);
+        
+        // Buscar campos de fecha por diferentes selectores posibles
+        const fechaIngresoSelectors = [
+            'input[name="fecha_ingreso"]',
+            '#id_fecha_ingreso',
+            'input[type="date"][name*="fecha_ingreso"]',
+            'input[type="date"][id*="fecha_ingreso"]'
+        ];
+        
+        const fechaSalidaSelectors = [
+            'input[name="fecha_salida"]', 
+            '#id_fecha_salida',
+            'input[type="date"][name*="fecha_salida"]',
+            'input[type="date"][id*="fecha_salida"]'
+        ];
+        
+        let fechaIngresoInput = null;
+        let fechaSalidaInput = null;
+        
+        // Buscar campo de fecha de ingreso
+        for (const selector of fechaIngresoSelectors) {
+            fechaIngresoInput = document.querySelector(selector);
+            if (fechaIngresoInput) {
+                console.log('Campo fecha ingreso encontrado con selector:', selector);
+                break;
+            }
+        }
+        
+        // Buscar campo de fecha de salida
+        for (const selector of fechaSalidaSelectors) {
+            fechaSalidaInput = document.querySelector(selector);
+            if (fechaSalidaInput) {
+                console.log('Campo fecha salida encontrado con selector:', selector);
+                break;
+            }
+        }
+        
+        // Configurar fecha de ingreso
+        if (fechaIngresoInput) {
+            fechaIngresoInput.setAttribute('min', todayString);
+            fechaIngresoInput.addEventListener('change', function() {
+                validateFechaIngreso(this, todayString);
+            });
+            console.log('✅ Validación configurada para fecha de ingreso');
+        } else {
+            console.warn('⚠️ No se encontró el campo fecha_ingreso');
+        }
+        
+        // Configurar fecha de salida
+        if (fechaSalidaInput) {
+            fechaSalidaInput.setAttribute('min', todayString);
+            fechaSalidaInput.addEventListener('change', function() {
+                validateFechaSalida(this, fechaIngresoInput);
+            });
+            console.log('✅ Validación configurada para fecha de salida');
+        } else {
+            console.warn('⚠️ No se encontró el campo fecha_salida');
+        }
+        
+        // Si encontramos ambos campos, configurar validación cruzada
+        if (fechaIngresoInput && fechaSalidaInput) {
+            fechaIngresoInput.addEventListener('change', function() {
+                if (fechaSalidaInput.value && fechaSalidaInput.value < this.value) {
+                    fechaSalidaInput.value = '';
+                    alert('La fecha de salida debe ser posterior a la fecha de ingreso');
+                }
+                fechaSalidaInput.setAttribute('min', this.value);
+            });
+        }
+    }
+    
+    function validateFechaIngreso(input, todayString) {
+        const selectedDate = input.value;
+        
+        if (selectedDate < todayString) {
+            input.value = '';
+            alert('La fecha de ingreso no puede ser anterior a hoy');
+            input.focus();
+            return false;
+        }
+        
+        console.log('✅ Fecha de ingreso válida:', selectedDate);
+        return true;
+    }
+    
+    function validateFechaSalida(input, fechaIngresoInput) {
+        const selectedDate = input.value;
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Validar que no sea anterior a hoy
+        if (selectedDate < today) {
+            input.value = '';
+            alert('La fecha de salida no puede ser anterior a hoy');
+            input.focus();
+            return false;
+        }
+        
+        // Validar que no sea anterior a la fecha de ingreso
+        if (fechaIngresoInput && fechaIngresoInput.value && selectedDate < fechaIngresoInput.value) {
+            input.value = '';
+            alert('La fecha de salida no puede ser anterior a la fecha de ingreso');
+            input.focus();
+            return false;
+        }
+        
+        console.log('✅ Fecha de salida válida:', selectedDate);
+        return true;
+    }
+    
+    // ===== FUNCIONES PARA EL MODAL DE ELIMINACIÓN =====
+    
+    function abrirModalEliminar(tipo, index, nombre, extra) {
+        console.log('Abriendo modal eliminar:', tipo, index, nombre, extra);
+        
+        // Configurar el modal según el tipo
+        if (tipo === 'personal') {
+            document.getElementById('tipoElementoTexto').textContent = 'Personal';
+            document.getElementById('elementoInfo').textContent = `${nombre} (${extra})`;
+        } else if (tipo === 'vehiculo') {
+            document.getElementById('tipoElementoTexto').textContent = 'Vehículo';
+            document.getElementById('elementoInfo').textContent = `${nombre} (${extra})`;
+        }
+        
+        // Guardar información para las acciones
+        document.getElementById('eliminarTipoElemento').value = tipo;
+        document.getElementById('eliminarIndexElemento').value = index;
+        
+        // Limpiar el campo de confirmación
+        document.getElementById('confirmacionEliminarPermanente').value = '';
+        document.getElementById('btnEliminarPermanente').disabled = true;
+        document.getElementById('btnEliminarPermanente').textContent = 'Escriba "eliminar" para continuar';
+        
+        // Mostrar el modal
+        const modal = new bootstrap.Modal(document.getElementById('modalEliminar'));
+        modal.show();
+    }
+    
+    function quitarDeLista() {
+        const tipo = document.getElementById('eliminarTipoElemento').value;
+        const index = parseInt(document.getElementById('eliminarIndexElemento').value);
+        
+        console.log('Quitando de lista:', tipo, index);
+        
+        if (tipo === 'personal') {
+            if (index >= 0 && index < personalData.length) {
+                const persona = personalData[index];
+                console.log('Eliminando personal:', persona);
+                personalData.splice(index, 1);
+                updatePersonalTable();
+            }
+        } else if (tipo === 'vehiculo') {
+            if (index >= 0 && index < vehiculosData.length) {
+                const vehiculo = vehiculosData[index];
+                console.log('Eliminando vehículo:', vehiculo);
+                vehiculosData.splice(index, 1);
+                updateVehiculosTable();
+            }
+        }
+        
+        // Cerrar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('modalEliminar'));
+        modal.hide();
+    }
+    
+    function eliminarPermanentemente() {
+        const tipo = document.getElementById('eliminarTipoElemento').value;
+        const index = parseInt(document.getElementById('eliminarIndexElemento').value);
+        
+        console.log('Eliminando permanentemente:', tipo, index);
+        
+        if (tipo === 'personal') {
+            if (index >= 0 && index < personalData.length) {
+                const persona = personalData[index];
+                // Aquí iría la llamada API para eliminar del sistema
+                console.log('Eliminando personal del sistema:', persona);
+                personalData.splice(index, 1);
+                updatePersonalTable();
+                alert('Personal eliminado permanentemente del sistema');
+            }
+        } else if (tipo === 'vehiculo') {
+            if (index >= 0 && index < vehiculosData.length) {
+                const vehiculo = vehiculosData[index];
+                // Aquí iría la llamada API para eliminar del sistema
+                console.log('Eliminando vehículo del sistema:', vehiculo);
+                vehiculosData.splice(index, 1);
+                updateVehiculosTable();
+                alert('Vehículo eliminado permanentemente del sistema');
+            }
+        }
+        
+        // Cerrar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('modalEliminar'));
+        modal.hide();
+    }
+    
+    // Funciones para manejar tabla de personal
+    function updatePersonalTable() {
+        console.log('🔄 updatePersonalTable() llamada');
+        const tbody = document.querySelector('#tablaPersonal tbody');
+        const sinPersonalMessage = document.getElementById('sinPersonalMessage');
+
+        console.log('📋 Elementos encontrados:', {
+            tbody: !!tbody,
+            sinPersonalMessage: !!sinPersonalMessage,
+            personalDataLength: personalData ? personalData.length : 'undefined'
+        });
+
+        // Verificar que los elementos existan antes de manipularlos
+        if (!tbody || !sinPersonalMessage) {
+            console.log('⚠️ Elementos de tabla personal no encontrados, omitiendo updatePersonalTable');
+            return;
+        }
+
+        if (personalData.length === 0) {
+            tbody.innerHTML = '';
+            sinPersonalMessage.style.display = 'block';
+        } else {
+            sinPersonalMessage.style.display = 'none';
+            tbody.innerHTML = personalData.map((persona, index) => `
+                <tr>
+                    <td><strong>${persona.nombre}</strong></td>
+                    <td>${persona.cedula}</td>
+                    <td>${persona.cargo || 'N/A'}</td>
+                    <td>${persona.telefono || 'N/A'}</td>
+                    <td>${persona.rol_operacion || 'N/A'}</td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-warning me-1" 
+                                onclick="abrirDocumentosPersonal(${index}, '${persona.nombre}')"
+                                title="Cédula">
+                            <i class="fas fa-id-card"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-info" 
+                                onclick="abrirDocumentosPersonal(${index}, '${persona.nombre}', 'licencia')"
+                                title="Licencia de Conducir">
+                            <i class="fas fa-car"></i>
+                        </button>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-primary me-1" 
+                                onclick="editarPersonal(${index})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-danger" 
+                                onclick="abrirModalEliminar('personal', ${index}, '${persona.nombre}', '${persona.cedula}')" title="Eliminar">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        // Actualizar campos hidden del formulario
+        updateHiddenFields();
+    }
+    
+    function updateHiddenFields() {
+        const hiddenContainer = document.getElementById('personalHiddenFields');
+        hiddenContainer.innerHTML = personalData.map((persona, index) => `
+            <input type="hidden" name="personal-${index}-id" value="${persona.id || ''}">
+            <input type="hidden" name="personal-${index}-nombre" value="${persona.nombre}">
+            <input type="hidden" name="personal-${index}-cedula" value="${getCleanValue(persona.cedula, 'cedula')}">
+            <input type="hidden" name="personal-${index}-cargo" value="${persona.cargo || ''}">
+            <input type="hidden" name="personal-${index}-licencia" value="${persona.licencia_conducir || ''}">
+            <input type="hidden" name="personal-${index}-telefono" value="${getCleanValue(persona.telefono || '', 'telefono')}">
+            <input type="hidden" name="personal-${index}-rol_operacion" value="${persona.rol_operacion || ''}">
+        `).join('');
+    }
+    
+    function buscarPersonalTabla() {
+        const query = document.getElementById('buscarPersonalInput').value.trim();
+        if (query.length < 3) {
+            alert('Debe ingresar al menos 3 caracteres');
+            return;
+        }
+        
+        buscarPersonalAPI(query, function(resultados) {
+            if (resultados.length > 0) {
+                // Mostrar resultados en una lista temporal
+                let html = '<div class="alert alert-info"><strong>Resultados encontrados:</strong><br>';
+                resultados.forEach((persona, index) => {
+                    html += `<a href="#" class="d-block mt-2" onclick="agregarPersonalDesdeTabla(${JSON.stringify(persona).replace(/"/g, '&quot;')})">
+                        <strong>${persona.nombre}</strong> - ${persona.cedula}
+                    </a>`;
+                });
+                html += '</div>';
+                
+                // Crear un div temporal para mostrar resultados
+                let tempDiv = document.getElementById('tempResultados');
+                if (!tempDiv) {
+                    tempDiv = document.createElement('div');
+                    tempDiv.id = 'tempResultados';
+                    document.querySelector('.table-responsive').before(tempDiv);
+                }
+                tempDiv.innerHTML = html;
+                
+                // Ocultar después de 10 segundos
+                setTimeout(() => {
+                    tempDiv.innerHTML = '';
+                }, 10000);
+            } else {
+                alert('No se encontraron resultados');
+            }
+        });
+    }
+    
+    function buscarPersonalModal() {
+        const query = document.getElementById('modalBuscarPersonal').value.trim();
+        if (query.length < 3) {
+            document.getElementById('modalResultadosBusqueda').innerHTML = 
+                '<div class="alert alert-warning">Debe ingresar al menos 3 caracteres</div>';
+            return;
+        }
+        
+        document.getElementById('modalResultadosBusqueda').innerHTML = 
+            '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Buscando...</div>';
+        
+        buscarPersonalAPI(query, function(resultados) {
+            if (resultados.length > 0) {
+                let html = '<div class="list-group">';
+                resultados.forEach(persona => {
+                    html += `
+                        <a href="#" class="list-group-item list-group-item-action" 
+                           onclick="seleccionarPersonalModal(${JSON.stringify(persona).replace(/"/g, '&quot;')})">
+                            <strong>${persona.nombre}</strong><br>
+                            <small>Cédula: ${persona.cedula} ${persona.cargo ? '• Cargo: ' + persona.cargo : ''}</small>
+                        </a>
+                    `;
+                });
+                html += '</div>';
+                document.getElementById('modalResultadosBusqueda').innerHTML = html;
+            } else {
+                document.getElementById('modalResultadosBusqueda').innerHTML = 
+                    '<div class="alert alert-info">No se encontraron resultados</div>';
+            }
+        });
+    }
+    
+    function buscarPersonalAPI(query, callback) {
+        fetch(`/empresas/api/buscar-personal/?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    callback(data.resultados);
+                } else {
+                    callback([]);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                callback([]);
+            });
+    }
+    
+    function agregarPersonalDesdeTabla(persona) {
+        // Verificar si ya existe en la tabla
+        if (personalData.find(p => p.cedula === persona.cedula)) {
+            alert('Esta persona ya está agregada');
+            return;
+        }
+        
+        personalData.push(persona);
+        updatePersonalTable();
+        
+        // Limpiar campo de búsqueda y resultados temporales
+        document.getElementById('buscarPersonalInput').value = '';
+        const tempDiv = document.getElementById('tempResultados');
+        if (tempDiv) tempDiv.innerHTML = '';
+    }
+    
+    function seleccionarPersonalModal(persona) {
+        document.getElementById('personalId').value = persona.id || '';
+        
+        // Separar nombre completo en nombre y apellido
+        const nombreCompleto = persona.nombre || '';
+        const partes = nombreCompleto.split(' ');
+        const nombre = partes.shift() || '';
+        const apellido = partes.join(' ') || '';
+        
+        document.getElementById('personalNombre').value = nombre;
+        document.getElementById('personalApellido').value = apellido;
+        
+        // Aplicar formateo a cédula y teléfono si es necesario
+        const cedulaInput = document.getElementById('personalCedula');
+        const telefonoInput = document.getElementById('personalTelefono');
+        
+        cedulaInput.value = persona.cedula;
+        formatCedula(cedulaInput);
+        
+        telefonoInput.value = persona.telefono || '';
+        if (telefonoInput.value) {
+            formatTelefono(telefonoInput);
+        }
+        
+        document.getElementById('personalCargo').value = persona.cargo || '';
+        document.getElementById('personalLicencia').value = persona.licencia_conducir || '';
+        
+        // Deshabilitar campos si es personal existente
+        if (persona.id) {
+            document.getElementById('personalNombre').readOnly = true;
+            document.getElementById('personalApellido').readOnly = true;
+            document.getElementById('personalCedula').readOnly = true;
+            document.getElementById('personalCargo').readOnly = true;
+            document.getElementById('personalLicencia').readOnly = true;
+            document.getElementById('personalTelefono').readOnly = true;
+        }
+        
+        document.getElementById('modalResultadosBusqueda').innerHTML = '';
+        document.getElementById('modalBuscarPersonal').value = '';
+    }
+    
+    function guardarPersonal() {
+        const form = document.getElementById('formPersonal');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        
+        const personalId = document.getElementById('personalId').value;
+        const nombre = document.getElementById('personalNombre').value.trim();
+        const apellido = document.getElementById('personalApellido').value.trim();
+        const nombreCompleto = `${nombre} ${apellido}`.trim();
+        const cedula = document.getElementById('personalCedula').value.trim();
+        
+        // Verificar si ya existe en la tabla (solo si no estamos editando)
+        const editIndex = form.dataset.editIndex;
+        const cedulaLimpia = getCleanValue(cedula, 'cedula');
+        if (editIndex === undefined && personalData.find(p => getCleanValue(p.cedula, 'cedula') === cedulaLimpia)) {
+            alert('Ya existe una persona con esta cédula');
+            return;
+        }
+        
+        const persona = {
+            id: personalId || null,
+            nombre: nombreCompleto,
+            cedula: cedula,  // Ya viene formateado del input
+            cargo: document.getElementById('personalCargo').value.trim(),
+            licencia_conducir: document.getElementById('personalLicencia').value.trim(),
+            telefono: document.getElementById('personalTelefono').value.trim(),  // Ya viene formateado del input
+            rol_operacion: document.getElementById('personalRolOperacion').value.trim()
+        };
+        
+        if (editIndex !== undefined) {
+            // Editando persona existente
+            personalData[parseInt(editIndex)] = persona;
+            delete form.dataset.editIndex;
+        } else {
+            // Agregando nueva persona
+            personalData.push(persona);
+        }
+        
+        updatePersonalTable();
+        
+        // Cerrar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('modalAgregarPersonal'));
+        modal.hide();
+    }
+    
+    function editarPersonal(index) {
+        const persona = personalData[index];
+        
+        document.getElementById('modalAgregarPersonalLabel').textContent = '✏️ Editar Personal';
+        document.getElementById('formPersonal').dataset.editIndex = index;
+        
+        document.getElementById('personalId').value = persona.id || '';
+        
+        // Separar nombre completo en nombre y apellido
+        const nombreCompleto = persona.nombre || '';
+        const partes = nombreCompleto.split(' ');
+        const nombre = partes.shift() || '';
+        const apellido = partes.join(' ') || '';
+        
+        document.getElementById('personalNombre').value = nombre;
+        document.getElementById('personalApellido').value = apellido;
+        
+        // Aplicar formateo a cédula y teléfono
+        const cedulaInput = document.getElementById('personalCedula');
+        const telefonoInput = document.getElementById('personalTelefono');
+        
+        cedulaInput.value = persona.cedula;
+        formatCedula(cedulaInput);
+        
+        telefonoInput.value = persona.telefono || '';
+        if (telefonoInput.value) {
+            formatTelefono(telefonoInput);
+        }
+        
+        document.getElementById('personalCargo').value = persona.cargo || '';
+        document.getElementById('personalLicencia').value = persona.licencia_conducir || '';
+        document.getElementById('personalRolOperacion').value = persona.rol_operacion || '';
+        
+        // Habilitar todos los campos para edición
+        document.getElementById('personalNombre').readOnly = false;
+        document.getElementById('personalApellido').readOnly = false;
+        document.getElementById('personalCedula').readOnly = false;
+        document.getElementById('personalCargo').readOnly = false;
+        document.getElementById('personalLicencia').readOnly = false;
+        document.getElementById('personalTelefono').readOnly = false;
+        
+        const modal = new bootstrap.Modal(document.getElementById('modalAgregarPersonal'));
+        modal.show();
+    }
+    
+    function eliminarPersonal(index) {
+        console.log('eliminarPersonal llamada con index:', index);
+        console.log('personalData actual:', personalData);
+        
+        if (index < 0 || index >= personalData.length) {
+            alert('Error: Índice inválido');
+            return;
+        }
+        
+        const persona = personalData[index];
+        const mensaje = `¿Está seguro de quitar a ${persona.nombre} de la lista?`;
+        
+        if (confirm(mensaje)) {
+            console.log('Eliminando persona:', persona);
+            personalData.splice(index, 1);
+            updatePersonalTable();
+            console.log('Personal eliminado. Nuevo personalData:', personalData);
+        }
+    }
+    
+    function limpiarModalPersonal() {
+        document.getElementById('modalAgregarPersonalLabel').textContent = '👤 Agregar Personal';
+        document.getElementById('formPersonal').reset();
+        delete document.getElementById('formPersonal').dataset.editIndex;
+        document.getElementById('modalResultadosBusqueda').innerHTML = '';
+        
+        // Habilitar todos los campos
+        document.getElementById('personalNombre').readOnly = false;
+        document.getElementById('personalApellido').readOnly = false;
+        document.getElementById('personalCedula').readOnly = false;
+        document.getElementById('personalCargo').readOnly = false;
+        document.getElementById('personalLicencia').readOnly = false;
+        document.getElementById('personalTelefono').readOnly = false;
+    }
+    
+    function abrirDocumentosPersonal(index, nombre, tipoDoc = null) {
+        document.getElementById('nombrePersonalDocs').textContent = nombre;
+        
+        // Si se especifica un tipo de documento, destacarlo
+        if (tipoDoc === 'licencia') {
+            // Hacer scroll al área de licencia o destacarla visualmente
+            setTimeout(() => {
+                document.querySelector('[onclick*="licenciaPersonal"]').style.borderColor = '#ffc107';
+                document.querySelector('[onclick*="licenciaPersonal"]').style.backgroundColor = '#fff9e6';
+            }, 300);
+        } else if (tipoDoc === 'cedula') {
+            setTimeout(() => {
+                document.querySelector('[onclick*="cedulaPersonal"]').style.borderColor = '#007bff';
+                document.querySelector('[onclick*="cedulaPersonal"]').style.backgroundColor = '#e6f3ff';
+            }, 300);
+        }
+        
+        const modal = new bootstrap.Modal(document.getElementById('modalDocumentosPersonal'));
+        modal.show();
+    }
+    
+    function handleFileUpload(event, tipoDoc) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const previewContainer = document.getElementById('uploadedFilesPreview');
+        const fileInfo = document.createElement('div');
+        fileInfo.className = 'alert alert-success d-flex align-items-center justify-content-between';
+        fileInfo.innerHTML = `
+            <div>
+                <i class="fas ${tipoDoc === 'cedula' ? 'fa-id-card' : 'fa-car'} me-2"></i>
+                <strong>${tipoDoc === 'cedula' ? 'Cédula' : 'Licencia'}:</strong> ${file.name}
+                <small class="text-muted ms-2">(${(file.size / 1024 / 1024).toFixed(2)} MB)</small>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFileUpload(this)">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        // Remover archivo previo del mismo tipo
+        const existingFiles = previewContainer.querySelectorAll('.alert');
+        existingFiles.forEach(alert => {
+            if (alert.textContent.includes(tipoDoc === 'cedula' ? 'Cédula' : 'Licencia')) {
+                alert.remove();
+            }
+        });
+        
+        previewContainer.appendChild(fileInfo);
+        
+        // Preview del archivo
+        if (file.type.startsWith('image/') || file.type === 'application/pdf') {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                displayFilePreview(e.result, file.type, file.name);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+    
+    function removeFileUpload(button) {
+        button.closest('.alert').remove();
+    }
+    
+    function displayFilePreview(src, type, fileName) {
+        const previewContainer = document.getElementById('previewContainerPersonal');
+        
+        if (type.startsWith('image/')) {
+            previewContainer.innerHTML = `
+                <img src="${src}" class="img-fluid" style="max-height: 400px; cursor: zoom-in;" 
+                     onclick="toggleImageZoom(this)" alt="${fileName}">
+            `;
+            document.getElementById('zoomControlsPersonal').style.display = 'block';
+        } else if (type === 'application/pdf') {
+            previewContainer.innerHTML = `
+                <embed src="${src}" type="application/pdf" width="100%" height="400px">
+            `;
+            document.getElementById('zoomControlsPersonal').style.display = 'none';
+        }
+        
+        // Mostrar botón de descarga
+        const downloadBtn = document.getElementById('btnDescargarArchivoPersonal');
+        downloadBtn.href = src;
+        downloadBtn.download = fileName;
+        downloadBtn.style.display = 'block';
+    }
+    
+    function toggleImageZoom(img) {
+        if (img.style.transform) {
+            img.style.transform = '';
+            img.style.cursor = 'zoom-in';
+        } else {
+            img.style.transform = 'scale(1.5)';
+            img.style.cursor = 'zoom-out';
+        }
+    }
+    
+    // Limpiar modal de documentos al cerrarse
+    document.getElementById('modalDocumentosPersonal').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('uploadedFilesPreview').innerHTML = '';
+        document.getElementById('previewContainerPersonal').innerHTML = `
+            <div class="alert alert-info">
+                <i class="fas fa-upload fa-3x mb-3"></i>
+                <p>Sube documentos para visualizarlos aquí</p>
+            </div>
+        `;
+        document.getElementById('btnDescargarArchivoPersonal').style.display = 'none';
+        document.getElementById('zoomControlsPersonal').style.display = 'none';
+        
+        // Resetear estilos de documentos
+        document.querySelectorAll('.document-upload-card').forEach(card => {
+            card.style.borderColor = '';
+            card.style.backgroundColor = '';
+        });
+    });
+    
+    // ===== FUNCIONES PARA VEHÍCULOS =====
+    
+    function updateVehiculosTable() {
+        const tbody = document.querySelector('#tablaVehiculos tbody');
+        const sinVehiculosMessage = document.getElementById('sinVehiculosMessage');
+
+        // Verificar que los elementos existan antes de manipularlos
+        if (!tbody || !sinVehiculosMessage) {
+            console.log('⚠️ Elementos de tabla vehículos no encontrados, omitiendo updateVehiculosTable');
+            return;
+        }
+
+        if (vehiculosData.length === 0) {
+            tbody.innerHTML = '';
+            sinVehiculosMessage.style.display = 'block';
+        } else {
+            sinVehiculosMessage.style.display = 'none';
+            tbody.innerHTML = vehiculosData.map((vehiculo, index) => `
+                <tr>
+                    <td><strong>${vehiculo.placa}</strong></td>
+                    <td>${getDisplayTipoVehiculo(vehiculo.tipo_vehiculo)}</td>
+                    <td>${vehiculo.conductor_nombre || 'N/A'}</td>
+                    <td>${vehiculo.conductor_licencia || 'N/A'}</td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-success me-1" 
+                                onclick="abrirDocumentosVehiculo(${index}, '${vehiculo.placa}', 'registro')"
+                                title="Registro del Vehículo">
+                            <i class="fas fa-file-alt"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-warning me-1" 
+                                onclick="abrirDocumentosVehiculo(${index}, '${vehiculo.placa}', 'seguro')"
+                                title="Seguro">
+                            <i class="fas fa-shield-alt"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-info" 
+                                onclick="abrirDocumentosVehiculo(${index}, '${vehiculo.placa}', 'inspeccion')"
+                                title="Inspección Técnica">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-primary me-1" 
+                                onclick="editarVehiculo(${index})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-danger" 
+                                onclick="abrirModalEliminar('vehiculo', ${index}, '${vehiculo.placa}', '${vehiculo.tipo_vehiculo}')" title="Eliminar">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        // Actualizar campos hidden del formulario
+        updateVehiculosHiddenFields();
+    }
+    
+    function updateVehiculosHiddenFields() {
+        const hiddenContainer = document.getElementById('vehiculosHiddenFields');
+        hiddenContainer.innerHTML = vehiculosData.map((vehiculo, index) => `
+            <input type="hidden" name="vehiculo-${index}-id" value="${vehiculo.id || ''}">
+            <input type="hidden" name="vehiculo-${index}-placa" value="${vehiculo.placa}">
+            <input type="hidden" name="vehiculo-${index}-tipo_vehiculo" value="${vehiculo.tipo_vehiculo}">
+            <input type="hidden" name="vehiculo-${index}-conductor_nombre" value="${vehiculo.conductor_nombre || ''}">
+            <input type="hidden" name="vehiculo-${index}-conductor_licencia" value="${vehiculo.conductor_licencia || ''}">
+        `).join('');
+    }
+    
+    function getDisplayTipoVehiculo(tipo) {
+        const tipos = {
+            'camion': 'Camión',
+            'trailer': 'Tráiler', 
+            'camioneta': 'Camioneta',
+            'vehiculo_ligero': 'Vehículo Ligero',
+            'motocicleta': 'Motocicleta',
+            'grua': 'Grúa',
+            'montacargas': 'Montacargas',
+            'otros': 'Otros'
+        };
+        return tipos[tipo] || tipo;
+    }
+    
+    function buscarVehiculoTabla() {
+        const query = document.getElementById('buscarVehiculoInput').value.trim();
+        if (query.length < 3) {
+            alert('Debe ingresar al menos 3 caracteres');
+            return;
+        }
+        
+        // Simular búsqueda (en el futuro sería una API call)
+        alert('Funcionalidad de búsqueda de vehículos pendiente de implementar');
+    }
+    
+    function buscarVehiculoModal() {
+        const query = document.getElementById('modalBuscarVehiculo').value.trim();
+        if (query.length < 3) {
+            document.getElementById('modalResultadosBusquedaVehiculo').innerHTML = 
+                '<div class="alert alert-warning">Debe ingresar al menos 3 caracteres</div>';
+            return;
+        }
+        
+        document.getElementById('modalResultadosBusquedaVehiculo').innerHTML = 
+            '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Buscando vehículos...</div>';
+        
+        // Simular búsqueda (en el futuro sería una API call)
+        setTimeout(() => {
+            document.getElementById('modalResultadosBusquedaVehiculo').innerHTML = 
+                '<div class="alert alert-info">Funcionalidad de búsqueda de vehículos pendiente de implementar</div>';
+        }, 1000);
+    }
+    
+    function guardarVehiculo() {
+        const form = document.getElementById('formVehiculo');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        
+        const vehiculoId = document.getElementById('vehiculoId').value;
+        const placaRaw = document.getElementById('vehiculoPlaca').value.trim();
+        const placa = getCleanValue(placaRaw, 'placa');
+        
+        // Validar formato de placa (1 letra + 6 números)
+        const placaRegex = /^[A-Z][0-9]{6}$/;
+        if (!placaRegex.test(placa)) {
+            alert('Formato de placa incorrecto. Debe ser 1 letra seguida de 6 números (ej: A123456)');
+            return;
+        }
+        
+        // Verificar si ya existe en la tabla (solo si no estamos editando)
+        const editIndex = form.dataset.editIndex;
+        if (editIndex === undefined && vehiculosData.find(v => v.placa === placa)) {
+            alert('Ya existe un vehículo con esta placa');
+            return;
+        }
+        
+        const licenciaValue = document.getElementById('vehiculoLicencia').value.trim();
+        
+        // Validar licencia si se proporcionó (mismo formato que cédula)
+        if (licenciaValue) {
+            const licenciaLimpia = getCleanValue(licenciaValue, 'cedula');
+            if (licenciaLimpia.length !== 11) {
+                alert('Formato de licencia incorrecto. Debe tener el mismo formato que una cédula (XXX-XXXXXXX-X)');
+                return;
+            }
+        }
+        
+        const vehiculo = {
+            id: vehiculoId || null,
+            placa: placa,
+            tipo_vehiculo: document.getElementById('vehiculoTipo').value,
+            conductor_nombre: document.getElementById('vehiculoConductor').value.trim(),
+            conductor_licencia: licenciaValue
+        };
+        
+        if (editIndex !== undefined) {
+            // Editando vehículo existente
+            vehiculosData[parseInt(editIndex)] = vehiculo;
+            delete form.dataset.editIndex;
+        } else {
+            // Agregando nuevo vehículo
+            vehiculosData.push(vehiculo);
+        }
+        
+        updateVehiculosTable();
+        
+        // Cerrar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('modalAgregarVehiculo'));
+        modal.hide();
+    }
+    
+    function editarVehiculo(index) {
+        const vehiculo = vehiculosData[index];
+        
+        document.getElementById('modalAgregarVehiculoLabel').textContent = '✏️ Editar Vehículo';
+        document.getElementById('formVehiculo').dataset.editIndex = index;
+        
+        document.getElementById('vehiculoId').value = vehiculo.id || '';
+        
+        // Aplicar formateo a placa
+        const placaInput = document.getElementById('vehiculoPlaca');
+        placaInput.value = vehiculo.placa;
+        formatPlaca(placaInput);
+        
+        document.getElementById('vehiculoTipo').value = vehiculo.tipo_vehiculo;
+        document.getElementById('vehiculoConductor').value = vehiculo.conductor_nombre || '';
+        
+        // Aplicar formateo a licencia (mismo formato que cédula)
+        const licenciaInput = document.getElementById('vehiculoLicencia');
+        licenciaInput.value = vehiculo.conductor_licencia || '';
+        if (licenciaInput.value) {
+            formatCedula(licenciaInput);
+        }
+        
+        const modal = new bootstrap.Modal(document.getElementById('modalAgregarVehiculo'));
+        modal.show();
+    }
+    
+    
+    function limpiarModalVehiculo() {
+        document.getElementById('modalAgregarVehiculoLabel').textContent = '🚗 Agregar Vehículo';
+        document.getElementById('formVehiculo').reset();
+        delete document.getElementById('formVehiculo').dataset.editIndex;
+        document.getElementById('modalResultadosBusquedaVehiculo').innerHTML = '';
+    }
+    
+    function abrirDocumentosVehiculo(index, placa, tipoDoc = null) {
+        document.getElementById('placaVehiculoDocs').textContent = placa;
+        
+        // Si se especifica un tipo de documento, destacarlo
+        if (tipoDoc === 'registro') {
+            setTimeout(() => {
+                document.querySelector('[onclick*="registroVehiculo"]').style.borderColor = '#28a745';
+                document.querySelector('[onclick*="registroVehiculo"]').style.backgroundColor = '#e6ffe6';
+            }, 300);
+        } else if (tipoDoc === 'seguro') {
+            setTimeout(() => {
+                document.querySelector('[onclick*="seguroVehiculo"]').style.borderColor = '#ffc107';
+                document.querySelector('[onclick*="seguroVehiculo"]').style.backgroundColor = '#fff9e6';
+            }, 300);
+        } else if (tipoDoc === 'inspeccion') {
+            setTimeout(() => {
+                document.querySelector('[onclick*="inspeccionVehiculo"]').style.borderColor = '#17a2b8';
+                document.querySelector('[onclick*="inspeccionVehiculo"]').style.backgroundColor = '#e6f8ff';
+            }, 300);
+        }
+        
+        const modal = new bootstrap.Modal(document.getElementById('modalDocumentosVehiculo'));
+        modal.show();
+    }
+    
+    // Hacer funciones disponibles globalmente
+    window.agregarPersonalDesdeTabla = agregarPersonalDesdeTabla;
+    window.seleccionarPersonalModal = seleccionarPersonalModal;
+    window.editarPersonal = editarPersonal;
+    window.abrirDocumentosPersonal = abrirDocumentosPersonal;
+    
+    // Funciones globales para vehículos
+    window.editarVehiculo = editarVehiculo;
+    window.abrirDocumentosVehiculo = abrirDocumentosVehiculo;
+    
+    // Funciones globales para eliminación
+    window.abrirModalEliminar = abrirModalEliminar;
+});
+
+// JavaScript para manejar vehículos (mantener funcionalidad existente)
+let formIdx = {{ vehiculo_formset.total_form_count }};
+
+function addForm(prefix) {
+    const formContainer = document.getElementById(prefix + '-forms');
+    const totalForms = document.getElementById('id_' + prefix + 's-TOTAL_FORMS');
+    const formTemplate = formContainer.querySelector('.vehiculo-form').cloneNode(true);
+    
+    // Actualizar índices en el nuevo formulario
+    formTemplate.innerHTML = formTemplate.innerHTML.replace(/-\d+-/g, '-' + formIdx + '-');
+    formTemplate.innerHTML = formTemplate.innerHTML.replace(/vehiculos_\d+/g, 'vehiculos_' + formIdx);
+    formTemplate.dataset.formIdx = formIdx;
+    
+    // Limpiar valores
+    formTemplate.querySelectorAll('input, select').forEach(input => {
+        if (input.type !== 'hidden') {
+            input.value = '';
+        }
+    });
+    
+    // Agregar botón de eliminar
+    if (!formTemplate.querySelector('.btn-danger')) {
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'btn btn-danger';
+        deleteBtn.style.marginTop = '10px';
+        deleteBtn.innerHTML = '❌ Eliminar Vehículo';
+        deleteBtn.onclick = function() { removeForm(this, prefix); };
+        formTemplate.querySelector('.form-grid').after(deleteBtn);
+    }
+    
+    formContainer.appendChild(formTemplate);
+    totalForms.value = parseInt(totalForms.value) + 1;
+    formIdx++;
+}
+
+function removeForm(button, prefix) {
+    const form = button.closest('.vehiculo-form');
+    const totalForms = document.getElementById('id_' + prefix + 's-TOTAL_FORMS');
+    
+    form.remove();
+    totalForms.value = parseInt(totalForms.value) - 1;
+    
+    // Reindexar formularios restantes
+    const forms = document.querySelectorAll('.vehiculo-form');
+    forms.forEach((form, index) => {
+        form.innerHTML = form.innerHTML.replace(/-\d+-/g, '-' + index + '-');
+        form.innerHTML = form.innerHTML.replace(/vehiculos_\d+/g, 'vehiculos_' + index);
+        form.dataset.formIdx = index;
+    });
+}
+</script>
+
+<style>
+.error {
+    color: #e74c3c;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.alert {
+    padding: 12px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    border: 1px solid #f5c2c7;
+    color: #842029;
+}
+
+input[type="file"] {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+}
+
+.table-responsive {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+}
+
+.table th {
+    background-color: #343a40 !important;
+    color: white !important;
+    border-color: #454d55 !important;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.table td {
+    vertical-align: middle;
+    font-size: 13px;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.775rem;
+}
+
+.document-upload-card {
+    transition: all 0.3s ease;
+}
+
+.document-upload-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.document-upload-card:active {
+    transform: translateY(0);
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+
+.modal-lg {
+    max-width: 900px;
+}
+</style>
+
+{% block extra_js %}
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- JavaScript específico de solicitudes -->
+<script src="{% static 'solicitudes/js/solicitudes.js' %}"></script>
+
+<script>
+// Esperar a que tanto Bootstrap como el DOM estén listos
+function initializeModals() {
+    console.log('Iniciando configuración de modales...');
+    
+    // Modal de Personal
+    const modalPersonalElement = document.getElementById('modalAgregarPersonal');
+    const btnAgregarPersonal = document.querySelector('button[data-bs-target="#modalAgregarPersonal"]');
+    
+    if (modalPersonalElement && btnAgregarPersonal && typeof bootstrap !== 'undefined') {
+        // Remover listeners previos
+        btnAgregarPersonal.removeAttribute('data-bs-toggle');
+        btnAgregarPersonal.removeAttribute('data-bs-target');
+        
+        // Agregar listener personalizado
+        btnAgregarPersonal.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('¡Botón Personal clickeado! Abriendo modal...');
+            
+            try {
+                const modal = new bootstrap.Modal(modalPersonalElement, {
+                    keyboard: true,
+                    backdrop: true,
+                    focus: true
+                });
+                modal.show();
+            } catch (error) {
+                console.error('Error al abrir modal de personal:', error);
+            }
+        });
+    }
+    
+    // Modal de Vehículo
+    const modalVehiculoElement = document.getElementById('modalAgregarVehiculo');
+    const btnAgregarVehiculo = document.querySelector('button[data-bs-target="#modalAgregarVehiculo"]');
+    
+    if (modalVehiculoElement && btnAgregarVehiculo && typeof bootstrap !== 'undefined') {
+        // Remover listeners previos
+        btnAgregarVehiculo.removeAttribute('data-bs-toggle');
+        btnAgregarVehiculo.removeAttribute('data-bs-target');
+        
+        // Agregar listener personalizado
+        btnAgregarVehiculo.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('¡Botón Vehículo clickeado! Abriendo modal...');
+            
+            try {
+                const modal = new bootstrap.Modal(modalVehiculoElement, {
+                    keyboard: true,
+                    backdrop: true,
+                    focus: true
+                });
+                modal.show();
+            } catch (error) {
+                console.error('Error al abrir modal de vehículo:', error);
+            }
+        });
+    }
+    
+    console.log('Modales configurados:', {
+        personal: !!modalPersonalElement && !!btnAgregarPersonal,
+        vehiculo: !!modalVehiculoElement && !!btnAgregarVehiculo,
+        bootstrap: typeof bootstrap !== 'undefined'
+    });
+}
+
+// Intentar inicializar cuando el DOM esté listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(initializeModals, 100);
+    });
+} else {
+    setTimeout(initializeModals, 100);
+}
+
+// ===== FUNCIÓN PARA MODAL DE VALIDACIÓN =====
+function cerrarModalValidacion() {
+    const modal = document.getElementById('modalValidacionSolicitud');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+        // Remover el backdrop
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+            backdrop.remove();
+        }
+        // Restaurar scroll del body
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('padding-right');
+    }
+}
+
+// Auto mostrar modal si hay elementos faltantes
+{% if show_validation_modal %}
+document.addEventListener('DOMContentLoaded', function() {
+    // Agregar la clase modal-open al body para el efecto de backdrop
+    document.body.classList.add('modal-open');
+    
+    // Manejar el cierre con la X
+    const btnClose = document.querySelector('#modalValidacionSolicitud .btn-close');
+    if (btnClose) {
+        btnClose.addEventListener('click', cerrarModalValidacion);
+    }
+    
+    // Manejar el cierre con ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            cerrarModalValidacion();
+        }
+    });
+
+    // === FUNCIONALIDAD DE SERVICIOS ===
+    
+    // Función para actualizar el contador de servicios
+    function actualizarContadorServicios() {
+        const checkboxes = document.querySelectorAll('input[name="servicios_solicitados"]:checked');
+        const contador = document.getElementById('contador-servicios');
+        if (contador) {
+            contador.textContent = checkboxes.length;
+        }
+        
+        // Agregar efecto visual a las opciones seleccionadas
+        document.querySelectorAll('.servicio-checkbox-item').forEach(item => {
+            const checkbox = item.querySelector('input[type="checkbox"]');
+            if (checkbox && checkbox.checked) {
+                item.style.backgroundColor = '#e8f5e8';
+                item.style.borderColor = '#28a745';
+            } else {
+                item.style.backgroundColor = 'white';
+                item.style.borderColor = '#e9ecef';
+            }
+        });
+    }
+    
+    // Botones de selección masiva
+    const btnSeleccionarTodos = document.getElementById('btn-seleccionar-todos-servicios');
+    const btnDeseleccionarTodos = document.getElementById('btn-deseleccionar-todos-servicios');
+    
+    if (btnSeleccionarTodos) {
+        btnSeleccionarTodos.addEventListener('click', function() {
+            const checkboxes = document.querySelectorAll('input[name="servicios_solicitados"]');
+            checkboxes.forEach(cb => cb.checked = true);
+            actualizarContadorServicios();
+        });
+    }
+    
+    if (btnDeseleccionarTodos) {
+        btnDeseleccionarTodos.addEventListener('click', function() {
+            const checkboxes = document.querySelectorAll('input[name="servicios_solicitados"]');
+            checkboxes.forEach(cb => cb.checked = false);
+            actualizarContadorServicios();
+        });
+    }
+    
+    // Escuchar cambios en los checkboxes de servicios
+    document.querySelectorAll('input[name="servicios_solicitados"]').forEach(checkbox => {
+        checkbox.addEventListener('change', actualizarContadorServicios);
+    });
+    
+    // Inicializar contador al cargar la página
+    actualizarContadorServicios();
+
+    // ===== CARGA DINÁMICA DE LUGARES =====
+    // (Movido a script independiente para evitar conflictos)
+
+});
+{% endif %}
+</script>
+
+<!-- Script independiente para carga dinámica de lugares -->
+<script>
+// Este script se ejecuta independientemente para evitar conflictos
+(function() {
+    'use strict';
+
+    // Protección contra ejecución múltiple
+    if (window.lugaresScriptInitialized) {
+        console.log('🔄 Script de lugares ya inicializado, omitiendo...');
+        return;
+    }
+    window.lugaresScriptInitialized = true;
+
+    console.log('🌍 SCRIPT INDEPENDIENTE DE LUGARES INICIADO');
+
+    function initializeLugaresLoading() {
+        const puertoSelect = document.getElementById('id_puerto_destino');
+        const lugarSelect = document.getElementById('id_lugar_destino');
+
+        console.log('🔍 Elementos buscados:', {
+            puertoSelect: !!puertoSelect,
+            lugarSelect: !!lugarSelect
+        });
+
+        if (!puertoSelect || !lugarSelect) {
+            console.log('❌ Elementos no encontrados, reintentando en 1 segundo...');
+            setTimeout(initializeLugaresLoading, 1000);
+            return;
+        }
+
+        console.log('✅ Elementos encontrados, configurando event listener');
+
+        // Verificar si ya tiene el event listener para evitar duplicados
+        if (puertoSelect.dataset.lugaresListenerAdded) {
+            console.log('🔄 Event listener ya configurado, omitiendo...');
+            return;
+        }
+        puertoSelect.dataset.lugaresListenerAdded = 'true';
+
+        puertoSelect.addEventListener('change', function() {
+            const puertoId = this.value;
+            console.log('🔄 Puerto seleccionado ID:', puertoId);
+
+            // Limpiar select de lugares
+            lugarSelect.innerHTML = '<option value="">Seleccionar lugar</option>';
+            lugarSelect.disabled = true;
+
+            if (puertoId && puertoId !== '') {
+                console.log('📡 Cargando lugares para puerto:', puertoId);
+
+                const url = '/evaluacion/api/puertos/' + puertoId + '/lugares/';
+                console.log('🌐 URL:', url);
+
+                fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'include'
+                })
+                .then(response => {
+                    console.log('📥 Respuesta:', response.status, response.statusText);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('📋 Datos recibidos:', data);
+
+                    if (data.success && data.lugares && data.lugares.length > 0) {
+                        console.log('✅ Agregando', data.lugares.length, 'lugares');
+                        lugarSelect.disabled = false;
+
+                        data.lugares.forEach((lugar, index) => {
+                            console.log(`  → ${lugar.display_name} (ID: ${lugar.id})`);
+                            const option = document.createElement('option');
+                            option.value = lugar.id;
+                            option.textContent = lugar.display_name;
+                            lugarSelect.appendChild(option);
+                        });
+
+                        console.log('🎉 Lugares cargados exitosamente');
+                    } else {
+                        console.log('⚠️ No hay lugares disponibles');
+                        lugarSelect.innerHTML = '<option value="">No hay lugares disponibles</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error:', error);
+                    lugarSelect.innerHTML = '<option value="">Error cargando lugares</option>';
+                    lugarSelect.disabled = false;
+                });
+            } else {
+                console.log('ℹ️ Puerto vacío seleccionado');
+            }
+        });
+
+        console.log('🎯 Event listener configurado correctamente');
+
+        // Disparar evento si hay un puerto preseleccionado
+        if (puertoSelect.value && puertoSelect.value !== '') {
+            console.log('🔄 Disparando evento para puerto preseleccionado:', puertoSelect.value);
+            puertoSelect.dispatchEvent(new Event('change'));
+        }
+    }
+
+    // Inicializar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeLugaresLoading);
+    } else {
+        initializeLugaresLoading();
+    }
+
+})();
+</script>
+
+{% endblock %}
+{% endblock %} 

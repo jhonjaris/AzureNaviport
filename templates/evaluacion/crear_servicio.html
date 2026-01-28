@@ -1,0 +1,371 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if editando %}Editar{% else %}Crear{% endif %} Servicio | NaviPort RD{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar_evaluador.html' with active_page='config' %}
+
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+            <a href="{% url 'evaluacion:gestionar_servicios' %}" class="btn" style="background: #6c757d; color: white;">
+                ← Volver
+            </a>
+            <h2 style="color: #2c3e50; margin: 0;">
+                {% if editando %}
+                    ✏️ Editar Servicio: {{ servicio.nombre }}
+                {% else %}
+                    ➕ Crear Nuevo Servicio
+                {% endif %}
+            </h2>
+        </div>
+        <p style="color: #7f8c8d;">{{ user.get_display_name }} • Evaluador Portuario</p>
+    </div>
+
+    <div class="data-table">
+        <div class="table-header">
+            <div class="table-title">
+                {% if editando %}Información del Servicio{% else %}Datos del Nuevo Servicio{% endif %}
+            </div>
+        </div>
+        
+        <div style="padding: 30px;">
+            <form method="POST" novalidate>
+                {% csrf_token %}
+                
+                <!-- Información Básica -->
+                <fieldset style="border: none; margin: 0; padding: 0;">
+                    <legend style="font-size: 18px; font-weight: 600; color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #9b59b6; padding-bottom: 10px;">
+                        🛡️ Información del Servicio
+                    </legend>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 30px;">
+                        <div>
+                            <label for="{{ form.codigo.id_for_label }}" style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">
+                                Código del Servicio *
+                            </label>
+                            {{ form.codigo }}
+                            {% if form.codigo.errors %}
+                                <div style="color: #e74c3c; font-size: 12px; margin-top: 5px;">
+                                    {{ form.codigo.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <small style="color: #6c757d; font-size: 12px;">Ejemplo: CG-001, CNT-002, etc.</small>
+                        </div>
+                        
+                        <div>
+                            <label for="{{ form.nombre.id_for_label }}" style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">
+                                Nombre del Servicio *
+                            </label>
+                            {{ form.nombre }}
+                            {% if form.nombre.errors %}
+                                <div style="color: #e74c3c; font-size: 12px; margin-top: 5px;">
+                                    {{ form.nombre.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 30px;">
+                        <label for="{{ form.descripcion.id_for_label }}" style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">
+                            Descripción
+                        </label>
+                        {{ form.descripcion }}
+                        {% if form.descripcion.errors %}
+                            <div style="color: #e74c3c; font-size: 12px; margin-top: 5px;">
+                                {{ form.descripcion.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small style="color: #6c757d; font-size: 12px;">Descripción detallada del servicio y sus alcances</small>
+                    </div>
+                    
+                    <div style="margin-bottom: 30px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            {{ form.activo }}
+                            <label for="{{ form.activo.id_for_label }}" style="margin: 0; font-weight: 500; color: #495057;">
+                                Servicio Activo
+                            </label>
+                            {% if form.activo.errors %}
+                                <div style="color: #e74c3c; font-size: 12px; margin-left: 10px;">
+                                    {{ form.activo.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <small style="color: #6c757d; font-size: 12px; display: block; margin-top: 5px;">
+                            Solo los servicios activos pueden ser asignados a empresas y tipos de licencia
+                        </small>
+                    </div>
+                </fieldset>
+
+                <!-- Documentos Requeridos -->
+                <fieldset style="border: none; margin: 0; padding: 0; margin-bottom: 30px;">
+                    <legend style="font-size: 18px; font-weight: 600; color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #e67e22; padding-bottom: 10px;">
+                        📄 Documentos Requeridos para este Servicio
+                    </legend>
+
+                    <div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: flex-start; gap: 10px;">
+                            <span style="font-size: 20px;">📋</span>
+                            <div>
+                                <strong style="color: #0c5460;">¿Cómo funciona?</strong>
+                                <p style="color: #0c5460; margin: 5px 0 0;">
+                                    Aquí defines los <strong>nombres de los documentos</strong> que el solicitante deberá adjuntar cuando seleccione este servicio.
+                                    <br>Por ejemplo: "Certificado de Fumigación", "Manifiesto de Carga", etc.
+                                    <br><em>Máximo 5 requisitos por servicio.</em>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{ formset.management_form }}
+
+                    <div id="documentos-container">
+                        {% for doc_form in formset %}
+                        <div class="documento-form" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin-bottom: 15px; position: relative;">
+                            {% if doc_form.instance.pk %}
+                            <input type="hidden" name="{{ doc_form.prefix }}-id" value="{{ doc_form.instance.pk }}">
+                            {% endif %}
+                            {{ doc_form.id }}
+
+                            <div style="display: grid; grid-template-columns: 1fr auto; gap: 15px; align-items: start;">
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057; font-size: 14px;">
+                                        Nombre del Documento *
+                                    </label>
+                                    {{ doc_form.nombre }}
+                                    {% if doc_form.nombre.errors %}
+                                        <div style="color: #e74c3c; font-size: 12px; margin-top: 3px;">{{ doc_form.nombre.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div style="display: flex; align-items: center; gap: 10px; padding-top: 25px;">
+                                    <div style="display: flex; align-items: center; gap: 5px;">
+                                        {{ doc_form.obligatorio }}
+                                        <label style="font-size: 13px; color: #495057; margin: 0;">Obligatorio</label>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 5px;">
+                                        {{ doc_form.activo }}
+                                        <label style="font-size: 13px; color: #495057; margin: 0;">Activo</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057; font-size: 14px;">
+                                    Instrucciones para el solicitante
+                                </label>
+                                {{ doc_form.descripcion }}
+                            </div>
+
+                            <div style="display: flex; align-items: center; gap: 15px; margin-top: 15px;">
+                                <div style="display: flex; align-items: center; gap: 5px;">
+                                    <label style="font-size: 13px; color: #495057; margin: 0;">Orden:</label>
+                                    {{ doc_form.orden }}
+                                </div>
+
+                                {% if doc_form.instance.pk %}
+                                <div style="display: flex; align-items: center; gap: 5px; margin-left: auto;">
+                                    {{ doc_form.DELETE }}
+                                    <label style="font-size: 13px; color: #e74c3c; margin: 0;">Eliminar</label>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p style="color: #6c757d; font-style: italic;">No hay documentos requeridos configurados.</p>
+                        {% endfor %}
+                    </div>
+
+                    <button type="button" id="agregar-documento" class="btn" style="background: #28a745; color: white; margin-top: 10px;" {% if formset.forms|length >= 5 %}disabled{% endif %}>
+                        + Agregar Requisito de Documento
+                    </button>
+                    <small style="color: #6c757d; font-size: 12px; display: block; margin-top: 5px;">
+                        <span id="contador-docs">{{ formset.forms|length }}</span>/5 requisitos configurados
+                        <br><em>(El solicitante subirá estos documentos al crear su solicitud)</em>
+                    </small>
+                </fieldset>
+
+                {% if editando and servicio %}
+                <!-- Información de Uso -->
+                <fieldset style="border: none; margin: 0; padding: 0; margin-bottom: 30px;">
+                    <legend style="font-size: 18px; font-weight: 600; color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #17a2b8; padding-bottom: 10px;">
+                        📊 Información de Uso
+                    </legend>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                        <div class="stat-card">
+                            <div class="stat-number" style="color: #28a745;">{{ servicio.empresas_autorizadas.count }}</div>
+                            <div class="stat-label">Empresas Autorizadas</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" style="color: #17a2b8;">{{ servicio.tipos_licencia.count }}</div>
+                            <div class="stat-label">Tipos de Licencia</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" style="{% if servicio.puede_eliminar %}color: #28a745;{% else %}color: #e74c3c;{% endif %}">
+                                {% if servicio.puede_eliminar %}✓{% else %}✗{% endif %}
+                            </div>
+                            <div class="stat-label">Puede Eliminar</div>
+                        </div>
+                    </div>
+                    
+                    {% if not servicio.puede_eliminar %}
+                    <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px;">
+                        <div style="color: #856404; font-weight: 500; margin-bottom: 5px;">
+                            ⚠️ Servicio en Uso
+                        </div>
+                        <div style="color: #856404; font-size: 14px;">
+                            Este servicio no puede ser eliminado porque está siendo utilizado por empresas o tipos de licencia. 
+                            Para eliminarlo, primero debe ser removido de todas las asignaciones.
+                        </div>
+                    </div>
+                    {% endif %}
+                </fieldset>
+                {% endif %}
+
+                <!-- Botones de Acción -->
+                <div style="padding-top: 20px; border-top: 1px solid #dee2e6; display: flex; gap: 15px; justify-content: flex-end;">
+                    <a href="{% url 'evaluacion:gestionar_servicios' %}" class="btn" style="background: #6c757d; color: white; padding: 12px 24px;">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary" style="padding: 12px 24px;">
+                        {% if editando %}
+                            💾 Actualizar Servicio
+                        {% else %}
+                            ➕ Crear Servicio
+                        {% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validación del código de servicio
+    const codigoInput = document.getElementById('{{ form.codigo.id_for_label }}');
+
+    if (codigoInput) {
+        codigoInput.addEventListener('blur', function() {
+            const codigo = this.value.toUpperCase();
+            this.value = codigo;
+
+            // Validar formato básico
+            if (codigo && !codigo.match(/^[A-Z]+-\d+$/)) {
+                this.setCustomValidity('El código debe seguir el formato: TEXTO-NÚMERO (ej: CG-001)');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+
+        codigoInput.addEventListener('input', function() {
+            this.setCustomValidity('');
+        });
+    }
+
+    // Auto-completar nombre basado en código
+    const nombreInput = document.getElementById('{{ form.nombre.id_for_label }}');
+
+    if (codigoInput && nombreInput) {
+        codigoInput.addEventListener('blur', function() {
+            if (this.value && !nombreInput.value) {
+                const codigo = this.value.toUpperCase();
+
+                // Sugerencias básicas basadas en códigos comunes
+                const sugerencias = {
+                    'CG': 'Carga General',
+                    'CNT': 'Contenedores',
+                    'COMB': 'Combustibles',
+                    'GRAN': 'Graneles',
+                    'FRIG': 'Carga Refrigerada',
+                    'VEH': 'Vehículos',
+                    'QUIM': 'Químicos',
+                    'PEST': 'Pesquero',
+                    'CRUC': 'Cruceros',
+                    'REMOL': 'Remolque'
+                };
+
+                const prefijo = codigo.split('-')[0];
+                if (sugerencias[prefijo]) {
+                    nombreInput.value = sugerencias[prefijo];
+                }
+            }
+        });
+    }
+
+    // === Gestión de documentos requeridos ===
+    const container = document.getElementById('documentos-container');
+    const addButton = document.getElementById('agregar-documento');
+    const totalFormsInput = document.querySelector('input[name="documentos-TOTAL_FORMS"]');
+    const contadorDocs = document.getElementById('contador-docs');
+    const MAX_DOCS = 5;
+
+    function actualizarContador() {
+        const formsVisibles = container.querySelectorAll('.documento-form:not([style*="display: none"])').length;
+        contadorDocs.textContent = formsVisibles;
+        addButton.disabled = formsVisibles >= MAX_DOCS;
+    }
+
+    if (addButton) {
+        addButton.addEventListener('click', function() {
+            const totalForms = parseInt(totalFormsInput.value);
+            if (totalForms >= MAX_DOCS) {
+                alert('Máximo 5 documentos permitidos por servicio.');
+                return;
+            }
+
+            // Clonar el último formulario vacío o crear uno nuevo
+            const emptyForm = `
+                <div class="documento-form" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin-bottom: 15px; position: relative;">
+                    <div style="display: grid; grid-template-columns: 1fr auto; gap: 15px; align-items: start;">
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057; font-size: 14px;">
+                                Nombre del Documento *
+                            </label>
+                            <input type="text" name="documentos-${totalForms}-nombre" class="form-control" placeholder="Nombre del documento requerido">
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px; padding-top: 25px;">
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" name="documentos-${totalForms}-obligatorio" class="form-check-input" checked>
+                                <label style="font-size: 13px; color: #495057; margin: 0;">Obligatorio</label>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" name="documentos-${totalForms}-activo" class="form-check-input" checked>
+                                <label style="font-size: 13px; color: #495057; margin: 0;">Activo</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057; font-size: 14px;">
+                            Instrucciones para el solicitante
+                        </label>
+                        <textarea name="documentos-${totalForms}-descripcion" class="form-control" rows="2" placeholder="Instrucciones para el solicitante..."></textarea>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 15px; margin-top: 15px;">
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <label style="font-size: 13px; color: #495057; margin: 0;">Orden:</label>
+                            <input type="number" name="documentos-${totalForms}-orden" class="form-control" min="0" style="width: 80px;" value="${totalForms}">
+                        </div>
+                        <button type="button" class="btn btn-sm" style="background: #dc3545; color: white; margin-left: auto;" onclick="this.closest('.documento-form').remove(); actualizarContador();">
+                            🗑️ Quitar
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            container.insertAdjacentHTML('beforeend', emptyForm);
+            totalFormsInput.value = totalForms + 1;
+            actualizarContador();
+        });
+    }
+
+    // Hacer actualizarContador global para el onclick
+    window.actualizarContador = actualizarContador;
+
+    // Inicializar contador
+    actualizarContador();
+});
+</script>
+
+{% endblock %}

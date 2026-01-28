@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Revisar Subsanación{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <h2>Revisar Respuesta de Subsanación</h2>
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5>Explicación:</h5>
+            <p>{{ respuesta.explicacion }}</p>
+            <h5>Medidas Preventivas:</h5>
+            <p>{{ respuesta.medidas_preventivas }}</p>
+            <h5>Documentos Adjuntos:</h5>
+            <ul>
+                {% for doc in documentos %}
+                <li><a href="{{ doc.archivo.url }}" target="_blank">{{ doc.nombre }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label>Comentarios:</label>
+            <textarea name="comentarios" class="form-control" rows="3"></textarea>
+        </div>
+        <button type="submit" name="accion" value="aprobar" class="btn btn-success">Aprobar</button>
+        <button type="submit" name="accion" value="rechazar" class="btn btn-danger">Rechazar</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle Vehículo - {{ vehiculo.placa }} | NaviPort RD</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% load static %}{% static 'css/styles.css' %}">
+    <style>
+        .badge-status {
+            font-size: 0.8em;
+            padding: 0.4rem 0.8rem;
+        }
+        .document-card {
+            border: 1px solid #e3e6f0;
+            border-radius: 0.35rem;
+            transition: all 0.3s ease;
+        }
+        .document-card:hover {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        .vehicle-info-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .document-type-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .btn-action {
+            margin: 0.2rem;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'accounts:dashboard' %}">🚢 NaviPort RD</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:dashboard' %}">🏠 Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'gestion_vehiculos:dashboard' %}">🚗 Vehículos</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            👤 {{ user.first_name }} {{ user.last_name }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'accounts:logout' %}">🚪 Cerrar Sesión</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2>🚗 Detalle del Vehículo</h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'gestion_vehiculos:dashboard' %}">Vehículos</a></li>
+                        <li class="breadcrumb-item active">{{ vehiculo.placa }}</li>
+                    </ol>
+                </nav>
+            </div>
+            <div>
+                <a href="{% url 'gestion_vehiculos:editar_vehiculo' vehiculo.id %}" class="btn btn-warning btn-action">
+                    ✏️ Editar
+                </a>
+                <a href="{% url 'gestion_vehiculos:eliminar_vehiculo' vehiculo.id %}" class="btn btn-danger btn-action">
+                    🗑️ Eliminar
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Información del Vehículo -->
+            <div class="col-md-6 mb-4">
+                <div class="card vehicle-info-card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">📋 Información del Vehículo</h5>
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <strong>Placa:</strong><br>
+                                <span class="h4">{{ vehiculo.placa }}</span>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <strong>Tipo:</strong><br>
+                                {{ vehiculo.get_tipo_vehiculo_display }}
+                            </div>
+                            <div class="col-6 mb-3">
+                                <strong>Marca:</strong><br>
+                                {{ vehiculo.marca }}
+                            </div>
+                            <div class="col-6 mb-3">
+                                <strong>Modelo:</strong><br>
+                                {{ vehiculo.modelo }}
+                            </div>
+                            <div class="col-6 mb-3">
+                                <strong>Año:</strong><br>
+                                {{ vehiculo.ano }}
+                            </div>
+                            <div class="col-6 mb-3">
+                                <strong>Color:</strong><br>
+                                {{ vehiculo.color }}
+                            </div>
+                            {% if vehiculo.numero_chasis %}
+                            <div class="col-12 mb-3">
+                                <strong>Número de Chasis:</strong><br>
+                                {{ vehiculo.numero_chasis }}
+                            </div>
+                            {% endif %}
+                            {% if vehiculo.numero_motor %}
+                            <div class="col-12 mb-3">
+                                <strong>Número de Motor:</strong><br>
+                                {{ vehiculo.numero_motor }}
+                            </div>
+                            {% endif %}
+                            {% if vehiculo.notas_adicionales %}
+                            <div class="col-12 mb-3">
+                                <strong>Notas Adicionales:</strong><br>
+                                <small>{{ vehiculo.notas_adicionales }}</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de Registro -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">🏢 Información de Registro</h5>
+                        <div class="mb-3">
+                            <strong>Empresa Propietaria:</strong><br>
+                            {% if vehiculo.empresa_propietaria.empresa %}
+                                {{ vehiculo.empresa_propietaria.empresa.nombre }}
+                            {% else %}
+                                Sin empresa asignada
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Registrado por:</strong><br>
+                            {{ vehiculo.empresa_propietaria.first_name }} {{ vehiculo.empresa_propietaria.last_name }}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Fecha de Registro:</strong><br>
+                            {{ vehiculo.fecha_registro|date:"d/m/Y H:i" }}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Última Actualización:</strong><br>
+                            {{ vehiculo.fecha_actualizacion|date:"d/m/Y H:i" }}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Edad del Vehículo:</strong><br>
+                            {{ vehiculo.edad_vehiculo }} años
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentos del Vehículo -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">📄 Documentos del Vehículo</h5>
+                        <div class="dropdown">
+                            <button class="btn btn-success btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                ➕ Subir Documento
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'gestion_vehiculos:subir_documento_vehiculo' vehiculo.id %}?tipo=matricula">🆔 Matrícula</a></li>
+                                <li><a class="dropdown-item" href="{% url 'gestion_vehiculos:subir_documento_vehiculo' vehiculo.id %}?tipo=registro">📋 Registro</a></li>
+                                <li><a class="dropdown-item" href="{% url 'gestion_vehiculos:subir_documento_vehiculo' vehiculo.id %}?tipo=seguro">🛡️ Seguro</a></li>
+                                <li><a class="dropdown-item" href="{% url 'gestion_vehiculos:subir_documento_vehiculo' vehiculo.id %}?tipo=revision_tecnica">🔧 Revisión Técnica</a></li>
+                                <li><a class="dropdown-item" href="{% url 'gestion_vehiculos:subir_documento_vehiculo' vehiculo.id %}?tipo=permiso_circulacion">🎫 Permiso de Circulación</a></li>
+                                <li><a class="dropdown-item" href="{% url 'gestion_vehiculos:subir_documento_vehiculo' vehiculo.id %}?tipo=otro">📝 Otro Documento</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% if documentos %}
+                            <div class="row">
+                                {% for documento in documentos %}
+                                <div class="col-md-6 col-lg-4 mb-4">
+                                    <div class="document-card card h-100">
+                                        <div class="card-body text-center">
+                                            <div class="document-type-icon">
+                                                {% if documento.tipo_documento == 'matricula' %}
+                                                    🆔
+                                                {% elif documento.tipo_documento == 'registro' %}
+                                                    📋
+                                                {% elif documento.tipo_documento == 'seguro' %}
+                                                    🛡️
+                                                {% elif documento.tipo_documento == 'revision_tecnica' %}
+                                                    🔧
+                                                {% elif documento.tipo_documento == 'permiso_circulacion' %}
+                                                    🎫
+                                                {% else %}
+                                                    📝
+                                                {% endif %}
+                                            </div>
+                                            <h6 class="card-title">{{ documento.get_tipo_documento_display }}</h6>
+
+                                            <!-- Estado de Validación -->
+                                            {% if documento.estado_validacion == 'validado' %}
+                                                <span class="badge bg-success badge-status">✅ Validado</span>
+                                            {% elif documento.estado_validacion == 'rechazado' %}
+                                                <span class="badge bg-danger badge-status">❌ Rechazado</span>
+                                            {% elif documento.estado_validacion == 'vencido' %}
+                                                <span class="badge bg-warning badge-status">⏰ Vencido</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary badge-status">⏳ Pendiente</span>
+                                            {% endif %}
+
+                                            {% if documento.numero_documento %}
+                                            <p class="card-text mt-2">
+                                                <small><strong>Número:</strong> {{ documento.numero_documento }}</small>
+                                            </p>
+                                            {% endif %}
+
+                                            {% if documento.fecha_vencimiento %}
+                                            <p class="card-text">
+                                                <small><strong>Vence:</strong> {{ documento.fecha_vencimiento|date:"d/m/Y" }}</small>
+                                                {% if documento.esta_vencido %}
+                                                    <br><small class="text-danger">⚠️ Vencido</small>
+                                                {% elif documento.proxima_vencer %}
+                                                    <br><small class="text-warning">⚠️ Próximo a vencer</small>
+                                                {% endif %}
+                                            </p>
+                                            {% endif %}
+
+                                            <p class="card-text">
+                                                <small class="text-muted">
+                                                    Subido: {{ documento.fecha_subida|date:"d/m/Y" }}<br>
+                                                    Por: {{ documento.subido_por.first_name }} {{ documento.subido_por.last_name }}
+                                                </small>
+                                            </p>
+
+                                            <!-- Acciones del Documento -->
+                                            <div class="btn-group-vertical w-100" role="group">
+                                                {% if documento.archivo %}
+                                                <a href="{% url 'gestion_vehiculos:descargar_documento_vehiculo' documento.id %}"
+                                                   class="btn btn-outline-primary btn-sm" target="_blank">
+                                                    👁️ Ver Documento
+                                                </a>
+                                                {% endif %}
+                                                <a href="{% url 'gestion_vehiculos:editar_documento_vehiculo' documento.id %}"
+                                                   class="btn btn-outline-warning btn-sm">
+                                                    ✏️ Editar
+                                                </a>
+                                                <a href="{% url 'gestion_vehiculos:eliminar_documento_vehiculo' documento.id %}"
+                                                   class="btn btn-outline-danger btn-sm">
+                                                    🗑️ Eliminar
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <div class="mb-3">
+                                    <i class="fas fa-file-alt" style="font-size: 4rem; color: #6c757d;"></i>
+                                </div>
+                                <h5 class="text-muted">No hay documentos subidos</h5>
+                                <p class="text-muted">Sube los documentos requeridos para este vehículo.</p>
+                                <a href="{% url 'gestion_vehiculos:subir_documento_vehiculo' vehiculo.id %}?tipo=matricula"
+                                   class="btn btn-primary">
+                                    ➕ Subir Primer Documento
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

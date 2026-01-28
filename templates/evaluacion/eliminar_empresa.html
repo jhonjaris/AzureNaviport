@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Empresa | NaviPort RD{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar_evaluador.html' with active_page='config' %}
+
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+            <a href="{% url 'evaluacion:gestionar_empresas' %}" class="btn" style="background: #6c757d; color: white;">
+                ← Volver
+            </a>
+            <h2 style="color: #e74c3c; margin: 0;">
+                🗑️ Eliminar Empresa
+            </h2>
+        </div>
+        <p style="color: #7f8c8d;">{{ user.get_display_name }} • Evaluador Portuario</p>
+    </div>
+
+    <div class="data-table">
+        <div class="table-header" style="background: #f8d7da; border-color: #e74c3c;">
+            <div class="table-title" style="color: #721c24;">⚠️ Confirmación de Eliminación</div>
+        </div>
+        
+        <div style="padding: 30px;">
+            <!-- Advertencia Principal -->
+            <div style="background: #f8d7da; padding: 20px; border-radius: 8px; border-left: 4px solid #e74c3c; margin-bottom: 30px;">
+                <h3 style="color: #721c24; margin: 0 0 15px 0;">⚠️ ¡ADVERTENCIA!</h3>
+                <p style="color: #721c24; margin: 0; font-weight: 500;">
+                    Está a punto de eliminar permanentemente la empresa <strong>"{{ empresa.nombre }}"</strong>. 
+                    Esta acción <strong>NO SE PUEDE DESHACER</strong>.
+                </p>
+            </div>
+
+            <!-- Información de la Empresa -->
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #6c757d; margin-bottom: 30px;">
+                <h3 style="color: #2c3e50; margin: 0 0 15px 0;">📋 Información de la Empresa a Eliminar</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; font-size: 14px;">
+                    <div>
+                        <strong>Nombre:</strong> {{ empresa.nombre }}
+                    </div>
+                    <div>
+                        <strong>RNC:</strong> {{ empresa.rnc }}
+                    </div>
+                    <div>
+                        <strong>Representante Legal:</strong> {{ empresa.representante_legal.get_display_name }}
+                    </div>
+                    <div>
+                        <strong>Email:</strong> {{ empresa.email }}
+                    </div>
+                    <div>
+                        <strong>Número de Licencia:</strong> {{ empresa.numero_licencia|default:"N/A" }}
+                    </div>
+                    <div>
+                        <strong>Estado:</strong>
+                        {% with estado=empresa.estado_licencia %}
+                        <span style="background: #{{ estado.color }}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">
+                            {{ estado.texto }}
+                        </span>
+                        {% endwith %}
+                    </div>
+                    <div>
+                        <strong>Registrada:</strong> {{ empresa.created_at|date:"d/m/Y H:i" }}
+                    </div>
+                    <div>
+                        <strong>Última Actualización:</strong> {{ empresa.updated_at|date:"d/m/Y H:i" }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Impacto de la Eliminación -->
+            <div style="background: #fff3cd; padding: 20px; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 30px;">
+                <h3 style="color: #856404; margin: 0 0 15px 0;">📊 Impacto de la Eliminación</h3>
+                
+                {% if solicitudes_count > 0 %}
+                <div style="color: #856404; margin-bottom: 15px;">
+                    <strong>⚠️ ATENCIÓN:</strong> Esta empresa tiene <strong>{{ solicitudes_count }}</strong> solicitud{{ solicitudes_count|pluralize:"es" }} asociada{{ solicitudes_count|pluralize:"s" }} en el sistema.
+                </div>
+                
+                <div style="background: #ffeaa7; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
+                    <h4 style="color: #856404; margin: 0 0 10px 0;">🔗 Datos que se verán afectados:</h4>
+                    <ul style="margin: 0; padding-left: 20px; color: #856404;">
+                        <li>{{ solicitudes_count }} solicitud{{ solicitudes_count|pluralize:"es" }} de acceso portuario</li>
+                        <li>Historial de evaluaciones y aprobaciones</li>
+                        <li>Registros de control de acceso</li>
+                        <li>Documentos y certificados asociados</li>
+                    </ul>
+                </div>
+
+                <div style="color: #721c24; font-weight: 600; padding: 10px; background: #f8d7da; border-radius: 4px;">
+                    💀 Al eliminar la empresa, todas las solicitudes asociadas quedarán huérfanas y podrían causar errores en el sistema.
+                </div>
+                {% else %}
+                <div style="color: #155724; padding: 15px; background: #d4edda; border-radius: 4px;">
+                    ✅ Esta empresa no tiene solicitudes asociadas. La eliminación será segura.
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Alternativas Recomendadas -->
+            {% if solicitudes_count > 0 %}
+            <div style="background: #d1ecf1; padding: 20px; border-radius: 8px; border-left: 4px solid #17a2b8; margin-bottom: 30px;">
+                <h3 style="color: #0c5460; margin: 0 0 15px 0;">💡 Alternativas Recomendadas</h3>
+                <p style="color: #0c5460; margin-bottom: 15px;">
+                    En lugar de eliminar la empresa, considera estas opciones más seguras:
+                </p>
+                <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
+                    <div style="background: white; padding: 15px; border-radius: 4px; border-left: 3px solid #28a745;">
+                        <strong>✅ Desactivar Empresa:</strong> Mantén los datos pero impide nuevas operaciones
+                    </div>
+                    <div style="background: white; padding: 15px; border-radius: 4px; border-left: 3px solid #ffc107;">
+                        <strong>⚠️ Marcar como No Verificada:</strong> Suspende temporalmente las operaciones
+                    </div>
+                    <div style="background: white; padding: 15px; border-radius: 4px; border-left: 3px solid #fd7e14;">
+                        <strong>📄 Archivar:</strong> Mueve a una sección de empresas inactivas
+                    </div>
+                </div>
+                <div style="margin-top: 15px; text-align: center;">
+                    <a href="{% url 'evaluacion:editar_empresa' empresa.id %}" class="btn" style="background: #28a745; color: white;">
+                        ✏️ Ir a Editar Empresa
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Formulario de Confirmación -->
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border: 2px solid #e74c3c; margin-bottom: 30px;">
+                <h3 style="color: #721c24; margin: 0 0 15px 0;">✍️ Confirmación Final</h3>
+                
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" id="confirmar-eliminacion" required 
+                                   style="width: 18px; height: 18px;">
+                            <span style="color: #721c24; font-weight: 500;">
+                                Confirmo que entiendo las consecuencias y deseo eliminar permanentemente la empresa "{{ empresa.nombre }}"
+                            </span>
+                        </label>
+                    </div>
+
+                    {% if solicitudes_count > 0 %}
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" id="confirmar-impacto" required 
+                                   style="width: 18px; height: 18px;">
+                            <span style="color: #721c24; font-weight: 500;">
+                                Acepto la responsabilidad por los {{ solicitudes_count }} registro{{ solicitudes_count|pluralize:"s" }} afectado{{ solicitudes_count|pluralize:"s" }}
+                            </span>
+                        </label>
+                    </div>
+                    {% endif %}
+
+                    <!-- Botones de Acción -->
+                    <div style="padding-top: 20px; border-top: 1px solid #dee2e6; display: flex; gap: 15px; justify-content: flex-end;">
+                        <a href="{% url 'evaluacion:gestionar_empresas' %}" class="btn btn-primary" style="padding: 12px 24px;">
+                            ← Cancelar y Volver
+                        </a>
+                        <button type="submit" id="btn-eliminar" disabled 
+                                class="btn" style="background: #e74c3c; color: white; padding: 12px 24px;">
+                            🗑️ ELIMINAR EMPRESA
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmarEliminacion = document.getElementById('confirmar-eliminacion');
+    const confirmarImpacto = document.getElementById('confirmar-impacto');
+    const btnEliminar = document.getElementById('btn-eliminar');
+    
+    function verificarConfirmaciones() {
+        const confirmado = confirmarEliminacion.checked;
+        const impactoConfirmado = !confirmarImpacto || confirmarImpacto.checked;
+        
+        btnEliminar.disabled = !(confirmado && impactoConfirmado);
+        
+        if (btnEliminar.disabled) {
+            btnEliminar.style.opacity = '0.5';
+        } else {
+            btnEliminar.style.opacity = '1';
+        }
+    }
+    
+    confirmarEliminacion.addEventListener('change', verificarConfirmaciones);
+    if (confirmarImpacto) {
+        confirmarImpacto.addEventListener('change', verificarConfirmaciones);
+    }
+    
+    // Confirmación adicional al hacer submit
+    btnEliminar.addEventListener('click', function(e) {
+        if (!confirm(`¿ESTÁ ABSOLUTAMENTE SEGURO de eliminar la empresa "${empresa.nombre}"?\n\nEsta acción NO SE PUEDE DESHACER.`)) {
+            e.preventDefault();
+        }
+    });
+    
+    verificarConfirmaciones();
+});
+</script>
+
+{% endblock %}

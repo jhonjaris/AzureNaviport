@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NaviPort RD - Iniciar Sesión</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-left">
+            <div class="login-brand">
+                <img src="{% static 'logo.png' %}" alt="Autoridad Portuaria Dominicana" class="logo-image">
+                <h2 style="font-size: 32px; margin-bottom: 15px;">NaviPort RD</h2>
+                <p style="font-size: 18px; opacity: 0.9;">Sistema de Gestión de Accesos Portuarios</p>
+                <p style="font-size: 16px; opacity: 0.7; margin-top: 20px;">Autoridad Portuaria Dominicana</p>
+            </div>
+        </div>
+        
+        <div class="login-right">
+            <div class="login-form">
+                <h3 style="text-align: center; margin-bottom: 30px; color: #2c3e50; font-size: 24px;">Iniciar Sesión</h3>
+                
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}" style="margin-bottom: 20px; padding: 12px; border-radius: 6px; {% if message.tags == 'error' %}background-color: #f8d7da; border: 1px solid #f5c2c7; color: #842029;{% elif message.tags == 'success' %}background-color: #d1ecf1; border: 1px solid #b8daff; color: #0c5460;{% else %}background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404;{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger" style="margin-bottom: 20px; padding: 12px; border-radius: 6px; background-color: #f8d7da; border: 1px solid #f5c2c7; color: #842029;">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        {{ form.username.label_tag }}
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <div class="error">{{ form.username.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.password.label_tag }}
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                            <div class="error">{{ form.password.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin: 20px 0;">
+                        <label style="display: flex; align-items: center; font-size: 14px; font-weight: normal;">
+                            {{ form.remember_me }}
+                            <span style="margin-left: 8px;">Recordarme</span>
+                        </label>
+                        <a href="{% url 'accounts:password_reset' %}" style="color: #3498db; text-decoration: none; font-size: 14px;">¿Olvidaste tu contraseña?</a>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-bottom: 20px;">
+                        🔐 Iniciar Sesión
+                    </button>
+
+                </form>
+
+                <!-- Lista de Usuarios Demo -->
+                <div class="demo-users" style="margin-top: 20px; padding: 12px; background-color: #f8f9fa; border-radius: 6px; border: 1px solid #e9ecef;">
+                    <h4 style="text-align: center; margin-bottom: 10px; color: #2c3e50; font-size: 12px; font-weight: bold;">👥 Usuarios Demo</h4>
+
+                    <div style="display: grid; gap: 6px; font-size: 11px;">
+                        <div class="demo-user-item">
+                            <strong style="color: #2c3e50;">Evaluador:</strong>
+                            <span style="color: #3498db; font-family: monospace;">asanchez</span> /
+                            <span style="color: #95a5a6; font-family: monospace;">eval123</span>
+                        </div>
+
+                        <div class="demo-user-item">
+                            <strong style="color: #2c3e50;">Solicitante:</strong>
+                            <span style="color: #3498db; font-family: monospace;">mgonzalez</span> /
+                            <span style="color: #95a5a6; font-family: monospace;">demo123</span>
+                        </div>
+
+                        <div class="demo-user-item">
+                            <strong style="color: #2c3e50;">Oficial Acceso:</strong>
+                            <span style="color: #3498db; font-family: monospace;">jperez</span> /
+                            <span style="color: #95a5a6; font-family: monospace;">acceso123</span>
+                        </div>
+
+                        <div class="demo-user-item">
+                            <strong style="color: #2c3e50;">Supervisor:</strong>
+                            <span style="color: #3498db; font-family: monospace;">rsilva</span> /
+                            <span style="color: #95a5a6; font-family: monospace;">super123</span>
+                        </div>
+
+                        <div class="demo-user-item">
+                            <strong style="color: #2c3e50;">Admin TIC:</strong>
+                            <span style="color: #3498db; font-family: monospace;">admin</span> /
+                            <span style="color: #95a5a6; font-family: monospace;">admin123</span>
+                        </div>
+
+                        <div class="demo-user-item">
+                            <strong style="color: #2c3e50;">Dirección:</strong>
+                            <span style="color: #3498db; font-family: monospace;">jtech</span> /
+                            <span style="color: #95a5a6; font-family: monospace;">tech123</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .error {
+            color: #e74c3c;
+            font-size: 12px;
+            margin-top: 5px;
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-control:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+        }
+        
+        .form-check-input {
+            width: auto !important;
+            margin-right: 8px;
+        }
+    </style>
+
+    <script>
+        // Auto-focus en el campo de usuario al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            const usernameField = document.querySelector('input[name="username"]');
+            if (usernameField) {
+                usernameField.focus();
+            }
+        });
+    </script>
+</body>
+</html>

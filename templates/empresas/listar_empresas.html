@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Empresas | NaviPort RD{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'empresas/css/empresas.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li><a href="{% url 'evaluacion:dashboard' %}" style="color: inherit; text-decoration: none;">Dashboard</a></li>
+        <li>Evaluaciones</li>
+        <li>Reportes</li>
+        <li class="active">Gestión de Empresas</li>
+        <li>Configuración</li>
+    </ul>
+    <div class="navbar-user">
+        <div style="text-align: right; margin-right: 10px;">
+            <div style="font-weight: 500;">{{ user.get_display_name }}</div>
+            <div style="font-size: 14px; color: #7f8c8d;">{{ user.get_role_display_with_admin }}</div>
+        </div>
+        <div class="user-avatar">{{ user.get_display_name|slice:':1'|upper }}{{ user.last_name|slice:':1'|upper }}</div>
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <h2 style="color: #2c3e50; margin-bottom: 10px;">Gestión de Empresas</h2>
+        <p style="color: #7f8c8d;">{{ user.get_display_name }} • {% if user.role == 'evaluador' %}Evaluador Portuario{% else %}Supervisor{% endif %}</p>
+    </div>
+
+    <!-- Filtros y Búsqueda -->
+    <div class="form-container" style="margin-bottom: 30px;">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" name="search" class="form-control" placeholder="Buscar por nombre, RNC o licencia..." value="{{ search }}">
+            </div>
+            <div class="col-md-3">
+                <select name="estado" class="form-control">
+                    <option value="all" {% if estado == 'all' %}selected{% endif %}>Todas las empresas</option>
+                    <option value="activas" {% if estado == 'activas' %}selected{% endif %}>Solo activas</option>
+                    <option value="inactivas" {% if estado == 'inactivas' %}selected{% endif %}>Solo inactivas</option>
+                    <option value="vencidas" {% if estado == 'vencidas' %}selected{% endif %}>Licencias vencidas</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">🔍 Buscar</button>
+            </div>
+            <div class="col-md-3">
+                <a href="{% url 'empresas:registrar_empresa' %}" class="btn btn-success w-100">➕ Nueva Empresa</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="dashboard-cards" style="margin-bottom: 30px;">
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #3498db;">🏢</div>
+                <div>
+                    <div class="card-title">Total Empresas</div>
+                    <div class="card-subtitle">{{ total_empresas }} registradas</div>
+                </div>
+            </div>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #27ae60;">✅</div>
+                <div>
+                    <div class="card-title">Empresas Activas</div>
+                    <div class="card-subtitle">{{ empresas_activas }} operando</div>
+                </div>
+            </div>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #f39c12;">🔧</div>
+                <div>
+                    <div class="card-title">Gestionar Servicios</div>
+                    <div class="card-subtitle">Configurar tipos</div>
+                </div>
+            </div>
+            <a href="{% url 'empresas:listar_servicios' %}" class="btn btn-warning">Ver Servicios</a>
+        </div>
+    </div>
+
+    <!-- Tabla de Empresas -->
+    {% if empresas %}
+    <div class="data-table">
+        <div class="table-header">
+            <div class="table-title">📋 Empresas Registradas</div>
+            <div>
+                <a href="{% url 'empresas:registrar_empresa' %}" class="btn btn-primary">➕ Nueva Empresa</a>
+            </div>
+        </div>
+        <div class="table-content">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Empresa</th>
+                        <th>RNC</th>
+                        <th>Licencia</th>
+                        <th>Expiración</th>
+                        <th>Servicios</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for empresa in empresas %}
+                    <tr {% if not empresa.activa %}style="opacity: 0.6;"{% endif %}>
+                        <td>
+                            <strong>{{ empresa.nombre }}</strong><br>
+                            <small style="color: #666;">{{ empresa.email|default:"Sin email" }}</small>
+                        </td>
+                        <td>{{ empresa.rnc }}</td>
+                        <td>
+                            <span style="font-family: monospace;">{{ empresa.numero_licencia }}</span>
+                        </td>
+                        <td>
+                            {% if empresa.fecha_expiracion_licencia %}
+                                <span style="color: {% if empresa.licencia_vigente %}#27ae60{% else %}#e74c3c{% endif %};">
+                                    {{ empresa.fecha_expiracion_licencia|date:"d/m/Y" }}
+                                </span>
+                                {% if not empresa.licencia_vigente %}
+                                    <br><small style="color: #e74c3c;">⚠️ Vencida</small>
+                                {% elif empresa.licencia_por_vencer %}
+                                    <br><small style="color: #f39c12;">⏰ Por vencer</small>
+                                {% endif %}
+                            {% else %}
+                                <span style="color: #95a5a6;">Sin fecha</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if empresa.servicios_autorizados.count > 0 %}
+                                <span class="badge bg-primary">{{ empresa.servicios_autorizados.count }} servicio{{ empresa.servicios_autorizados.count|pluralize:"s" }}</span>
+                                <br><small style="color: #666;">{{ empresa.get_servicios_names|truncatewords:3 }}</small>
+                            {% else %}
+                                <span style="color: #95a5a6;">Sin servicios</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if empresa.activa %}
+                                <span class="status-badge status-approved">Activa</span>
+                            {% else %}
+                                <span class="status-badge status-rejected">Inactiva</span>
+                            {% endif %}
+                        </td>
+                        <td style="white-space: nowrap;">
+                            <a href="{% url 'empresas:detalle_empresa' empresa.id %}" class="btn btn-sm btn-info me-1" title="Ver detalles">👁️</a>
+                            <a href="{% url 'empresas:editar_empresa' empresa.id %}" class="btn btn-sm btn-primary me-1" title="Editar">✏️</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Paginación -->
+    {% if empresas.has_other_pages %}
+    <div class="pagination" style="text-align: center; margin: 20px 0;">
+        {% if empresas.has_previous %}
+            <a href="?page={{ empresas.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if estado != 'all' %}&estado={{ estado }}{% endif %}" class="btn btn-primary">← Anterior</a>
+        {% endif %}
+        
+        <span style="margin: 0 15px;">
+            Página {{ empresas.number }} de {{ empresas.paginator.num_pages }}
+        </span>
+        
+        {% if empresas.has_next %}
+            <a href="?page={{ empresas.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if estado != 'all' %}&estado={{ estado }}{% endif %}" class="btn btn-primary">Siguiente →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="form-container" style="text-align: center; padding: 60px 20px;">
+        <div style="font-size: 64px; margin-bottom: 20px;">🏢</div>
+        <h3 style="color: #7f8c8d; margin-bottom: 15px;">No hay empresas registradas</h3>
+        <p style="color: #95a5a6; margin-bottom: 30px;">
+            {% if search %}
+                No se encontraron empresas que coincidan con "{{ search }}"
+            {% else %}
+                Comience registrando la primera empresa en el sistema
+            {% endif %}
+        </p>
+        <a href="{% url 'empresas:registrar_empresa' %}" class="btn btn-primary" style="padding: 15px 30px;">
+            ➕ Registrar Primera Empresa
+        </a>
+        {% if search %}
+            <br><br>
+            <a href="{% url 'empresas:listar_empresas' %}" class="btn btn-secondary">Ver Todas las Empresas</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,301 @@
+{% extends 'base.html' %}
+
+{% block title %}Historial de Extensiones | NaviPort RD{% endblock %}
+
+{% block content %}
+<!-- Navbar -->
+{% if user.role == 'evaluador' or user.role == 'supervisor' or user.role == 'admin_tic' or user.role == 'direccion' %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li><a href="{% url 'evaluacion:dashboard' %}" style="color: inherit; text-decoration: none;">Dashboard</a></li>
+        <li class="active">Extensiones de Validez</li>
+        <li><a href="{% url 'evaluacion:configuracion' %}" style="color: inherit; text-decoration: none;">Configuración</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div style="text-align: right; margin-right: 10px;">
+            <div style="font-weight: 500;">{{ user.get_display_name }}</div>
+            <div style="font-size: 14px; color: #7f8c8d;">{{ user.get_role_display_with_admin }}</div>
+        </div>
+        <div class="user-avatar">{{ user.get_display_name|slice:':1'|upper }}{{ user.last_name|slice:':1'|upper }}</div>
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li><a href="{% url 'solicitudes:dashboard' %}" style="color: inherit; text-decoration: none;">Dashboard</a></li>
+        <li><a href="{% url 'solicitudes:mis_solicitudes' %}" style="color: inherit; text-decoration: none;">Solicitudes</a></li>
+        <li class="active">Autorizaciones</li>
+    </ul>
+    <div class="navbar-user">
+        <div style="text-align: right; margin-right: 10px;">
+            <div style="font-weight: 500;">{{ user.get_display_name }}</div>
+            <div style="font-size: 14px; color: #7f8c8d;">{{ user.get_role_display_with_admin }}</div>
+        </div>
+        <div class="user-avatar">{{ user.get_display_name|slice:':1'|upper }}{{ user.last_name|slice:':1'|upper }}</div>
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="content-area">
+    <!-- Breadcrumb -->
+    <div style="margin-bottom: 20px;">
+        {% if user.role == 'evaluador' or user.role == 'supervisor' or user.role == 'admin_tic' or user.role == 'direccion' %}
+            <a href="{% url 'control_acceso:listar_extensiones_pendientes' %}" style="color: #3498db; text-decoration: none;">← Volver a Extensiones</a>
+        {% else %}
+            <a href="{% url 'solicitudes:mis_autorizaciones' %}" style="color: #3498db; text-decoration: none;">← Volver a Mis Autorizaciones</a>
+        {% endif %}
+    </div>
+
+    <!-- Header -->
+    <div class="page-header">
+        <h2 style="color: #2c3e50; margin-bottom: 10px;">
+            📜 Historial de Extensiones
+        </h2>
+        <p style="color: #7f8c8d;">
+            Todas las solicitudes de extensión para esta autorización
+        </p>
+    </div>
+
+    <!-- Información de la Autorización -->
+    <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h3 style="color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+            📄 Información de la Autorización
+        </h3>
+
+        <div class="info-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+            <div class="info-item">
+                <label style="color: #7f8c8d; font-size: 13px; font-weight: 500; display: block; margin-bottom: 5px;">Código</label>
+                <div style="color: #2c3e50; font-size: 16px; font-weight: 600;">{{ autorizacion.codigo }}</div>
+            </div>
+
+            <div class="info-item">
+                <label style="color: #7f8c8d; font-size: 13px; font-weight: 500; display: block; margin-bottom: 5px;">Estado</label>
+                <div>
+                    <span class="badge badge-{{ autorizacion.estado }}">{{ autorizacion.get_estado_display }}</span>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <label style="color: #7f8c8d; font-size: 13px; font-weight: 500; display: block; margin-bottom: 5px;">Total Extensiones</label>
+                <div style="color: #3498db; font-size: 20px; font-weight: bold;">{{ extensiones|length }}</div>
+            </div>
+
+            <div class="info-item">
+                <label style="color: #7f8c8d; font-size: 13px; font-weight: 500; display: block; margin-bottom: 5px;">Empresa</label>
+                <div style="color: #2c3e50; font-size: 15px;">{{ autorizacion.empresa_nombre }}</div>
+            </div>
+
+            <div class="info-item">
+                <label style="color: #7f8c8d; font-size: 13px; font-weight: 500; display: block; margin-bottom: 5px;">Puerto</label>
+                <div style="color: #2c3e50; font-size: 15px;">{{ autorizacion.puerto_nombre }}</div>
+            </div>
+
+            <div class="info-item">
+                <label style="color: #7f8c8d; font-size: 13px; font-weight: 500; display: block; margin-bottom: 5px;">Vencimiento Actual</label>
+                <div style="color: #e74c3c; font-size: 15px; font-weight: 600;">
+                    {{ autorizacion.valida_hasta|date:"d/m/Y H:i" }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline de Extensiones -->
+    <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h3 style="color: #2c3e50; margin-bottom: 30px; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+            ⏰ Línea de Tiempo de Extensiones
+        </h3>
+
+        {% if extensiones %}
+        <div class="timeline">
+            {% for extension in extensiones %}
+            <div class="timeline-item">
+                <div class="timeline-marker estado-{{ extension.estado }}">
+                    {% if extension.estado == 'pendiente' %}⏳{% elif extension.estado == 'aprobada' %}✅{% else %}❌{% endif %}
+                </div>
+                <div class="timeline-content">
+                    <div class="timeline-header">
+                        <div>
+                            <span class="badge badge-{{ extension.estado }}">{{ extension.get_estado_display }}</span>
+                            <strong style="margin-left: 10px; color: #2c3e50;">{{ extension.codigo }}</strong>
+                        </div>
+                        <span class="timeline-fecha">{{ extension.creada_el|date:"d/m/Y H:i" }}</span>
+                    </div>
+
+                    <div class="timeline-info" style="margin: 15px 0;">
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; background: #ecf0f1; padding: 15px; border-radius: 5px;">
+                            <div>
+                                <label style="color: #7f8c8d; font-size: 12px; font-weight: 600;">Fecha Actual</label>
+                                <div style="color: #e74c3c; font-size: 14px;">{{ extension.fecha_vencimiento_actual|date:"d/m/Y H:i" }}</div>
+                            </div>
+                            <div>
+                                <label style="color: #7f8c8d; font-size: 12px; font-weight: 600;">Fecha Solicitada</label>
+                                <div style="color: {% if extension.estado == 'aprobada' %}#27ae60{% else %}#2c3e50{% endif %}; font-size: 14px;">{{ extension.fecha_vencimiento_solicitada|date:"d/m/Y H:i" }}</div>
+                            </div>
+                            <div>
+                                <label style="color: #7f8c8d; font-size: 12px; font-weight: 600;">Extensión</label>
+                                <div style="color: #3498db; font-size: 16px; font-weight: bold;">+{{ extension.dias_extension_solicitados }} días</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-details">
+                        <div style="margin-bottom: 12px;">
+                            <label style="color: #7f8c8d; font-weight: 600; font-size: 13px;">Solicitada por:</label>
+                            <span style="color: #2c3e50;">{{ extension.solicitada_por.get_full_name }}</span>
+                        </div>
+
+                        <div style="margin-bottom: 12px;">
+                            <label style="color: #7f8c8d; font-weight: 600; font-size: 13px;">Motivo:</label>
+                            <div style="color: #2c3e50; padding: 10px; background: white; border-left: 3px solid #3498db; border-radius: 3px;">
+                                {{ extension.motivo }}
+                            </div>
+                        </div>
+
+                        {% if extension.estado != 'pendiente' %}
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+                            <div style="margin-bottom: 10px;">
+                                <label style="color: #7f8c8d; font-weight: 600; font-size: 13px;">Procesada por:</label>
+                                <span style="color: #2c3e50;">{{ extension.procesada_por.get_full_name }}</span>
+                                <span style="color: #7f8c8d; font-size: 13px; margin-left: 10px;">{{ extension.fecha_procesamiento|date:"d/m/Y H:i" }}</span>
+                            </div>
+
+                            {% if extension.estado == 'aprobada' and extension.observaciones_respuesta %}
+                            <div>
+                                <label style="color: #7f8c8d; font-weight: 600; font-size: 13px;">Observaciones:</label>
+                                <div style="color: #27ae60; padding: 10px; background: #eafaf1; border-left: 3px solid #27ae60; border-radius: 3px;">
+                                    {{ extension.observaciones_respuesta }}
+                                </div>
+                            </div>
+                            {% elif extension.estado == 'rechazada' %}
+                            <div>
+                                <label style="color: #7f8c8d; font-weight: 600; font-size: 13px;">Motivo del Rechazo:</label>
+                                <div style="color: #e74c3c; padding: 10px; background: #fadbd8; border-left: 3px solid #e74c3c; border-radius: 3px;">
+                                    {{ extension.motivo_rechazo }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 60px 20px; color: #7f8c8d;">
+            <div style="font-size: 64px; margin-bottom: 20px;">⏰</div>
+            <h3 style="color: #95a5a6;">Sin Historial de Extensiones</h3>
+            <p>Esta autorización no tiene solicitudes de extensión registradas.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.badge-activa { background: #27ae60; color: white; }
+.badge-vencida { background: #e74c3c; color: white; }
+.badge-revocada { background: #95a5a6; color: white; }
+.badge-pendiente { background: #f39c12; color: white; }
+.badge-aprobada { background: #27ae60; color: white; }
+.badge-rechazada { background: #e74c3c; color: white; }
+
+/* Timeline Styles */
+.timeline {
+    position: relative;
+    padding: 0;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 30px;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(to bottom, #3498db, #9b59b6);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 30px;
+    padding-left: 80px;
+    min-height: 70px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    z-index: 10;
+}
+
+.timeline-marker.estado-pendiente { background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); }
+.timeline-marker.estado-aprobada { background: linear-gradient(135deg, #27ae60 0%, #229954 100%); }
+.timeline-marker.estado-rechazada { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); }
+
+.timeline-content {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.timeline-content:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.timeline-fecha {
+    color: #7f8c8d;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.timeline-details {
+    color: #2c3e50;
+    font-size: 14px;
+    line-height: 1.6;
+}
+</style>
+{% endblock %}

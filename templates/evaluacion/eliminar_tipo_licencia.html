@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Tipo de Licencia | NaviPort RD{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar_evaluador.html' with active_page='config' %}
+
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+            <a href="{% url 'evaluacion:gestionar_tipos_licencia' %}" class="btn" style="background: #6c757d; color: white;">
+                ← Volver
+            </a>
+            <h2 style="color: #e74c3c; margin: 0;">🗑️ Eliminar Tipo de Licencia</h2>
+        </div>
+        <p style="color: #7f8c8d;">{{ user.get_display_name }} • Evaluador Portuario</p>
+    </div>
+
+    <div class="data-table">
+        <div class="table-header" style="background: #f8d7da; color: #721c24;">
+            <div class="table-title">
+                ⚠️ Confirmar Eliminación de Tipo de Licencia
+            </div>
+        </div>
+        
+        <div style="padding: 30px;">
+            <!-- Información del Tipo de Licencia -->
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">Información del Tipo de Licencia</h3>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div>
+                        <strong style="color: #495057;">Nombre:</strong>
+                        <div style="color: #2c3e50; font-size: 16px; font-weight: 500;">
+                            {{ tipo_licencia.nombre }}
+                        </div>
+                    </div>
+                    <div>
+                        <strong style="color: #495057;">Estado:</strong>
+                        {% if tipo_licencia.activo %}
+                            <span class="badge" style="background: #d4edda; color: #155724; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 500; margin-left: 5px;">
+                                ✓ Activo
+                            </span>
+                        {% else %}
+                            <span class="badge" style="background: #f8d7da; color: #721c24; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 500; margin-left: 5px;">
+                                ✗ Inactivo
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <strong style="color: #495057;">Descripción:</strong>
+                    <div style="color: #6c757d; margin-top: 5px;">
+                        {{ tipo_licencia.descripcion|default:"Sin descripción disponible" }}
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px;">
+                    <div>
+                        <strong style="color: #495057;">Servicios Incluidos:</strong>
+                        <div style="color: #9b59b6; font-size: 18px; font-weight: bold;">
+                            {{ tipo_licencia.servicios_incluidos.count }}
+                        </div>
+                    </div>
+                    <div>
+                        <strong style="color: #495057;">Empresas Asignadas:</strong>
+                        <div style="color: #28a745; font-size: 18px; font-weight: bold;">
+                            {{ empresas_usando.count }}
+                        </div>
+                    </div>
+                    <div>
+                        <strong style="color: #495057;">Creado:</strong>
+                        <div style="color: #6c757d;">
+                            {{ tipo_licencia.created_at|date:"d/m/Y" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if puede_eliminar %}
+                <!-- Confirmación de eliminación -->
+                <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+                    <div style="color: #856404; font-weight: 500; margin-bottom: 10px;">
+                        ⚠️ Confirmación Requerida
+                    </div>
+                    <div style="color: #856404; margin-bottom: 15px;">
+                        ¿Estás seguro de que deseas eliminar este tipo de licencia? Esta acción no se puede deshacer.
+                    </div>
+                    
+                    {% if tipo_licencia.servicios_incluidos.count > 0 %}
+                    <div style="background: white; padding: 15px; border-radius: 4px; margin-top: 15px;">
+                        <strong style="color: #495057;">Servicios que se desasignarán:</strong>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 10px;">
+                            {% for servicio in tipo_licencia.servicios_incluidos.all|slice:":10" %}
+                                <div style="background: #f8f9fa; padding: 8px; border-radius: 4px; font-size: 13px;">
+                                    <strong>{{ servicio.codigo }}</strong> - {{ servicio.nombre }}
+                                </div>
+                            {% endfor %}
+                            {% if tipo_licencia.servicios_incluidos.count > 10 %}
+                                <div style="background: #e9ecef; padding: 8px; border-radius: 4px; font-size: 13px; font-style: italic; color: #6c757d;">
+                                    ... y {{ tipo_licencia.servicios_incluidos.count|add:"-10" }} más
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <form method="POST">
+                    {% csrf_token %}
+                    <div style="padding-top: 20px; border-top: 1px solid #dee2e6; display: flex; gap: 15px; justify-content: flex-end;">
+                        <a href="{% url 'evaluacion:gestionar_tipos_licencia' %}" class="btn" style="background: #6c757d; color: white; padding: 12px 24px;">
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn" style="background: #e74c3c; color: white; padding: 12px 24px;">
+                            🗑️ Eliminar Tipo de Licencia
+                        </button>
+                    </div>
+                </form>
+            {% else %}
+                <!-- No se puede eliminar -->
+                <div style="background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+                    <div style="color: #721c24; font-weight: 500; margin-bottom: 10px;">
+                        🚫 No se puede eliminar este tipo de licencia
+                    </div>
+                    <div style="color: #721c24; margin-bottom: 15px;">
+                        Este tipo de licencia está asignado a empresas y no puede ser eliminado hasta que se remueva de todas sus asignaciones.
+                    </div>
+                    
+                    <!-- Mostrar empresas que lo usan -->
+                    {% if empresas_usando.count > 0 %}
+                    <div style="background: white; padding: 15px; border-radius: 4px; margin-top: 15px;">
+                        <h4 style="color: #2c3e50; margin-bottom: 15px;">
+                            Empresas que usan este tipo de licencia ({{ empresas_usando.count }}):
+                        </h4>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px;">
+                            {% for empresa in empresas_usando|slice:":12" %}
+                                <div style="background: #f8f9fa; padding: 12px; border-radius: 4px; border-left: 4px solid #f39c12;">
+                                    <div style="font-weight: 500; color: #2c3e50; margin-bottom: 5px;">
+                                        {{ empresa.nombre }}
+                                    </div>
+                                    <div style="color: #6c757d; font-size: 13px; font-family: 'Courier New', monospace;">
+                                        RNC: {{ empresa.rnc }}
+                                    </div>
+                                    {% with empresa.estado_licencia as estado %}
+                                        <div style="margin-top: 5px;">
+                                            <span class="badge" style="background: {{ estado.color }}; color: white; padding: 2px 6px; border-radius: 8px; font-size: 10px;">
+                                                {{ estado.texto }}
+                                            </span>
+                                        </div>
+                                    {% endwith %}
+                                </div>
+                            {% endfor %}
+                            {% if empresas_usando.count > 12 %}
+                                <div style="background: #e9ecef; padding: 12px; border-radius: 4px; font-style: italic; color: #6c757d; display: flex; align-items: center; justify-content: center;">
+                                    ... y {{ empresas_usando.count|add:"-12" }} empresa(s) más
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #dee2e6;">
+                            <strong style="color: #856404;">💡 Para eliminar este tipo de licencia:</strong>
+                            <ol style="color: #856404; margin: 10px 0; padding-left: 20px;">
+                                <li>Ve a cada empresa y cambia su tipo de licencia</li>
+                                <li>O desactiva todas las empresas que usan este tipo</li>
+                                <li>Luego regresa para eliminar este tipo de licencia</li>
+                            </ol>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div style="padding-top: 20px; border-top: 1px solid #dee2e6; display: flex; gap: 15px; justify-content: flex-end;">
+                    <a href="{% url 'evaluacion:gestionar_tipos_licencia' %}" class="btn" style="background: #6c757d; color: white; padding: 12px 24px;">
+                        Volver a Tipos de Licencia
+                    </a>
+                    <a href="{% url 'evaluacion:gestionar_empresas' %}" class="btn" style="background: #17a2b8; color: white; padding: 12px 24px;">
+                        👁️ Ver Empresas
+                    </a>
+                    <a href="{% url 'evaluacion:editar_tipo_licencia' tipo_licencia.id %}" class="btn" style="background: #f39c12; color: white; padding: 12px 24px;">
+                        ✏️ Editar Tipo
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,330 @@
+{% extends 'base.html' %}
+
+{% block title %}Mis Solicitudes | NaviPort RD{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar_evaluador.html' with active_page='dashboard' %}
+
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div>
+                <h2 style="color: #2c3e50; margin: 0;">👤 Mis Solicitudes Asignadas</h2>
+                <p style="color: #7f8c8d; margin: 5px 0 0 0;">{{ user.get_display_name }} • Evaluador Portuario</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <a href="{% url 'evaluacion:dashboard' %}" class="btn" style="background: #6c757d; color: white;">
+                    ← Volver al Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Personales -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px;">
+        <div class="dashboard-card" style="border-left-color: #3498db;">
+            <div class="card-header">
+                <div class="card-icon" style="background: #3498db;">📋</div>
+                <div>
+                    <div class="card-title" style="font-size: 36px;">{{ stats.total_asignadas }}</div>
+                    <div class="card-subtitle" style="font-size: 16px;">Total Asignadas</div>
+                </div>
+            </div>
+        </div>
+        <div class="dashboard-card" style="border-left-color: #f39c12;">
+            <div class="card-header">
+                <div class="card-icon" style="background: #f39c12;">⏳</div>
+                <div>
+                    <div class="card-title" style="font-size: 36px;">{{ stats.en_proceso }}</div>
+                    <div class="card-subtitle" style="font-size: 16px;">En Proceso</div>
+                </div>
+            </div>
+        </div>
+        <div class="dashboard-card" style="border-left-color: #27ae60;">
+            <div class="card-header">
+                <div class="card-icon" style="background: #27ae60;">✅</div>
+                <div>
+                    <div class="card-title" style="font-size: 36px;">{{ stats.completadas }}</div>
+                    <div class="card-subtitle" style="font-size: 16px;">Completadas</div>
+                </div>
+            </div>
+        </div>
+        <div class="dashboard-card" style="border-left-color: #e74c3c;">
+            <div class="card-header">
+                <div class="card-icon" style="background: #e74c3c;">📄</div>
+                <div>
+                    <div class="card-title" style="font-size: 36px;">{{ stats.documentos_pendientes }}</div>
+                    <div class="card-subtitle" style="font-size: 16px;">Docs. Pendientes</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros y Búsqueda -->
+    <div class="data-table">
+        <div class="table-header">
+            <div class="table-title">
+                {% if tiene_filtros %}
+                    Solicitudes Filtradas
+                {% else %}
+                    Todas Mis Solicitudes
+                {% endif %}
+            </div>
+        </div>
+        
+        <div style="padding: 20px; background: #f8f9fa; border-bottom: 1px solid #dee2e6;">
+            <form method="GET" style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">Buscar:</label>
+                    <input type="text" name="q" value="{{ busqueda }}" 
+                           placeholder="ID, empresa, solicitante..." 
+                           style="width: 100%; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px;">
+                </div>
+                <div style="min-width: 150px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">Estado:</label>
+                    <select name="estado" style="width: 100%; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px;">
+                        <option value="">Todos</option>
+                        <option value="sin_asignar" {% if estado_filtro == 'sin_asignar' %}selected{% endif %}>Sin Asignar</option>
+                        <option value="pendiente" {% if estado_filtro == 'pendiente' %}selected{% endif %}>Pendientes</option>
+                        <option value="en_revision" {% if estado_filtro == 'en_revision' %}selected{% endif %}>En Revisión</option>
+                        <option value="documentos_faltantes" {% if estado_filtro == 'documentos_faltantes' %}selected{% endif %}>Docs. Faltantes</option>
+                        <option value="aprobada" {% if estado_filtro == 'aprobada' %}selected{% endif %}>Aprobadas</option>
+                        <option value="rechazada" {% if estado_filtro == 'rechazada' %}selected{% endif %}>Rechazadas</option>
+                        <option value="escalada" {% if estado_filtro == 'escalada' %}selected{% endif %}>Escaladas</option>
+                        <option value="vencida" {% if estado_filtro == 'vencida' %}selected{% endif %}>Vencidas</option>
+                    </select>
+                </div>
+                <div style="min-width: 120px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">Prioridad:</label>
+                    <select name="prioridad" style="width: 100%; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px;">
+                        <option value="">Todas</option>
+                        <option value="baja" {% if prioridad_filtro == 'baja' %}selected{% endif %}>Baja</option>
+                        <option value="normal" {% if prioridad_filtro == 'normal' %}selected{% endif %}>Normal</option>
+                        <option value="alta" {% if prioridad_filtro == 'alta' %}selected{% endif %}>Alta</option>
+                        <option value="critica" {% if prioridad_filtro == 'critica' %}selected{% endif %}>Crítica</option>
+                        <option value="vip" {% if prioridad_filtro == 'vip' %}selected{% endif %}>VIP</option>
+                    </select>
+                </div>
+                <div style="min-width: 120px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">Por página:</label>
+                    <select name="per_page" style="width: 100%; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px;">
+                        <option value="10" {% if request.GET.per_page == '10' %}selected{% endif %}>10</option>
+                        <option value="25" {% if request.GET.per_page == '25' or not request.GET.per_page %}selected{% endif %}>25</option>
+                        <option value="50" {% if request.GET.per_page == '50' %}selected{% endif %}>50</option>
+                        <option value="100" {% if request.GET.per_page == '100' %}selected{% endif %}>100</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">🔍 Buscar</button>
+                <a href="{% url 'evaluacion:mis_solicitudes' %}" class="btn" style="background: #6c757d; color: white;">Limpiar</a>
+            </form>
+        </div>
+        
+        {% if solicitudes %}
+        <div class="table-content">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Solicitante</th>
+                        <th>Empresa</th>
+                        <th>Puerto</th>
+                        <th>Motivo</th>
+                        <th>Fecha Solicitud</th>
+                        <th>Fecha Servicio</th>
+                        <th style="min-width: 110px;">Tiempo Compromiso</th>
+                        <th style="width: 70px;">Prioridad</th>
+                        <th style="width: 90px;">Estado</th>
+                        <th style="min-width: 120px;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for s in solicitudes %}
+                    {% with estado_info=s.estado_con_color %}
+                    <tr>
+                        <td><strong>{{ s.id }}</strong></td>
+                        <td>{{ s.solicitante.get_display_name }}</td>
+                        <td>{{ s.empresa.nombre }}</td>
+                        <td>{{ s.puerto_destino }}</td>
+                        <td>{{ s.motivo_acceso }}</td>
+                        <td>{{ s.enviada_el|date:"d/m/Y" }}<br><small>{{ s.enviada_el|date:"g:i A" }}</small></td>
+                        <td>{{ s.fecha_ingreso|date:"d/m/Y" }}<br><small>{{ s.hora_ingreso|date:"g:i A" }}</small></td>
+                        <td>
+                            {% if s.vence_el %}
+                                <span id="tiempo-{{ s.id }}" 
+                                      data-vence="{{ s.vence_el|date:'c' }}"
+                                      style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; color: white;">
+                                    Calculando...
+                                </span>
+                            {% else %}
+                                <span style="background: #95a5a6; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;">
+                                    N/A
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if s.prioridad == 'vip' %}
+                                <span style="background: #e74c3c; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500; white-space: nowrap;">
+                                    VIP
+                                </span>
+                            {% elif s.prioridad == 'critica' %}
+                                <span style="background: #c0392b; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500; white-space: nowrap;">
+                                    Crítica
+                                </span>
+                            {% elif s.prioridad == 'alta' %}
+                                <span style="background: #f39c12; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500; white-space: nowrap;">
+                                    Alta
+                                </span>
+                            {% elif s.prioridad == 'normal' %}
+                                <span style="background: #3498db; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500; white-space: nowrap;">
+                                    Normal
+                                </span>
+                            {% else %}
+                                <span style="background: #95a5a6; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500; white-space: nowrap;">
+                                    Baja
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span style="background: {{ estado_info.bg_color }}; color: {{ estado_info.text_color|default:'white' }}; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500; white-space: nowrap; display: inline-block; max-width: 80px; overflow: hidden; text-overflow: ellipsis;">
+                                {{ estado_info.texto }}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                                {% if s.estado == 'pendiente' or s.estado == 'en_revision' %}
+                                    <a href="{% url 'evaluacion:evaluar_solicitud' s.id %}" class="btn btn-primary" style="padding: 4px 8px; font-size: 11px; white-space: nowrap;">📋 Evaluar</a>
+                                {% else %}
+                                    <a href="{% url 'evaluacion:evaluar_solicitud' s.id %}" class="btn" style="padding: 4px 8px; font-size: 11px; background: #6c757d; color: white; white-space: nowrap;">👁️ Ver</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endwith %}
+                {% empty %}
+                    <tr><td colspan="11" style="text-align:center; padding: 30px; color: #7f8c8d;">
+                        {% if tiene_filtros %}
+                            No se encontraron solicitudes asignadas a ti con los filtros aplicados.
+                        {% else %}
+                            No tienes solicitudes asignadas en este momento.
+                        {% endif %}
+                    </td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginación -->
+        {% if is_paginated %}
+        <div style="padding: 20px; background: #f8f9fa; border-top: 1px solid #dee2e6;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <!-- Información de registros -->
+                <div style="color: #6c757d; font-size: 14px;">
+                    Mostrando {{ solicitudes.start_index }} - {{ solicitudes.end_index }} de {{ solicitudes.paginator.count }} solicitudes
+                    ({{ request.GET.per_page|default:"25" }} por página)
+                </div>
+                
+                <!-- Controles de paginación -->
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    {% if solicitudes.has_previous %}
+                        <a href="?{% if busqueda %}q={{ busqueda }}&{% endif %}{% if estado_filtro %}estado={{ estado_filtro }}&{% endif %}{% if prioridad_filtro %}prioridad={{ prioridad_filtro }}&{% endif %}{% if request.GET.per_page %}per_page={{ request.GET.per_page }}&{% endif %}page=1" class="btn btn-sm">« Primera</a>
+                        <a href="?{% if busqueda %}q={{ busqueda }}&{% endif %}{% if estado_filtro %}estado={{ estado_filtro }}&{% endif %}{% if prioridad_filtro %}prioridad={{ prioridad_filtro }}&{% endif %}{% if request.GET.per_page %}per_page={{ request.GET.per_page }}&{% endif %}page={{ solicitudes.previous_page_number }}" class="btn btn-sm">‹ Anterior</a>
+                    {% endif %}
+                    
+                    <span style="margin: 0 15px; color: #6c757d;">
+                        Página {{ solicitudes.number }} de {{ solicitudes.paginator.num_pages }}
+                    </span>
+                    
+                    {% if solicitudes.has_next %}
+                        <a href="?{% if busqueda %}q={{ busqueda }}&{% endif %}{% if estado_filtro %}estado={{ estado_filtro }}&{% endif %}{% if prioridad_filtro %}prioridad={{ prioridad_filtro }}&{% endif %}{% if request.GET.per_page %}per_page={{ request.GET.per_page }}&{% endif %}page={{ solicitudes.next_page_number }}" class="btn btn-sm">Siguiente ›</a>
+                        <a href="?{% if busqueda %}q={{ busqueda }}&{% endif %}{% if estado_filtro %}estado={{ estado_filtro }}&{% endif %}{% if prioridad_filtro %}prioridad={{ prioridad_filtro }}&{% endif %}{% if request.GET.per_page %}per_page={{ request.GET.per_page }}&{% endif %}page={{ solicitudes.paginator.num_pages }}" class="btn btn-sm">Última »</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div style="padding: 40px; text-align: center;">
+            <div style="color: #6c757d; font-size: 18px; margin-bottom: 10px;">
+                👤 No hay solicitudes asignadas
+            </div>
+            <p style="color: #6c757d;">
+                {% if tiene_filtros %}
+                    No se encontraron solicitudes que coincidan con los filtros aplicados.
+                {% else %}
+                    Actualmente no tienes solicitudes asignadas para evaluar.
+                {% endif %}
+            </p>
+            <a href="{% url 'evaluacion:dashboard' %}" class="btn btn-primary" style="margin-top: 10px;">
+                ← Volver al Dashboard
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Función para inicializar los relojes de tiempo compromiso
+function iniciarRelojes() {
+    // Actualizar relojes inmediatamente
+    actualizarRelojes();
+    
+    // Actualizar relojes cada segundo
+    setInterval(() => {
+        actualizarRelojes();
+    }, 1000);
+}
+
+function actualizarRelojes() {
+    const ahora = new Date();
+    
+    // Buscar todos los elementos de tiempo
+    document.querySelectorAll('[id^="tiempo-"]').forEach(elemento => {
+        const fechaVence = elemento.getAttribute('data-vence');
+        if (!fechaVence) return;
+        
+        const vencimiento = new Date(fechaVence);
+        const diferencia = vencimiento - ahora;
+        
+        let texto, color;
+        
+        if (diferencia <= 0) {
+            // Vencida
+            texto = '⏰ Vencida';
+            color = '#e74c3c';
+        } else {
+            // Calcular tiempo restante
+            const segundosTotales = Math.floor(diferencia / 1000);
+            const dias = Math.floor(segundosTotales / 86400);
+            const horas = Math.floor((segundosTotales % 86400) / 3600);
+            const minutos = Math.floor((segundosTotales % 3600) / 60);
+            const segundos = segundosTotales % 60;
+            
+            if (dias > 0) {
+                texto = `${dias}d ${horas}h`;
+                color = '#27ae60'; // Verde
+            } else if (horas > 0) {
+                texto = `${horas}h ${minutos}m`;
+                color = '#f39c12'; // Naranja
+            } else if (minutos > 0) {
+                texto = `${minutos}m ${segundos}s`;
+                color = '#e74c3c'; // Rojo
+            } else {
+                texto = `${segundos}s`;
+                color = '#c0392b'; // Rojo oscuro para últimos segundos
+            }
+        }
+        
+        // Actualizar elemento
+        elemento.textContent = texto;
+        elemento.style.backgroundColor = color;
+    });
+}
+
+// Iniciar cuando la página carga
+document.addEventListener('DOMContentLoaded', () => {
+    iniciarRelojes();
+});
+</script>
+
+{% endblock %}

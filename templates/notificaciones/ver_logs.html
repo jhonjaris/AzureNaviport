@@ -1,0 +1,536 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Logs de Notificaciones{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh;">
+    <div class="content-wrapper">
+        <!-- Header -->
+        <div class="header-section mb-4">
+            <a href="{% url 'notificaciones:configuracion_correo' %}" class="back-link">
+                <i class="fas fa-arrow-left"></i> Volver a Notificaciones
+            </a>
+            <h1 class="page-title">Historial de Notificaciones</h1>
+            <p class="page-subtitle">Registro completo de todas las notificaciones enviadas por el sistema</p>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="stats-container mb-4">
+            <div class="stat-card stat-card-primary">
+                <div class="stat-icon">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number">{{ total_logs }}</h3>
+                    <p class="stat-label">Total de Intentos</p>
+                </div>
+            </div>
+            <div class="stat-card stat-card-success">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number">{{ total_enviados }}</h3>
+                    <p class="stat-label">Enviados Exitosamente</p>
+                </div>
+            </div>
+            <div class="stat-card stat-card-danger">
+                <div class="stat-icon">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number">{{ total_errores }}</h3>
+                    <p class="stat-label">Errores</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filter-card mb-4">
+            <div class="filter-header">
+                <i class="fas fa-filter"></i> Filtros de Búsqueda
+            </div>
+            <div class="filter-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-5">
+                        <label for="evento" class="filter-label">Evento</label>
+                        <select name="evento" id="evento" class="filter-select">
+                            <option value="">Todos los eventos</option>
+                            {% for evento in eventos %}
+                            <option value="{{ evento.id }}" {% if request.GET.evento == evento.id|stringformat:"s" %}selected{% endif %}>
+                                {{ evento.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <label for="estado" class="filter-label">Estado</label>
+                        <select name="estado" id="estado" class="filter-select">
+                            <option value="">Todos los estados</option>
+                            <option value="pendiente" {% if request.GET.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                            <option value="enviado" {% if request.GET.estado == 'enviado' %}selected{% endif %}>Enviado</option>
+                            <option value="error" {% if request.GET.estado == 'error' %}selected{% endif %}>Error</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="filter-btn">
+                            <i class="fas fa-search"></i> Filtrar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabla de Logs -->
+        <div class="logs-card">
+            <div class="logs-header">
+                <i class="fas fa-list"></i> Registro de Notificaciones (Últimos 100)
+            </div>
+            <div class="logs-body">
+                {% if logs %}
+                <div class="table-responsive">
+                    <table class="logs-table">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-calendar"></i> Fecha/Hora</th>
+                                <th><i class="fas fa-bell"></i> Evento</th>
+                                <th><i class="fas fa-users"></i> Destinatarios</th>
+                                <th><i class="fas fa-envelope"></i> Asunto</th>
+                                <th><i class="fas fa-signal"></i> Estado</th>
+                                <th><i class="fas fa-cog"></i> Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in logs %}
+                            <tr class="log-row">
+                                <td class="log-date">
+                                    <div class="date-time">
+                                        <i class="fas fa-clock"></i>
+                                        {{ log.fecha_creacion|date:"d/m/Y" }}
+                                        <br>
+                                        <small>{{ log.fecha_creacion|date:"H:i" }}</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="event-badge">{{ log.evento.nombre }}</span>
+                                </td>
+                                <td class="log-recipients">
+                                    {{ log.destinatarios|truncatewords:3 }}
+                                </td>
+                                <td class="log-subject">
+                                    {{ log.asunto|truncatewords:6 }}
+                                </td>
+                                <td>
+                                    {% if log.estado == 'enviado' %}
+                                        <span class="status-badge status-success">
+                                            <i class="fas fa-check-circle"></i> Enviado
+                                        </span>
+                                    {% elif log.estado == 'error' %}
+                                        <span class="status-badge status-error">
+                                            <i class="fas fa-times-circle"></i> Error
+                                        </span>
+                                    {% else %}
+                                        <span class="status-badge status-pending">
+                                            <i class="fas fa-clock"></i> Pendiente
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'notificaciones:detalle_log' log.id %}" class="action-btn">
+                                        <i class="fas fa-eye"></i> Ver Detalle
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>No hay logs de notificaciones registrados</p>
+                    <small>Los logs aparecerán aquí cuando se envíen notificaciones</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Header Section */
+.header-section {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.back-link {
+    display: inline-block;
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 14px;
+    margin-bottom: 15px;
+    padding: 8px 15px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.back-link:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    transform: translateX(-5px);
+}
+
+.page-title {
+    color: #ffffff;
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 16px;
+    margin: 0;
+}
+
+/* Stats Container */
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+/* Stat Cards */
+.stat-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    color: white;
+}
+
+.stat-card-primary .stat-icon {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card-success .stat-icon {
+    background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+}
+
+.stat-card-danger .stat-icon {
+    background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-number {
+    font-size: 36px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0 0 5px 0;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #7f8c8d;
+    margin: 0;
+    font-weight: 500;
+}
+
+/* Filter Card */
+.filter-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.filter-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px 25px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.filter-body {
+    padding: 25px;
+}
+
+.filter-label {
+    display: block;
+    margin-bottom: 8px;
+    color: #2c3e50;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.filter-select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.filter-btn {
+    width: 100%;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filter-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* Logs Card */
+.logs-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.logs-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    padding: 20px 25px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.logs-body {
+    padding: 0;
+}
+
+/* Logs Table */
+.logs-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.logs-table thead {
+    background: #f8f9fa;
+}
+
+.logs-table thead th {
+    padding: 15px 20px;
+    text-align: left;
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.logs-table thead th i {
+    margin-right: 8px;
+    color: #667eea;
+}
+
+.logs-table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.logs-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.logs-table tbody td {
+    padding: 20px;
+    border-bottom: 1px solid #f0f0f0;
+    color: #2c3e50;
+}
+
+.log-date {
+    font-weight: 500;
+}
+
+.date-time {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.date-time i {
+    color: #667eea;
+    margin-right: 5px;
+}
+
+.date-time small {
+    color: #7f8c8d;
+    font-size: 12px;
+}
+
+.event-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.log-recipients, .log-subject {
+    font-size: 13px;
+    color: #555;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.status-success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status-pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #7f8c8d;
+}
+
+.empty-state i {
+    font-size: 80px;
+    color: #e0e0e0;
+    margin-bottom: 20px;
+}
+
+.empty-state p {
+    font-size: 18px;
+    color: #2c3e50;
+    margin: 10px 0;
+}
+
+.empty-state small {
+    font-size: 14px;
+    color: #95a5a6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .stats-container {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .page-title {
+        font-size: 24px;
+    }
+
+    .stat-number {
+        font-size: 28px;
+    }
+
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 24px;
+    }
+
+    .logs-table {
+        font-size: 12px;
+    }
+
+    .logs-table thead th,
+    .logs-table tbody td {
+        padding: 10px;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .stats-container {
+        gap: 15px;
+    }
+
+    .stat-card {
+        padding: 20px;
+        gap: 15px;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Mis Incumplimientos{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <h2>Incumplimientos de {{ user.empresa.nombre }}</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Puerto</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for inc in incumplimientos %}
+            <tr>
+                <td>{{ inc.fecha_incumplimiento|date:"d/m/Y" }}</td>
+                <td>{{ inc.get_tipo_display }}</td>
+                <td>{{ inc.puerto.nombre }}</td>
+                <td>{{ inc.get_estado_display }}</td>
+                <td><a href="{% url 'incumplimientos:detalle' inc.pk %}" class="btn btn-sm btn-primary">Ver</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

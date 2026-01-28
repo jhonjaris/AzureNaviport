@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if editando %}Editar{% else %}Crear{% endif %} Tipo de Licencia | NaviPort RD{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar_evaluador.html' with active_page='config' %}
+
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+            <a href="{% url 'evaluacion:gestionar_tipos_licencia' %}" class="btn" style="background: #6c757d; color: white;">
+                ← Volver
+            </a>
+            <h2 style="color: #2c3e50; margin: 0;">
+                {% if editando %}
+                    ✏️ Editar Tipo de Licencia: {{ tipo_licencia.nombre }}
+                {% else %}
+                    ➕ Crear Nuevo Tipo de Licencia
+                {% endif %}
+            </h2>
+        </div>
+        <p style="color: #7f8c8d;">{{ user.get_display_name }} • Evaluador Portuario</p>
+    </div>
+
+    <div class="data-table">
+        <div class="table-header">
+            <div class="table-title">
+                {% if editando %}Información del Tipo de Licencia{% else %}Datos del Nuevo Tipo de Licencia{% endif %}
+            </div>
+        </div>
+        
+        <div style="padding: 30px;">
+            <form method="POST" novalidate>
+                {% csrf_token %}
+                
+                <!-- Información Básica -->
+                <fieldset style="border: none; margin: 0; padding: 0;">
+                    <legend style="font-size: 18px; font-weight: 600; color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #f39c12; padding-bottom: 10px;">
+                        🏷️ Información Básica
+                    </legend>
+                    
+                    <div style="margin-bottom: 30px;">
+                        <label for="{{ form.nombre.id_for_label }}" style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">
+                            Nombre del Tipo de Licencia *
+                        </label>
+                        {{ form.nombre }}
+                        {% if form.nombre.errors %}
+                            <div style="color: #e74c3c; font-size: 12px; margin-top: 5px;">
+                                {{ form.nombre.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small style="color: #6c757d; font-size: 12px;">Ejemplo: Licencia Portuaria General, Licencia de Combustibles</small>
+                    </div>
+                    
+                    <div style="margin-bottom: 30px;">
+                        <label for="{{ form.descripcion.id_for_label }}" style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">
+                            Descripción
+                        </label>
+                        {{ form.descripcion }}
+                        {% if form.descripcion.errors %}
+                            <div style="color: #e74c3c; font-size: 12px; margin-top: 5px;">
+                                {{ form.descripcion.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small style="color: #6c757d; font-size: 12px;">Descripción del tipo de licencia y sus alcances</small>
+                    </div>
+                    
+                    <div style="margin-bottom: 30px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            {{ form.activo }}
+                            <label for="{{ form.activo.id_for_label }}" style="margin: 0; font-weight: 500; color: #495057;">
+                                Tipo de Licencia Activo
+                            </label>
+                            {% if form.activo.errors %}
+                                <div style="color: #e74c3c; font-size: 12px; margin-left: 10px;">
+                                    {{ form.activo.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <small style="color: #6c757d; font-size: 12px; display: block; margin-top: 5px;">
+                            Solo los tipos de licencia activos pueden ser asignados a empresas
+                        </small>
+                    </div>
+                </fieldset>
+
+                <!-- Servicios Incluidos -->
+                <fieldset style="border: none; margin: 0; padding: 0;">
+                    <legend style="font-size: 18px; font-weight: 600; color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #9b59b6; padding-bottom: 10px;">
+                        🛡️ Servicios Incluidos
+                    </legend>
+                    
+                    <div style="margin-bottom: 30px;">
+                        <label style="display: block; margin-bottom: 10px; font-weight: 500; color: #495057;">
+                            Servicios que se incluyen automáticamente con este tipo de licencia
+                        </label>
+                        <div id="servicios-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; max-height: 400px; overflow-y: auto;">
+                            {% for field in form.servicios_incluidos %}
+                                <div class="servicio-item" style="display: flex; align-items: center; gap: 8px; padding: 8px; background: white; border-radius: 4px; border: 1px solid #e9ecef;">
+                                    {{ field.tag }}
+                                    <label for="{{ field.id_for_label }}" style="margin: 0; font-size: 14px; color: #495057; cursor: pointer; flex: 1;">
+                                        <strong>{{ field.choice_label|slice:":7" }}</strong> - {{ field.choice_label|slice:"8:" }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if form.servicios_incluidos.errors %}
+                            <div style="color: #e74c3c; font-size: 12px; margin-top: 5px;">
+                                {{ form.servicios_incluidos.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small style="color: #6c757d; font-size: 12px; display: block; margin-top: 5px;">
+                            {{ form.servicios_incluidos.help_text }}
+                        </small>
+                        
+                        <!-- Botones de selección rápida -->
+                        <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button type="button" id="btn-seleccionar-todos" class="btn" style="background: #28a745; color: white; font-size: 12px; padding: 5px 10px;">
+                                ✓ Seleccionar Todos
+                            </button>
+                            <button type="button" id="btn-deseleccionar-todos" class="btn" style="background: #dc3545; color: white; font-size: 12px; padding: 5px 10px;">
+                                ✗ Deseleccionar Todos
+                            </button>
+                        </div>
+                    </div>
+                </fieldset>
+
+                {% if editando and tipo_licencia %}
+                <!-- Información de Uso -->
+                <fieldset style="border: none; margin: 0; padding: 0; margin-bottom: 30px;">
+                    <legend style="font-size: 18px; font-weight: 600; color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #17a2b8; padding-bottom: 10px;">
+                        📊 Información de Uso
+                    </legend>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                        <div class="stat-card">
+                            <div class="stat-number" style="color: #28a745;">{{ tipo_licencia.empresas_asignadas.count }}</div>
+                            <div class="stat-label">Empresas Asignadas</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" style="color: #9b59b6;">{{ tipo_licencia.servicios_incluidos.count }}</div>
+                            <div class="stat-label">Servicios Incluidos</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" style="{% if tipo_licencia.puede_eliminar %}color: #28a745;{% else %}color: #e74c3c;{% endif %}">
+                                {% if tipo_licencia.puede_eliminar %}✓{% else %}✗{% endif %}
+                            </div>
+                            <div class="stat-label">Puede Eliminar</div>
+                        </div>
+                    </div>
+                    
+                    {% if not tipo_licencia.puede_eliminar %}
+                    <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px;">
+                        <div style="color: #856404; font-weight: 500; margin-bottom: 5px;">
+                            ⚠️ Tipo de Licencia en Uso
+                        </div>
+                        <div style="color: #856404; font-size: 14px;">
+                            Este tipo de licencia no puede ser eliminado porque está asignado a {{ tipo_licencia.empresas_asignadas.count }} empresa(s). 
+                            Para eliminarlo, primero debe ser removido de todas las empresas.
+                        </div>
+                    </div>
+                    {% endif %}
+                </fieldset>
+                {% endif %}
+
+                <!-- Botones de Acción -->
+                <div style="padding-top: 20px; border-top: 1px solid #dee2e6; display: flex; gap: 15px; justify-content: flex-end;">
+                    <a href="{% url 'evaluacion:gestionar_tipos_licencia' %}" class="btn" style="background: #6c757d; color: white; padding: 12px 24px;">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary" style="padding: 12px 24px;">
+                        {% if editando %}
+                            💾 Actualizar Tipo de Licencia
+                        {% else %}
+                            ➕ Crear Tipo de Licencia
+                        {% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Seleccionar/deseleccionar todos los servicios
+    const btnSeleccionarTodos = document.getElementById('btn-seleccionar-todos');
+    const btnDeseleccionarTodos = document.getElementById('btn-deseleccionar-todos');
+    
+    if (btnSeleccionarTodos) {
+        btnSeleccionarTodos.addEventListener('click', function() {
+            const checkboxes = document.querySelectorAll('input[name="servicios_incluidos"]');
+            checkboxes.forEach(cb => cb.checked = true);
+        });
+    }
+    
+    if (btnDeseleccionarTodos) {
+        btnDeseleccionarTodos.addEventListener('click', function() {
+            const checkboxes = document.querySelectorAll('input[name="servicios_incluidos"]');
+            checkboxes.forEach(cb => cb.checked = false);
+        });
+    }
+    
+    // Auto-generar nombre basado en servicios seleccionados (solo para nuevos)
+    {% if not editando %}
+    const nombreInput = document.getElementById('{{ form.nombre.id_for_label }}');
+    if (nombreInput && !nombreInput.value) {
+        const serviciosCheckboxes = document.querySelectorAll('input[name="servicios_incluidos"]');
+        
+        serviciosCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                if (!nombreInput.value) {
+                    const serviciosSeleccionados = Array.from(document.querySelectorAll('input[name="servicios_incluidos"]:checked'));
+                    
+                    if (serviciosSeleccionados.length > 0) {
+                        // Sugerencias basadas en los servicios más comunes
+                        const servicios = serviciosSeleccionados.map(cb => {
+                            const label = cb.parentElement.querySelector('label').textContent;
+                            return label.split(' - ')[0].replace(/^[A-Z]+-\d+\s*/, '').trim();
+                        });
+                        
+                        let sugerencia = 'Licencia de ';
+                        
+                        if (servicios.includes('Carga General') && servicios.includes('Contenedores')) {
+                            sugerencia += 'Carga General';
+                        } else if (servicios.some(s => s.includes('Combustible'))) {
+                            sugerencia += 'Combustibles';
+                        } else if (servicios.some(s => s.includes('Granel'))) {
+                            sugerencia += 'Graneles';
+                        } else if (servicios.some(s => s.includes('Crucero'))) {
+                            sugerencia += 'Servicios Turísticos';
+                        } else if (servicios.some(s => s.includes('Pesquer'))) {
+                            sugerencia += 'Servicios Pesqueros';
+                        } else {
+                            sugerencia += 'Servicios Especializados';
+                        }
+                        
+                        nombreInput.value = sugerencia;
+                    }
+                }
+            });
+        });
+    }
+    {% endif %}
+});
+</script>
+
+{% endblock %}

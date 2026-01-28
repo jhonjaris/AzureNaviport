@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Lista de Vehículos | NaviPort RD{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="content-area">
+    <div class="page-header">
+        <div>
+            <h2 style="color: #2c3e50; margin-bottom: 10px;">🚚 Lista de Vehículos</h2>
+            <p style="color: #7f8c8d;">Gestiona los vehículos registrados en el sistema</p>
+        </div>
+        <a href="{% url 'gestion_vehiculos:crear_vehiculo' %}" class="btn btn-success">➕ Nuevo Vehículo</a>
+    </div>
+
+    <!-- Buscador -->
+    <div class="search-section">
+        <form method="get" class="search-form">
+            <input type="text" name="q" value="{{ query }}" placeholder="Buscar por placa, marca o modelo..." class="search-input">
+            <button type="submit" class="btn btn-success">🔍 Buscar</button>
+            {% if query %}
+            <a href="{% url 'gestion_vehiculos:listar_vehiculos' %}" class="btn btn-secondary">Limpiar</a>
+            {% endif %}
+        </form>
+    </div>
+
+    {% if vehiculos %}
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Placa</th>
+                    <th>Vehículo</th>
+                    <th>Color</th>
+                    <th>Año</th>
+                    <th>Tipo</th>
+                    <th>Fecha Registro</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vehiculo in vehiculos %}
+                <tr>
+                    <td><strong>{{ vehiculo.placa }}</strong></td>
+                    <td>
+                        <strong>{{ vehiculo.marca }} {{ vehiculo.modelo }}</strong>
+                        {% if vehiculo.numero_chasis %}
+                        <br><small style="color: #7f8c8d;">VIN: {{ vehiculo.numero_chasis|slice:":10" }}...</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ vehiculo.color }}</td>
+                    <td>
+                        {{ vehiculo.ano }}
+                        {% if vehiculo.edad_vehiculo %}
+                        <br><small style="color: #7f8c8d;">{{ vehiculo.edad_vehiculo }} años</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ vehiculo.get_tipo_vehiculo_display }}</td>
+                    <td>{{ vehiculo.fecha_registro|date:'d/m/Y' }}</td>
+                    <td class="actions-cell">
+                        <a href="{% url 'gestion_vehiculos:detalle_vehiculo' vehiculo.id %}" class="btn-small btn-info">Ver</a>
+                        <a href="{% url 'gestion_vehiculos:editar_vehiculo' vehiculo.id %}" class="btn-small btn-warning">Editar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">🚚</div>
+        <h3>No se encontraron vehículos</h3>
+        <p>{% if query %}No hay vehículos que coincidan con "{{ query }}"{% else %}Aún no hay vehículos registrados{% endif %}</p>
+        <a href="{% url 'gestion_vehiculos:crear_vehiculo' %}" class="btn btn-success">Registrar Primer Vehículo</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

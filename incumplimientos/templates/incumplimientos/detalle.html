@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Detalle Incumplimiento - NaviPort RD{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh;">
+    <div class="content-wrapper">
+        <div class="header-section mb-4">
+            <a href="javascript:history.back()" class="back-link">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+            <h1 class="page-title">Detalle del Incumplimiento</h1>
+            <p class="page-subtitle">Información completa del incumplimiento #{{ incumplimiento.id }}</p>
+        </div>
+
+        <div class="detail-card mb-4">
+            <div class="detail-header">
+                <i class="fas fa-exclamation-triangle"></i> Información del Incumplimiento
+            </div>
+            <div class="detail-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="info-item">
+                            <label>Tipo:</label>
+                            <span>{{ incumplimiento.get_tipo_display }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Empresa:</label>
+                            <span>{{ incumplimiento.solicitud.empresa.nombre }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Puerto:</label>
+                            <span>{{ incumplimiento.puerto.nombre }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Lugar:</label>
+                            <span>{{ incumplimiento.lugar_puerto.nombre|default:"No especificado" }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-item">
+                            <label>Fecha del Incumplimiento:</label>
+                            <span>{{ incumplimiento.fecha_incumplimiento|date:"d/m/Y H:i" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Reportado Por:</label>
+                            <span>{{ incumplimiento.reportado_por.get_full_name }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Estado:</label>
+                            <span class="status-badge status-{{ incumplimiento.estado }}">{{ incumplimiento.get_estado_display }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Fecha de Reporte:</label>
+                            <span>{{ incumplimiento.fecha_reporte|date:"d/m/Y H:i" }}</span>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="info-item">
+                    <label>Descripción:</label>
+                    <p>{{ incumplimiento.descripcion }}</p>
+                </div>
+                {% if incumplimiento.observaciones %}
+                <div class="info-item">
+                    <label>Observaciones:</label>
+                    <p>{{ incumplimiento.observaciones }}</p>
+                </div>
+                {% endif %}
+                {% if incumplimiento.evidencia %}
+                <div class="info-item">
+                    <label>Evidencia:</label>
+                    <a href="{{ incumplimiento.evidencia.url }}" target="_blank" class="btn-download">
+                        <i class="fas fa-file-download"></i> Descargar Evidencia
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if subsanacion %}
+        <div class="detail-card">
+            <div class="detail-header">
+                <i class="fas fa-clipboard-check"></i> Solicitud de Subsanación
+            </div>
+            <div class="detail-body">
+                <div class="info-item">
+                    <label>Información Requerida:</label>
+                    <p>{{ subsanacion.informacion_requerida }}</p>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="info-item">
+                            <label>Plazo:</label>
+                            <span>{{ subsanacion.plazo_dias }} días hábiles</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="info-item">
+                            <label>Fecha Límite:</label>
+                            <span>{{ subsanacion.fecha_limite|date:"d/m/Y H:i" }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="info-item">
+                            <label>Estado:</label>
+                            <span class="status-badge">{{ subsanacion.get_estado_display }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% if subsanacion.estado == 'pendiente' and user.role == 'solicitante' %}
+                <div class="mt-3">
+                    <a href="{% url 'incumplimientos:responder_subsanacion' subsanacion.id %}" class="btn-action">
+                        <i class="fas fa-reply"></i> Responder Subsanación
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.header-section { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-radius: 15px; padding: 25px; border: 1px solid rgba(255, 255, 255, 0.2); }
+.back-link { display: inline-block; color: #fff; text-decoration: none; padding: 8px 15px; background: rgba(255, 255, 255, 0.2); border-radius: 8px; margin-bottom: 15px; }
+.page-title { color: #fff; font-size: 32px; font-weight: 700; margin: 0 0 10px 0; }
+.page-subtitle { color: rgba(255, 255, 255, 0.9); font-size: 16px; }
+.detail-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
+.detail-header { background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white; padding: 20px 25px; font-size: 18px; font-weight: 600; }
+.detail-body { padding: 30px; }
+.info-item { margin-bottom: 20px; }
+.info-item label { display: block; font-weight: 600; color: #2c3e50; margin-bottom: 5px; font-size: 14px; }
+.info-item span, .info-item p { color: #555; font-size: 15px; }
+.status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.status-reportado { background: #fff3cd; color: #856404; }
+.status-en_revision { background: #cce5ff; color: #004085; }
+.status-pendiente_subsanacion { background: #f8d7da; color: #721c24; }
+.status-subsanado { background: #d4edda; color: #155724; }
+.btn-download, .btn-action { display: inline-block; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; }
+hr { border: 0; border-top: 2px solid #f0f0f0; margin: 25px 0; }
+</style>
+{% endblock %}

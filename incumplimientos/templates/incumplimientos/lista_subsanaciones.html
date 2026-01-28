@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Subsanaciones{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <h2>Solicitudes de Subsanación</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Incumplimiento</th>
+                <th>Empresa</th>
+                <th>Plazo</th>
+                <th>Fecha Límite</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sub in subsanaciones %}
+            <tr>
+                <td>#{{ sub.incumplimiento.id }}</td>
+                <td>{{ sub.incumplimiento.solicitud.empresa.nombre }}</td>
+                <td>{{ sub.plazo_dias }} días</td>
+                <td>{{ sub.fecha_limite|date:"d/m/Y H:i" }}</td>
+                <td>{{ sub.get_estado_display }}</td>
+                <td>
+                    {% if sub.estado == 'respondida' %}
+                    <a href="{% url 'incumplimientos:revisar_subsanacion' sub.pk %}" class="btn btn-sm btn-primary">Revisar</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

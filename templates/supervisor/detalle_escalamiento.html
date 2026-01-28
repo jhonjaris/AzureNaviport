@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalle Escalamiento {{ escalamiento.codigo }} | NaviPort RD{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li>Dashboard</li>
+        <li>Escalamientos</li>
+        <li>Discrepancias</li>
+        <li>Reportes</li>
+    </ul>
+    <div class="navbar-user">
+        <span>Supervisor</span>
+        <div class="user-avatar">SP</div>
+    
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <h2 style="color: #2c3e50; margin-bottom: 10px;">Detalle de Escalamiento {{ escalamiento.codigo }}</h2>
+        <p style="color: #7f8c8d;">Tipo: {{ escalamiento.tipo }} • Evaluador: {{ escalamiento.evaluador }}</p>
+    </div>
+    <div class="form-container" style="max-width: 600px; margin: 0 auto;">
+        <table style="width:100%; font-size: 15px;">
+            <tr><td><strong>Código:</strong></td><td>{{ escalamiento.codigo }}</td></tr>
+            <tr><td><strong>Tipo:</strong></td><td>{{ escalamiento.tipo }}</td></tr>
+            <tr><td><strong>Evaluador:</strong></td><td>{{ escalamiento.evaluador }}</td></tr>
+            <tr><td><strong>Prioridad:</strong></td><td><span class="status-badge" style="background: {{ escalamiento.color }}; color: white;">{{ escalamiento.prioridad }}</span></td></tr>
+            <tr><td><strong>Tiempo:</strong></td><td style="color: {{ escalamiento.color }};">⏰ {{ escalamiento.tiempo }}</td></tr>
+        </table>
+        <div style="margin-top: 30px; text-align: center;">
+            <a href="{% url 'supervisor:dashboard' %}" class="btn btn-primary">← Volver al Dashboard</a>
+            <form method="post" action="{% url 'supervisor:resolver_escalamiento' escalamiento.codigo %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger" style="margin-left: 20px;">Resolver Escalamiento</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

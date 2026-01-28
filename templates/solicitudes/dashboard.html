@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load notificaciones_tags %}
+
+{% block title %}Dashboard Solicitante | NaviPort RD{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'solicitudes/css/solicitudes.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li class="active"><a href="{% url 'solicitudes:dashboard' %}" style="color: inherit; text-decoration: none;">🏠 Dashboard</a></li>
+        <li><a href="{% url 'solicitudes:solicitud_wizard_inicio' %}" style="color: inherit; text-decoration: none;">➕ Nueva Solicitud</a></li>
+        <li><a href="{% url 'solicitudes:mis_solicitudes' %}" style="color: inherit; text-decoration: none;">📋 Solicitudes</a></li>
+        <li><a href="{% url 'gestion_personal:dashboard' %}" style="color: inherit; text-decoration: none;">👥 Personal</a></li>
+        <li><a href="{% url 'gestion_vehiculos:dashboard' %}" style="color: inherit; text-decoration: none;">🚚 Vehículos</a></li>
+        <li><a href="{% url 'solicitudes:mis_autorizaciones' %}" style="color: inherit; text-decoration: none;">🎫 Autorizaciones</a></li>
+        {% if user.es_admin_empresa %}
+        <li><a href="{% url 'accounts:gestionar_usuarios' %}" style="color: inherit; text-decoration: none;">👨‍💼 Gestión de Usuarios</a></li>
+        {% endif %}
+        <li><a href="{% url 'accounts:ayuda' %}" style="color: inherit; text-decoration: none;">❓ Ayuda</a></li>
+        <!-- <li><a href="{% url 'solicitudes:estadisticas' %}" style="color: inherit; text-decoration: none;">📊 Estadísticas</a></li> -->
+    </ul>
+    <div class="navbar-user">
+        <div style="text-align: right; margin-right: 10px;">
+            <div class="user-name">{{ user.get_display_name }}</div>
+            <div style="font-size: 14px; color: #7f8c8d;">{{ user.get_role_display_with_admin }}</div>
+        </div>
+        <div class="user-avatar" title="Clic para opciones">{{ user.get_display_name|slice:':1'|upper }}{{ user.last_name|slice:':1'|upper }}</div>
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+
+<!-- Barra de Notificaciones -->
+{% csrf_token %}
+{% get_notificaciones as notificaciones_lista %}
+{% if notificaciones_lista %}
+{% mostrar_notificaciones_lista notificaciones_lista user %}
+{% endif %}
+
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <h2 style="color: #2c3e50; margin-bottom: 10px;">Bienvenido, {{ user.get_display_name }}</h2>
+        <p style="color: #2c3e50;">{% if user.empresa %}{{ user.empresa.nombre }}{% else %}Sin empresa asignada{% endif %} • Cédula/RNC: {{ user.cedula_rnc }}</p>
+    </div>
+    {% if stats.documentos_faltantes > 0 %}
+    <div class="notification-bar">
+        <span style="font-size: 20px;">📋</span>
+        <div>
+            <strong>Tienes {{ stats.documentos_faltantes }} solicitud{% if stats.documentos_faltantes != 1 %}es{% endif %} pendiente{% if stats.documentos_faltantes != 1 %}s{% endif %} de documentación</strong>
+            <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">Revisa tus solicitudes para completar la información requerida.</p>
+        </div>
+    </div>
+    {% endif %}
+    <div class="dashboard-cards">
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #3498db;">📝</div>
+                <div>
+                    <div class="card-title">Nueva Solicitud</div>
+                    <div class="card-subtitle">Solicitar acceso a puerto</div>
+                </div>
+            </div>
+            <p style="color: #7f8c8d; margin-bottom: 20px;">Crea una nueva solicitud de acceso portuario con todos los documentos requeridos.</p>
+            <a href="{% url 'solicitudes:solicitud_wizard_inicio' %}" class="btn btn-primary">+ Crear Solicitud</a>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #f39c12;">📊</div>
+                <div>
+                    <div class="card-title">Mis Solicitudes</div>
+                    <div class="card-subtitle">{{ stats.activas }} activas • {{ stats.pendientes }} pendientes</div>
+                </div>
+            </div>
+            <div style="margin: 15px 0;">
+                <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px;">
+                    <span>En proceso</span>
+                    <span>{{ stats.pendientes }} de {{ stats.total_solicitudes }}</span>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar orange" style="width: {% if stats.total_solicitudes > 0 %}{% widthratio stats.pendientes stats.total_solicitudes 100 %}{% else %}0{% endif %}%;"></div>
+                </div>
+            </div>
+            <a href="{% url 'solicitudes:mis_solicitudes' %}" class="btn btn-warning">Ver Todas</a>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #95a5a6;">📄</div>
+                <div>
+                    <div class="card-title">Borradores</div>
+                    <div class="card-subtitle">{{ stats.borradores }} solicitudes guardadas</div>
+                </div>
+            </div>
+            <p style="color: #7f8c8d; margin-bottom: 20px;">Continúa completando tus solicitudes guardadas como borrador.</p>
+            {% if stats.borradores > 0 %}
+                <a href="{% url 'solicitudes:mis_borradores' %}" class="btn btn-secondary">Ver Borradores ({{ stats.borradores }})</a>
+            {% else %}
+                <button class="btn btn-outline-secondary" disabled>No hay borradores</button>
+            {% endif %}
+        </div>
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #27ae60;">🎫</div>
+                <div>
+                    <div class="card-title">Autorizaciones</div>
+                    <div class="card-subtitle">{{ stats.autorizaciones_activas }} activas • {{ stats.autorizaciones_por_vencer }} por vencer</div>
+                </div>
+            </div>
+            <p style="color: #7f8c8d; margin-bottom: 20px;">Consulta tus autorizaciones vigentes y descargar códigos QR.</p>
+            <button class="btn btn-success">Ver Autorizaciones</button>
+        </div>
+        <!-- Card de Estadísticas - Comentado para uso futuro en rol Director del Depto
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #9b59b6;">📈</div>
+                <div>
+                    <div class="card-title">Estadísticas</div>
+                    <div class="card-subtitle">Este mes</div>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
+                <div style="text-align: center;">
+                    <div style="font-size: 24px; font-weight: bold; color: #3498db;">{{ stats.solicitudes_mes }}</div>
+                    <div style="font-size: 14px; color: #7f8c8d;">Este Mes</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 24px; font-weight: bold; color: #27ae60;">{{ stats.porcentaje_aprobacion }}%</div>
+                    <div style="font-size: 14px; color: #7f8c8d;">Tasa Éxito</div>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
+                <div style="text-align: center;">
+                    <div style="font-size: 18px; font-weight: bold; color: #f39c12;">{{ stats.tiempo_promedio_aprobacion|default:"5" }} días</div>
+                    <div style="font-size: 11px; color: #7f8c8d;">Tiempo Promedio</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 18px; font-weight: bold; color: #9b59b6;">{{ stats.puerto_favorito|default:"Haina"|truncatechars:8 }}</div>
+                    <div style="font-size: 11px; color: #7f8c8d;">Puerto Favorito</div>
+                </div>
+            </div>
+            <a href="{% url 'solicitudes:estadisticas' %}" class="btn btn-primary">📊 Más Estadísticas</a>
+        </div>
+        -->
+    </div>
+    <!-- Acciones Rápidas -->
+    <div class="data-table" style="margin-top: 40px;">
+        <div class="table-header">
+            <div class="table-title">🚀 Acciones Rápidas</div>
+        </div>
+        <div style="padding: 30px; text-align: center;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                <a href="{% url 'solicitudes:solicitud_wizard_inicio' %}" class="btn btn-primary" style="padding: 20px; text-decoration: none;">
+                    <div style="font-size: 24px; margin-bottom: 10px;">📝</div>
+                    <div style="font-weight: bold;">Nueva Solicitud</div>
+                    <small>Crear solicitud de acceso</small>
+                </a>
+                <a href="{% url 'solicitudes:mis_solicitudes' %}" class="btn btn-info" style="padding: 20px; text-decoration: none;">
+                    <div style="font-size: 24px; margin-bottom: 10px;">📋</div>
+                    <div style="font-weight: bold;">Mis Solicitudes</div>
+                    <small>Ver todas ({{ stats.total_solicitudes }})</small>
+                </a>
+                {% if stats.borradores > 0 %}
+                <a href="{% url 'solicitudes:mis_borradores' %}" class="btn btn-secondary" style="padding: 20px; text-decoration: none;">
+                    <div style="font-size: 24px; margin-bottom: 10px;">📄</div>
+                    <div style="font-weight: bold;">Borradores</div>
+                    <small>Continuar editando ({{ stats.borradores }})</small>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Servicios | NaviPort RD{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'empresas/css/empresas.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li><a href="{% url 'evaluacion:dashboard' %}" style="color: inherit; text-decoration: none;">Dashboard</a></li>
+        <li>Evaluaciones</li>
+        <li>Reportes</li>
+        <li class="active">Gestión de Servicios</li>
+        <li>Configuración</li>
+    </ul>
+    <div class="navbar-user">
+        <div style="text-align: right; margin-right: 10px;">
+            <div style="font-weight: 500;">{{ user.get_display_name }}</div>
+            <div style="font-size: 14px; color: #7f8c8d;">{{ user.get_role_display_with_admin }}</div>
+        </div>
+        <div class="user-avatar">{{ user.get_display_name|slice:':1'|upper }}{{ user.last_name|slice:':1'|upper }}</div>
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <h2 style="color: #2c3e50; margin-bottom: 10px;">Gestión de Servicios</h2>
+        <p style="color: #7f8c8d;">{{ user.get_display_name }} • {% if user.role == 'evaluador' %}Evaluador Portuario{% else %}Supervisor{% endif %}</p>
+    </div>
+
+    <!-- Filtros y Búsqueda -->
+    <div class="form-container" style="margin-bottom: 30px;">
+        <form method="get" class="row g-3">
+            <div class="col-md-8">
+                <input type="text" name="search" class="form-control" placeholder="Buscar servicios por nombre..." value="{{ search }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">🔍 Buscar</button>
+            </div>
+            <div class="col-md-2">
+                <a href="{% url 'empresas:crear_servicio' %}" class="btn btn-success w-100">➕ Nuevo Servicio</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Navegación -->
+    <div class="dashboard-cards" style="margin-bottom: 30px;">
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #3498db;">🔧</div>
+                <div>
+                    <div class="card-title">Servicios Disponibles</div>
+                    <div class="card-subtitle">{{ servicios.paginator.count }} tipo{{ servicios.paginator.count|pluralize:"s" }} de servicio</div>
+                </div>
+            </div>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #27ae60;">🏢</div>
+                <div>
+                    <div class="card-title">Volver a Empresas</div>
+                    <div class="card-subtitle">Gestionar empresas</div>
+                </div>
+            </div>
+            <a href="{% url 'empresas:listar_empresas' %}" class="btn btn-success">Ver Empresas</a>
+        </div>
+    </div>
+
+    <!-- Tabla de Servicios -->
+    {% if servicios %}
+    <div class="data-table">
+        <div class="table-header">
+            <div class="table-title">🔧 Servicios Disponibles</div>
+            <div>
+                <a href="{% url 'empresas:crear_servicio' %}" class="btn btn-primary">➕ Nuevo Servicio</a>
+            </div>
+        </div>
+        <div class="table-content">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Servicio</th>
+                        <th>Descripción</th>
+                        <th>Empresas Autorizadas</th>
+                        <th>Estado</th>
+                        <th>Creado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for servicio in servicios %}
+                    <tr {% if not servicio.activo %}style="opacity: 0.6;"{% endif %}>
+                        <td>
+                            <strong>{{ servicio.nombre }}</strong>
+                        </td>
+                        <td>
+                            {% if servicio.descripcion %}
+                                {{ servicio.descripcion|truncatewords:15 }}
+                            {% else %}
+                                <span style="color: #95a5a6; font-style: italic;">Sin descripción</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if servicio.empresaservicio_set.count > 0 %}
+                                <span class="badge bg-primary">
+                                    {{ servicio.empresaservicio_set.count }} empresa{{ servicio.empresaservicio_set.count|pluralize:"s" }}
+                                </span>
+                                <br>
+                                <small style="color: #666;">
+                                    {% for empresa in servicio.empresaservicio_set.all|slice:":2" %}
+                                        {{ empresa.nombre }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                    {% if servicio.empresaservicio_set.count > 2 %}
+                                        y {{ servicio.empresaservicio_set.count|add:"-2" }} más...
+                                    {% endif %}
+                                </small>
+                            {% else %}
+                                <span style="color: #95a5a6;">Ninguna empresa</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if servicio.activo %}
+                                <span class="status-badge status-approved">Activo</span>
+                            {% else %}
+                                <span class="status-badge status-rejected">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span style="color: #666;">{{ servicio.created_at|date:"d/m/Y" }}</span>
+                        </td>
+                        <td style="white-space: nowrap;">
+                            <a href="{% url 'empresas:editar_servicio' servicio.id %}" class="btn btn-sm btn-primary" title="Editar servicio">✏️</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Paginación -->
+    {% if servicios.has_other_pages %}
+    <div class="pagination" style="text-align: center; margin: 20px 0;">
+        {% if servicios.has_previous %}
+            <a href="?page={{ servicios.previous_page_number }}{% if search %}&search={{ search }}{% endif %}" class="btn btn-primary">← Anterior</a>
+        {% endif %}
+        
+        <span style="margin: 0 15px;">
+            Página {{ servicios.number }} de {{ servicios.paginator.num_pages }}
+        </span>
+        
+        {% if servicios.has_next %}
+            <a href="?page={{ servicios.next_page_number }}{% if search %}&search={{ search }}{% endif %}" class="btn btn-primary">Siguiente →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="form-container" style="text-align: center; padding: 60px 20px;">
+        <div style="font-size: 64px; margin-bottom: 20px;">🔧</div>
+        <h3 style="color: #7f8c8d; margin-bottom: 15px;">No hay servicios registrados</h3>
+        <p style="color: #95a5a6; margin-bottom: 30px;">
+            {% if search %}
+                No se encontraron servicios que coincidan con "{{ search }}"
+            {% else %}
+                Los servicios definen los tipos de actividades que pueden ofrecer las empresas
+            {% endif %}
+        </p>
+        <a href="{% url 'empresas:crear_servicio' %}" class="btn btn-primary" style="padding: 15px 30px;">
+            🔧 Crear Primer Servicio
+        </a>
+        {% if search %}
+            <br><br>
+            <a href="{% url 'empresas:listar_servicios' %}" class="btn btn-secondary">Ver Todos los Servicios</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

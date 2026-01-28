@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inhabilitar Vehiculo - {{ vehiculo.placa }} | NaviPort RD</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% load static %}{% static 'css/styles.css' %}">
+    <style>
+        .delete-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .warning-card {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 0.5rem 1rem rgba(220, 53, 69, 0.25);
+        }
+        .vehicle-info-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+        .danger-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        .btn-delete {
+            background: #dc3545;
+            border-color: #dc3545;
+            font-weight: 600;
+        }
+        .btn-delete:hover {
+            background: #c82333;
+            border-color: #bd2130;
+        }
+        .consequences-list {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 0.375rem;
+            padding: 1rem;
+        }
+        .consequences-list li {
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'accounts:dashboard' %}">NaviPort RD</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:dashboard' %}">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'gestion_vehiculos:dashboard' %}">Vehiculos</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            {{ user.first_name }} {{ user.last_name }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'accounts:logout' %}">Cerrar Sesion</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="delete-container">
+            <!-- Header de Advertencia -->
+            <div class="card warning-card mb-4">
+                <div class="card-body text-center">
+                    <div class="danger-icon">&#9888;</div>
+                    <h3 class="card-title mb-3">Confirmar Inhabilitacion</h3>
+                    <p class="card-text">
+                        Estas a punto de inhabilitar el vehiculo. Esta accion marcara el vehiculo como inactivo.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Informacion del Vehiculo -->
+            <div class="card vehicle-info-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Informacion del Vehiculo a Inhabilitar</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-sm-6 mb-3">
+                            <strong>Placa:</strong><br>
+                            <span class="h5 text-primary">{{ vehiculo.placa }}</span>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <strong>Tipo:</strong><br>
+                            {{ vehiculo.get_tipo_vehiculo_display }}
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <strong>Marca y Modelo:</strong><br>
+                            {{ vehiculo.marca }} {{ vehiculo.modelo }}
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <strong>Ano:</strong><br>
+                            {{ vehiculo.ano }}
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <strong>Color:</strong><br>
+                            {{ vehiculo.color }}
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <strong>Empresa:</strong><br>
+                            {% if vehiculo.empresa_propietaria.empresa %}
+                                {{ vehiculo.empresa_propietaria.empresa.nombre }}
+                            {% else %}
+                                Sin empresa asignada
+                            {% endif %}
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <strong>Fecha de Registro:</strong><br>
+                            {{ vehiculo.fecha_registro|date:"d/m/Y" }}
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <strong>Documentos:</strong><br>
+                            <span class="badge bg-info">{{ vehiculo.documentos.count }} documentos</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Consecuencias de la Inhabilitacion -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Consecuencias de la Inhabilitacion</h5>
+                </div>
+                <div class="card-body">
+                    <div class="consequences-list">
+                        <ul class="mb-0">
+                            <li>El vehiculo sera marcado como <strong>inactivo</strong> (no se elimina permanentemente)</li>
+                            <li>Los documentos asociados se mantendran en el sistema</li>
+                            <li>El historial de registro se conservara para auditoria</li>
+                            <li>El vehiculo no aparecera en las listas activas</li>
+                            <li>No podra ser utilizado en nuevas solicitudes de acceso</li>
+                            <li><strong>Puede reactivar el vehiculo desde "Vehiculos Inhabilitados"</strong></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario de Confirmacion -->
+            <form method="post" id="formEliminarVehiculo">
+                {% csrf_token %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Motivo de Inhabilitacion</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="motivo" class="form-label">Indique el motivo por el cual desea inhabilitar este vehiculo:</label>
+                            <textarea class="form-control" id="motivo" name="motivo" rows="3"
+                                      placeholder="Ej: Vehiculo vendido, dado de baja, en reparacion, etc." required></textarea>
+                            <div class="form-text">Este motivo quedara registrado para futuras referencias.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h6 class="mb-2">Confirmacion Final</h6>
+                                <p class="text-muted mb-0">
+                                    Para confirmar la inhabilitacion, escribe la placa del vehiculo:
+                                    <strong class="text-danger">{{ vehiculo.placa }}</strong>
+                                </p>
+                            </div>
+                            <div class="col-md-4 mt-3 mt-md-0">
+                                <input type="text"
+                                       class="form-control"
+                                       id="confirmarPlaca"
+                                       placeholder="{{ vehiculo.placa }}"
+                                       style="text-transform: uppercase;"
+                                       required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de Accion -->
+                <div class="d-flex justify-content-between align-items-center pt-4">
+                    <a href="{% url 'gestion_vehiculos:detalle_vehiculo' vehiculo.id %}"
+                       class="btn btn-outline-secondary">
+                        Volver al Detalle
+                    </a>
+                    <div>
+                        <a href="{% url 'gestion_vehiculos:dashboard' %}"
+                           class="btn btn-secondary me-2">
+                            Cancelar
+                        </a>
+                        <button type="submit"
+                                class="btn btn-danger btn-delete"
+                                id="btnEliminar"
+                                disabled>
+                            Confirmar Inhabilitacion
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const placaOriginal = '{{ vehiculo.placa }}';
+            const confirmarPlacaInput = document.getElementById('confirmarPlaca');
+            const btnEliminar = document.getElementById('btnEliminar');
+            const form = document.getElementById('formEliminarVehiculo');
+            const motivoInput = document.getElementById('motivo');
+
+            // Auto-convertir a mayusculas
+            confirmarPlacaInput.addEventListener('input', function() {
+                this.value = this.value.toUpperCase();
+                validarFormulario();
+            });
+
+            motivoInput.addEventListener('input', validarFormulario);
+
+            function validarFormulario() {
+                const placaCoincide = confirmarPlacaInput.value === placaOriginal;
+                const motivoValido = motivoInput.value.trim().length >= 5;
+
+                if (placaCoincide && motivoValido) {
+                    btnEliminar.disabled = false;
+                    btnEliminar.classList.remove('btn-secondary');
+                    btnEliminar.classList.add('btn-danger');
+                } else {
+                    btnEliminar.disabled = true;
+                    btnEliminar.classList.add('btn-secondary');
+                    btnEliminar.classList.remove('btn-danger');
+                }
+
+                // Indicador visual de placa
+                if (confirmarPlacaInput.value === placaOriginal) {
+                    confirmarPlacaInput.classList.remove('is-invalid');
+                    confirmarPlacaInput.classList.add('is-valid');
+                } else if (confirmarPlacaInput.value.length > 0) {
+                    confirmarPlacaInput.classList.remove('is-valid');
+                    confirmarPlacaInput.classList.add('is-invalid');
+                } else {
+                    confirmarPlacaInput.classList.remove('is-valid', 'is-invalid');
+                }
+            }
+
+            // Confirmacion final antes del envio
+            form.addEventListener('submit', function(e) {
+                if (confirmarPlacaInput.value !== placaOriginal) {
+                    e.preventDefault();
+                    alert('La placa confirmada no coincide con la placa del vehiculo.');
+                    return false;
+                }
+
+                if (motivoInput.value.trim().length < 5) {
+                    e.preventDefault();
+                    alert('Por favor, indique un motivo valido para la inhabilitacion (minimo 5 caracteres).');
+                    motivoInput.focus();
+                    return false;
+                }
+
+                const confirmacion = confirm(
+                    'ESTAS COMPLETAMENTE SEGURO de que deseas inhabilitar el vehiculo ' + placaOriginal + '?\n\n' +
+                    'Esta accion marcara el vehiculo como inactivo.\n\n' +
+                    'Haz clic en "Aceptar" para proceder o "Cancelar" para mantener el vehiculo.'
+                );
+
+                if (!confirmacion) {
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Mostrar indicador de procesamiento
+                btnEliminar.innerHTML = 'Procesando...';
+                btnEliminar.disabled = true;
+            });
+
+            // Focus automatico en el motivo
+            motivoInput.focus();
+        });
+    </script>
+</body>
+</html>

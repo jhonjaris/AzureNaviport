@@ -1,0 +1,810 @@
+{% extends 'solicitudes/wizard/base.html' %}
+
+{% block title %}Paso 2: Personal - Solicitud Wizard{% endblock %}
+
+{% block wizard_content %}
+<div class="wizard-form-header">
+    <h4 class="wizard-form-title">
+        <i class="fas fa-users"></i>
+        Personal
+    </h4>
+    <p class="wizard-form-subtitle">Agregue el personal que accederá al puerto</p>
+</div>
+
+<form method="post" class="wizard-form">
+    {% csrf_token %}
+
+    <!-- Sección de Agregar Personal -->
+    <div class="form-section-header">
+        <h5>➕ Agregar Persona</h5>
+        <div class="button-group">
+            <button type="button" class="wizard-btn wizard-btn-success-green wizard-btn-sm" id="seleccionar-registrados">
+                <i class="fas fa-address-book"></i>
+                Seleccionar de Registrados
+            </button>
+        </div>
+    </div>
+
+    <!-- Formulario de nueva persona -->
+    <div class="nueva-persona-form" style="background: #f8f9fa; padding: 25px; border-radius: 12px; margin-bottom: 25px; border: 2px solid #e0e0e0;">
+        <!-- Fila 1: Nombre, Apellido, Cédula -->
+        <div class="form-grid-row">
+            <div class="form-grid-item">
+                <label class="form-label">Nombre *</label>
+                <input type="text" class="form-control-compact" id="nuevo-nombre" placeholder="Nombre">
+            </div>
+            <div class="form-grid-item">
+                <label class="form-label">Apellido *</label>
+                <input type="text" class="form-control-compact" id="nuevo-apellido" placeholder="Apellido">
+            </div>
+            <div class="form-grid-item">
+                <label class="form-label">Cédula</label>
+                <input type="text" class="form-control-compact cedula-input-nuevo" id="nuevo-cedula" placeholder="000-0000000-0" maxlength="13">
+                <small class="form-text text-muted">Para dominicanos</small>
+            </div>
+        </div>
+
+        <!-- Fila 2: Pasaporte, Email, Teléfono -->
+        <div class="form-grid-row">
+            <div class="form-grid-item">
+                <label class="form-label">Pasaporte</label>
+                <input type="text" class="form-control-compact" id="nuevo-pasaporte" placeholder="Número de pasaporte">
+                <small class="form-text text-muted">Para extranjeros</small>
+            </div>
+            <div class="form-grid-item">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control-compact" id="nuevo-email" placeholder="ejemplo@correo.com">
+            </div>
+            <div class="form-grid-item">
+                <label class="form-label">Teléfono</label>
+                <input type="text" class="form-control-compact telefono-input-nuevo" id="nuevo-telefono" placeholder="809-123-4567" maxlength="12">
+            </div>
+        </div>
+
+        <!-- Fila 3: Cargo, Licencia, Rol -->
+        <div class="form-grid-row">
+            <div class="form-grid-item">
+                <label class="form-label">Cargo</label>
+                <input type="text" class="form-control-compact" id="nuevo-cargo" placeholder="Ej: Conductor, Operador">
+            </div>
+            <div class="form-grid-item">
+                <label class="form-label">Licencia de Conducir</label>
+                <input type="text" class="form-control-compact" id="nuevo-licencia" placeholder="Número de licencia">
+            </div>
+            <div class="form-grid-item">
+                <label class="form-label">Rol en la Operación</label>
+                <input type="text" class="form-control-compact" id="nuevo-rol" placeholder="Rol específico en esta solicitud">
+            </div>
+        </div>
+
+        <div style="text-align: right; margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+            <button type="button" class="wizard-btn wizard-btn-secondary" id="cancelar-edicion" style="display: none;">
+                <i class="fas fa-times"></i>
+                Cancelar
+            </button>
+            <button type="button" class="wizard-btn wizard-btn-primary" id="agregar-persona-nueva">
+                <i class="fas fa-plus"></i>
+                <span id="btn-texto">Agregar a la Lista</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Lista de Personal Agregado -->
+    <div class="form-section-header">
+        <h5>👥 Personal Agregado (<span id="personal-count">0</span>)</h5>
+    </div>
+
+    <div id="personal-container">
+        <!-- Personal será agregado aquí dinámicamente -->
+        {% if datos_previos.personal %}
+            {% for persona in datos_previos.personal %}
+                <!-- Renderizar personas previas (se hará en JavaScript) -->
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <div id="empty-state" style="text-align: center; padding: 40px; color: #95a5a6; display: none;">
+        <i class="fas fa-users" style="font-size: 48px; margin-bottom: 15px; opacity: 0.3;"></i>
+        <p>No hay personal agregado. Agregue al menos una persona para continuar.</p>
+    </div>
+
+    <div class="wizard-form-actions">
+        <a href="{% url 'solicitudes:wizard_paso1' %}" class="wizard-btn wizard-btn-ghost">
+            <i class="fas fa-arrow-left"></i>
+            Volver
+        </a>
+        <button type="submit" class="wizard-btn wizard-btn-primary">
+            Siguiente Paso
+            <i class="fas fa-arrow-right"></i>
+        </button>
+    </div>
+</form>
+
+<!-- Modal para seleccionar personas registradas -->
+<div id="modal-seleccionar" class="modal-overlay" style="display: none;">
+    <div class="modal-dialog" style="max-width: 900px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5>📚 Seleccionar Personal Registrado</h5>
+                <button type="button" class="modal-close" id="cerrar-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="buscar-persona" placeholder="🔍 Buscar por nombre, cédula o pasaporte...">
+                </div>
+                <div id="lista-personas-registradas" style="max-height: 400px; overflow-y: auto;">
+                    <!-- Lista de personas se cargará aquí -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Estilos del formulario */
+.form-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 3px solid #3498db;
+}
+
+.form-section-header h5 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+}
+
+.wizard-btn-sm {
+    padding: 10px 20px !important;
+    font-size: 14px !important;
+}
+
+.wizard-btn-warning {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%) !important;
+    color: white !important;
+}
+
+.wizard-btn-warning:hover {
+    background: linear-gradient(135deg, #e67e22 0%, #d35400 100%) !important;
+}
+
+.wizard-btn-success-green {
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%) !important;
+    color: white !important;
+}
+
+.wizard-btn-success-green:hover {
+    background: linear-gradient(135deg, #229954 0%, #1e8449 100%) !important;
+}
+
+/* Estilos de items de personal */
+.personal-item {
+    background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%);
+    border: 2px solid #dbeafe;
+    border-radius: 16px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.personal-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 5px;
+    height: 100%;
+    background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.personal-item:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
+    transform: translateY(-2px);
+}
+
+.personal-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #7f8c8d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+}
+
+.info-value {
+    font-size: 14px;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.personal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding-top: 15px;
+    border-top: 1px solid #e0e0e0;
+}
+
+/* Grid layout para formulario compacto */
+.form-grid-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.form-grid-item {
+    display: flex;
+    flex-direction: column;
+}
+
+@media (max-width: 1024px) {
+    .form-grid-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .form-grid-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Estilos consistentes con otros pasos */
+.form-label {
+    font-weight: 600 !important;
+    color: #2c3e50 !important;
+    margin-bottom: 8px !important;
+    font-size: 0.95rem !important;
+}
+
+.form-control-compact {
+    padding: 12px 16px !important;
+    border: 2px solid #e0e0e0 !important;
+    border-radius: 8px !important;
+    font-size: 1rem !important;
+    color: #2c3e50 !important;
+    background: white !important;
+    transition: all 0.3s ease !important;
+    font-weight: 500 !important;
+    width: 100%;
+}
+
+.form-control-compact:focus {
+    outline: none !important;
+    border-color: #3498db !important;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1) !important;
+}
+
+.form-control-compact::placeholder {
+    color: #95a5a6 !important;
+    font-weight: 400 !important;
+}
+
+.form-text.text-muted {
+    font-size: 0.85rem;
+    color: #7f8c8d;
+    margin-top: 4px;
+}
+
+/* Botones personalizados */
+.btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.875rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #2980b9 0%, #21618c 100%);
+    transform: translateY(-1px);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+    transform: translateY(-1px);
+}
+
+/* Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-dialog {
+    width: 90%;
+    max-height: 90vh;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.modal-header {
+    padding: 20px 30px;
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h5 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.modal-close {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+.persona-card {
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.persona-card:hover {
+    border-color: #3498db;
+    background: #f0f9ff;
+    transform: translateX(5px);
+}
+
+.persona-card.selected {
+    border-color: #3498db;
+    background: #dbeafe;
+}
+</style>
+
+<script>
+// ========== VARIABLES GLOBALES ==========
+let personalCount = 0;
+let personalData = {{ datos_previos.personal|safe }} || [];
+let modoEdicion = false;
+let indiceEditando = -1;
+
+// ========== FUNCIONES DE FORMATO ==========
+function formatCedula(value) {
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length <= 3) {
+        return numbers;
+    } else if (numbers.length <= 10) {
+        return numbers.slice(0, 3) + '-' + numbers.slice(3);
+    } else {
+        return numbers.slice(0, 3) + '-' + numbers.slice(3, 10) + '-' + numbers.slice(10, 11);
+    }
+}
+
+function formatTelefono(value) {
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length <= 3) {
+        return numbers;
+    } else if (numbers.length <= 6) {
+        return numbers.slice(0, 3) + '-' + numbers.slice(3);
+    } else {
+        return numbers.slice(0, 3) + '-' + numbers.slice(3, 6) + '-' + numbers.slice(6, 10);
+    }
+}
+
+// ========== INICIALIZACIÓN ==========
+document.addEventListener('DOMContentLoaded', function() {
+    // Aplicar formatos a campos nuevos
+    document.querySelector('.cedula-input-nuevo').addEventListener('input', function(e) {
+        e.target.value = formatCedula(e.target.value);
+    });
+
+    document.querySelector('.telefono-input-nuevo').addEventListener('input', function(e) {
+        e.target.value = formatTelefono(e.target.value);
+    });
+
+    // Cargar personal previo si existe
+    if (personalData.length > 0) {
+        personalData.forEach((persona, index) => {
+            agregarPersonaALista(persona, index);
+        });
+    }
+
+    actualizarEstadoLista();
+
+    // ========== EVENTO: AGREGAR/ACTUALIZAR PERSONA ==========
+    document.getElementById('agregar-persona-nueva').addEventListener('click', function() {
+        const nombre = document.getElementById('nuevo-nombre').value.trim();
+        const apellido = document.getElementById('nuevo-apellido').value.trim();
+        const cedula = document.getElementById('nuevo-cedula').value.trim();
+        const pasaporte = document.getElementById('nuevo-pasaporte').value.trim();
+        const email = document.getElementById('nuevo-email').value.trim();
+        const telefono = document.getElementById('nuevo-telefono').value.trim();
+        const cargo = document.getElementById('nuevo-cargo').value.trim();
+        const licencia = document.getElementById('nuevo-licencia').value.trim();
+        const rol = document.getElementById('nuevo-rol').value.trim();
+
+        // Validaciones
+        if (!nombre || !apellido) {
+            alert('Por favor complete el nombre y apellido');
+            return;
+        }
+
+        if (!cedula && !pasaporte) {
+            alert('Debe proporcionar al menos cédula o pasaporte');
+            return;
+        }
+
+        const persona = {
+            nombre: nombre,
+            apellido: apellido,
+            cedula: cedula,
+            pasaporte: pasaporte,
+            email: email,
+            telefono: telefono,
+            cargo: cargo,
+            licencia_conducir: licencia,
+            rol_operacion: rol
+        };
+
+        if (modoEdicion) {
+            // Actualizar persona existente
+            personalData[indiceEditando] = persona;
+
+            // Re-renderizar toda la lista
+            document.getElementById('personal-container').innerHTML = '';
+            personalData.forEach((p, idx) => {
+                agregarPersonaALista(p, idx);
+            });
+
+            // Salir del modo edición
+            cancelarModoEdicion();
+        } else {
+            // Agregar nueva persona
+            agregarPersonaALista(persona, personalCount);
+            personalData.push(persona);
+            personalCount++;
+        }
+
+        // Limpiar formulario
+        limpiarFormularioNuevo();
+        actualizarEstadoLista();
+    });
+
+    // ========== EVENTO: CANCELAR EDICIÓN ==========
+    document.getElementById('cancelar-edicion').addEventListener('click', function() {
+        cancelarModoEdicion();
+        limpiarFormularioNuevo();
+    });
+
+    // ========== EVENTO: SELECCIONAR DE REGISTRADOS ==========
+    document.getElementById('seleccionar-registrados').addEventListener('click', function() {
+        cargarPersonasRegistradas();
+        document.getElementById('modal-seleccionar').style.display = 'flex';
+    });
+
+    document.getElementById('cerrar-modal').addEventListener('click', function() {
+        document.getElementById('modal-seleccionar').style.display = 'none';
+    });
+
+    // Buscar en modal
+    document.getElementById('buscar-persona').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const cards = document.querySelectorAll('.persona-card');
+
+        cards.forEach(card => {
+            const text = card.textContent.toLowerCase();
+            card.style.display = text.includes(searchTerm) ? 'block' : 'none';
+        });
+    });
+
+    // ========== VALIDACIÓN AL ENVIAR ==========
+    document.querySelector('.wizard-form').addEventListener('submit', function(e) {
+        if (personalData.length === 0) {
+            e.preventDefault();
+            alert('Debe agregar al menos una persona');
+            return false;
+        }
+    });
+});
+
+// ========== FUNCIONES AUXILIARES ==========
+function agregarPersonaALista(persona, index) {
+    const container = document.getElementById('personal-container');
+
+    const div = document.createElement('div');
+    div.className = 'personal-item';
+    div.dataset.index = index;
+
+    const documento = persona.cedula || persona.pasaporte || 'Sin documento';
+    const documentoLabel = persona.cedula ? 'Cédula' : 'Pasaporte';
+
+    div.innerHTML = `
+        <div class="personal-info">
+            <div class="info-item">
+                <span class="info-label">Nombre Completo</span>
+                <span class="info-value">${persona.nombre} ${persona.apellido}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">${documentoLabel}</span>
+                <span class="info-value">${documento}</span>
+            </div>
+            ${persona.email ? `
+            <div class="info-item">
+                <span class="info-label">Email</span>
+                <span class="info-value">${persona.email}</span>
+            </div>
+            ` : ''}
+            ${persona.telefono ? `
+            <div class="info-item">
+                <span class="info-label">Teléfono</span>
+                <span class="info-value">${persona.telefono}</span>
+            </div>
+            ` : ''}
+            ${persona.cargo ? `
+            <div class="info-item">
+                <span class="info-label">Cargo</span>
+                <span class="info-value">${persona.cargo}</span>
+            </div>
+            ` : ''}
+            ${persona.licencia_conducir ? `
+            <div class="info-item">
+                <span class="info-label">Licencia</span>
+                <span class="info-value">${persona.licencia_conducir}</span>
+            </div>
+            ` : ''}
+            ${persona.rol_operacion ? `
+            <div class="info-item">
+                <span class="info-label">Rol en Operación</span>
+                <span class="info-value">${persona.rol_operacion}</span>
+            </div>
+            ` : ''}
+        </div>
+
+        <!-- Campos hidden para envío -->
+        <input type="hidden" name="personal-nombre-${index}" value="${persona.nombre}">
+        <input type="hidden" name="personal-apellido-${index}" value="${persona.apellido}">
+        <input type="hidden" name="personal-cedula-${index}" value="${persona.cedula || ''}">
+        <input type="hidden" name="personal-pasaporte-${index}" value="${persona.pasaporte || ''}">
+        <input type="hidden" name="personal-email-${index}" value="${persona.email || ''}">
+        <input type="hidden" name="personal-telefono-${index}" value="${persona.telefono || ''}">
+        <input type="hidden" name="personal-cargo-${index}" value="${persona.cargo || ''}">
+        <input type="hidden" name="personal-licencia-${index}" value="${persona.licencia_conducir || ''}">
+        <input type="hidden" name="personal-rol-${index}" value="${persona.rol_operacion || ''}">
+
+        <div class="personal-actions">
+            <button type="button" class="btn btn-primary btn-sm edit-personal">
+                <i class="fas fa-edit"></i> Editar
+            </button>
+            <button type="button" class="btn btn-danger btn-sm remove-personal">
+                <i class="fas fa-trash"></i> Eliminar
+            </button>
+        </div>
+    `;
+
+    container.appendChild(div);
+
+    // Evento editar
+    div.querySelector('.edit-personal').addEventListener('click', function() {
+        const idx = parseInt(div.dataset.index);
+        editarPersona(idx);
+    });
+
+    // Evento eliminar
+    div.querySelector('.remove-personal').addEventListener('click', function() {
+        const idx = parseInt(div.dataset.index);
+        personalData = personalData.filter((_, i) => i !== idx);
+        div.remove();
+        actualizarEstadoLista();
+    });
+}
+
+function limpiarFormularioNuevo() {
+    document.getElementById('nuevo-nombre').value = '';
+    document.getElementById('nuevo-apellido').value = '';
+    document.getElementById('nuevo-cedula').value = '';
+    document.getElementById('nuevo-pasaporte').value = '';
+    document.getElementById('nuevo-email').value = '';
+    document.getElementById('nuevo-telefono').value = '';
+    document.getElementById('nuevo-cargo').value = '';
+    document.getElementById('nuevo-licencia').value = '';
+    document.getElementById('nuevo-rol').value = '';
+}
+
+function actualizarEstadoLista() {
+    const count = personalData.length;
+    document.getElementById('personal-count').textContent = count;
+
+    const emptyState = document.getElementById('empty-state');
+    const container = document.getElementById('personal-container');
+
+    if (count === 0) {
+        emptyState.style.display = 'block';
+        container.style.display = 'none';
+    } else {
+        emptyState.style.display = 'none';
+        container.style.display = 'block';
+    }
+}
+
+function editarPersona(index) {
+    const persona = personalData[index];
+
+    // Cargar datos en el formulario
+    document.getElementById('nuevo-nombre').value = persona.nombre;
+    document.getElementById('nuevo-apellido').value = persona.apellido;
+    document.getElementById('nuevo-cedula').value = persona.cedula || '';
+    document.getElementById('nuevo-pasaporte').value = persona.pasaporte || '';
+    document.getElementById('nuevo-email').value = persona.email || '';
+    document.getElementById('nuevo-telefono').value = persona.telefono || '';
+    document.getElementById('nuevo-cargo').value = persona.cargo || '';
+    document.getElementById('nuevo-licencia').value = persona.licencia_conducir || '';
+    document.getElementById('nuevo-rol').value = persona.rol_operacion || '';
+
+    // Activar modo edición
+    modoEdicion = true;
+    indiceEditando = index;
+
+    // Cambiar UI
+    const btnIcon = document.querySelector('#agregar-persona-nueva i');
+    btnIcon.className = 'fas fa-save';
+    document.getElementById('btn-texto').textContent = 'Actualizar Persona';
+    document.getElementById('cancelar-edicion').style.display = 'inline-block';
+    document.getElementById('agregar-persona-nueva').classList.remove('wizard-btn-primary');
+    document.getElementById('agregar-persona-nueva').classList.add('wizard-btn-warning');
+
+    // Scroll al formulario
+    document.querySelector('.nueva-persona-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function cancelarModoEdicion() {
+    modoEdicion = false;
+    indiceEditando = -1;
+
+    // Restaurar UI
+    const btnIcon = document.querySelector('#agregar-persona-nueva i');
+    btnIcon.className = 'fas fa-plus';
+    document.getElementById('btn-texto').textContent = 'Agregar a la Lista';
+    document.getElementById('cancelar-edicion').style.display = 'none';
+    document.getElementById('agregar-persona-nueva').classList.remove('wizard-btn-warning');
+    document.getElementById('agregar-persona-nueva').classList.add('wizard-btn-primary');
+}
+
+function cargarPersonasRegistradas() {
+    const lista = document.getElementById('lista-personas-registradas');
+    lista.innerHTML = '<p style="text-align: center; padding: 20px;">Cargando...</p>';
+
+    fetch('{% url "gestion_personal:listar_personas_ajax" %}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.personas.length > 0) {
+                lista.innerHTML = '';
+                data.personas.forEach(persona => {
+                    const card = document.createElement('div');
+                    card.className = 'persona-card';
+
+                    const documento = persona.cedula || persona.pasaporte || 'Sin documento';
+                    const documentoLabel = persona.cedula ? 'Cédula' : 'Pasaporte';
+
+                    card.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong style="font-size: 16px;">${persona.nombre} ${persona.apellido}</strong><br>
+                                <span style="color: #7f8c8d; font-size: 14px;">${documentoLabel}: ${documento}</span>
+                                ${persona.cargo ? `<br><span style="color: #7f8c8d; font-size: 14px;">Cargo: ${persona.cargo}</span>` : ''}
+                            </div>
+                            <button type="button" class="btn btn-primary btn-sm">
+                                <i class="fas fa-check"></i> Seleccionar
+                            </button>
+                        </div>
+                    `;
+
+                    card.querySelector('button').addEventListener('click', function() {
+                        agregarPersonaALista({
+                            nombre: persona.nombre,
+                            apellido: persona.apellido,
+                            cedula: persona.cedula || '',
+                            pasaporte: persona.pasaporte || '',
+                            email: persona.email || '',
+                            telefono: persona.telefono || '',
+                            cargo: persona.cargo || '',
+                            licencia_conducir: persona.licencia_conducir || '',
+                            rol_operacion: ''
+                        }, personalCount);
+
+                        personalData.push({
+                            nombre: persona.nombre,
+                            apellido: persona.apellido,
+                            cedula: persona.cedula || '',
+                            pasaporte: persona.pasaporte || '',
+                            email: persona.email || '',
+                            telefono: persona.telefono || '',
+                            cargo: persona.cargo || '',
+                            licencia_conducir: persona.licencia_conducir || '',
+                            rol_operacion: ''
+                        });
+
+                        personalCount++;
+                        actualizarEstadoLista();
+                        document.getElementById('modal-seleccionar').style.display = 'none';
+                    });
+
+                    lista.appendChild(card);
+                });
+            } else {
+                lista.innerHTML = '<p style="text-align: center; padding: 40px; color: #95a5a6;">No hay personas registradas</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            lista.innerHTML = '<p style="text-align: center; padding: 20px; color: #e74c3c;">Error al cargar personas</p>';
+        });
+}
+</script>
+{% endblock %}

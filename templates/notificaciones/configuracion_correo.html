@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Gestión de Notificaciones{% endblock %}
+
+{% block content %}
+<div class="notifications-wrapper">
+    <div class="container-fluid px-4 py-4">
+        <!-- Header -->
+        <div class="header-section mb-4">
+            <a href="{% url 'evaluacion:configuracion' %}" class="back-link">
+                <i class="fas fa-arrow-left"></i> Volver a Configuración
+            </a>
+            <h1 class="page-title">Sistema de Notificaciones</h1>
+            <p class="page-subtitle">Gestión centralizada de correos y notificaciones del sistema</p>
+        </div>
+
+        <!-- Cards Grid -->
+        <div class="cards-grid mb-4">
+            <!-- Configuración de Correo -->
+            <div class="notification-card card-email">
+                <div class="card-icon">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Configuración de Correo</h3>
+                    {% if config %}
+                        <div class="info-group">
+                            <div class="info-item">
+                                <span class="info-label">Servidor:</span>
+                                <span class="info-value">{{ config.email_host }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Usuario:</span>
+                                <span class="info-value">{{ config.email_host_user }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Estado:</span>
+                                {% if config.email_enabled %}
+                                    <span class="status-badge status-active">
+                                        <i class="fas fa-check-circle"></i> Activo
+                                    </span>
+                                {% else %}
+                                    <span class="status-badge status-inactive">
+                                        <i class="fas fa-times-circle"></i> Inactivo
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Emails enviados:</span>
+                                <span class="info-value highlight">{{ config.total_emails_sent }}</span>
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                            <a href="{% url 'notificaciones:editar_configuracion_correo' %}" class="action-btn btn-primary">
+                                <i class="fas fa-edit"></i> Editar Configuración
+                            </a>
+                            <a href="/admin/notificaciones/configuracionemail/" class="action-btn btn-secondary" target="_blank">
+                                <i class="fas fa-cog"></i> Ver en Admin
+                            </a>
+                        </div>
+                    {% else %}
+                        <p class="no-config-text">No hay configuración de correo establecida.</p>
+                        <div class="card-actions">
+                            <a href="{% url 'notificaciones:editar_configuracion_correo' %}" class="action-btn btn-primary">
+                                <i class="fas fa-plus"></i> Crear Configuración
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Gestión de Eventos -->
+            <div class="notification-card card-events">
+                <div class="card-icon">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Eventos del Sistema</h3>
+                    <p class="card-description">Configure qué eventos del sistema generan notificaciones y quién las recibe.</p>
+                    <div class="card-actions">
+                        <a href="{% url 'notificaciones:gestionar_eventos' %}" class="action-btn btn-primary">
+                            <i class="fas fa-tasks"></i> Gestionar Eventos
+                        </a>
+                        <a href="/admin/notificaciones/eventosistema/" class="action-btn btn-secondary" target="_blank">
+                            <i class="fas fa-cog"></i> Ver en Admin
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logs Card (Full Width) -->
+        <div class="notification-card card-logs mb-4">
+            <div class="card-icon">
+                <i class="fas fa-history"></i>
+            </div>
+            <div class="card-content">
+                <h3 class="card-title">Historial de Notificaciones</h3>
+                <p class="card-description">Consulte el registro de todas las notificaciones enviadas por el sistema.</p>
+                <div class="card-actions">
+                    <a href="{% url 'notificaciones:ver_logs' %}" class="action-btn btn-primary">
+                        <i class="fas fa-list"></i> Ver Logs
+                    </a>
+                    <a href="/admin/notificaciones/lognotificacion/" class="action-btn btn-secondary" target="_blank">
+                        <i class="fas fa-cog"></i> Ver en Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Access Card -->
+        <div class="admin-card">
+            <div class="admin-icon">
+                <i class="fas fa-info-circle"></i>
+            </div>
+            <div class="admin-content">
+                <h4 class="admin-title">Gestión Avanzada</h4>
+                <p class="admin-text">Para una configuración más detallada, puede acceder directamente al panel de administración.</p>
+                <a href="/admin/notificaciones/" class="admin-btn" target="_blank">
+                    <i class="fas fa-external-link-alt"></i> Ir al Admin de Notificaciones
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Wrapper */
+.notifications-wrapper {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e8ba3 100%);
+    min-height: 100vh;
+}
+
+/* Header Section */
+.header-section {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.back-link {
+    display: inline-block;
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 15px;
+    padding: 10px 18px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.back-link:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    transform: translateX(-5px);
+}
+
+.page-title {
+    color: #ffffff;
+    font-size: 36px;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 16px;
+    margin: 0;
+    font-weight: 400;
+}
+
+/* Cards Grid */
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+}
+
+/* Notification Cards */
+.notification-card {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    display: flex;
+    gap: 25px;
+}
+
+.notification-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
+}
+
+.card-logs {
+    grid-column: 1 / -1;
+}
+
+.card-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.card-email .card-icon {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+}
+
+.card-events .card-icon {
+    background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+}
+
+.card-logs .card-icon {
+    background: linear-gradient(135deg, #4776e6 0%, #8e54e9 100%);
+}
+
+.card-content {
+    flex: 1;
+}
+
+.card-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0 0 20px 0;
+}
+
+.card-description {
+    color: #7f8c8d;
+    font-size: 15px;
+    margin-bottom: 25px;
+    line-height: 1.6;
+}
+
+/* Info Group */
+.info-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #34495e;
+    font-size: 14px;
+}
+
+.info-value {
+    color: #7f8c8d;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.info-value.highlight {
+    color: #1e3c72;
+    font-weight: 700;
+    font-size: 18px;
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.status-active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-inactive {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* No Config Text */
+.no-config-text {
+    color: #95a5a6;
+    font-size: 15px;
+    margin-bottom: 20px;
+    font-style: italic;
+}
+
+/* Card Actions */
+.card-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.action-btn.btn-primary {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: white;
+}
+
+.action-btn.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(30, 60, 114, 0.4);
+    color: white;
+}
+
+.action-btn.btn-secondary {
+    background: white;
+    color: #1e3c72;
+    border: 2px solid #1e3c72;
+}
+
+.action-btn.btn-secondary:hover {
+    background: #1e3c72;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(30, 60, 114, 0.3);
+}
+
+/* Admin Card */
+.admin-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 25px;
+    border: 2px solid rgba(30, 60, 114, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.admin-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f39c12 0%, #f1c40f 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.admin-content {
+    flex: 1;
+}
+
+.admin-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0 0 8px 0;
+}
+
+.admin-text {
+    color: #7f8c8d;
+    font-size: 14px;
+    margin: 0 0 15px 0;
+    line-height: 1.5;
+}
+
+.admin-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.admin-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(30, 60, 114, 0.4);
+    color: white;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .cards-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .notification-card {
+        flex-direction: column;
+        padding: 25px;
+    }
+
+    .card-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+    }
+
+    .page-title {
+        font-size: 28px;
+    }
+
+    .admin-card {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .cards-grid {
+        gap: 20px;
+    }
+
+    .notification-card {
+        padding: 25px;
+    }
+}
+</style>
+{% endblock %}

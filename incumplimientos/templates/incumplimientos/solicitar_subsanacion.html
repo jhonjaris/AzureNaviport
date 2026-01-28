@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Solicitar Subsanación{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <h2>Solicitar Subsanación - Incumplimiento #{{ incumplimiento.id }}</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label>Información/Documentación Requerida:</label>
+            <textarea name="informacion_requerida" class="form-control" rows="5" required></textarea>
+        </div>
+        <div class="mb-3">
+            <label>Plazo en Días Hábiles:</label>
+            <input type="number" name="plazo_dias" class="form-control" value="5" min="1" max="15">
+        </div>
+        <button type="submit" class="btn btn-primary">Enviar Solicitud</button>
+        <a href="{% url 'incumplimientos:detalle' incumplimiento.pk %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

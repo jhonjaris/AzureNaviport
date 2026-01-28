@@ -1,0 +1,576 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Usuarios | NaviPort RD{% endblock %}
+
+{% block content %}
+<!-- CSRF Token para JavaScript -->
+{% csrf_token %}
+<!-- Navbar dependiendo del rol -->
+{% if user.role == 'evaluador' or user.role == 'supervisor' or user.role == 'admin_tic' %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li><a href="{% url 'evaluacion:dashboard' %}" style="color: inherit; text-decoration: none;">Dashboard</a></li>
+        <li>Reportes (Futuro)</li>
+        <li><a href="{% url 'evaluacion:gestion_licencias_servicios' %}" style="color: inherit; text-decoration: none;">Licencias y Servicios</a></li>
+        <li><a href="{% url 'evaluacion:configuracion' %}" style="color: inherit; text-decoration: none;">Configuración</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div style="text-align: right; margin-right: 10px;">
+            <div style="font-weight: 500;">{{ user.get_display_name }}</div>
+            <div style="font-size: 14px; color: #7f8c8d;">{{ user.get_role_display_with_admin }}</div>
+        </div>
+        <div class="user-avatar">{{ user.get_display_name|slice:':1'|upper }}{{ user.last_name|slice:':1'|upper }}</div>
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li><a href="{% url 'solicitudes:dashboard' %}" style="color: inherit; text-decoration: none;">Dashboard</a></li>
+        <li><a href="{% url 'solicitudes:mis_solicitudes' %}" style="color: inherit; text-decoration: none;">Solicitudes</a></li>
+        <li><a href="{% url 'solicitudes:mis_autorizaciones' %}" style="color: inherit; text-decoration: none;">Autorizaciones</a></li>
+        <li class="active">Gestión de Usuarios</li>
+    </ul>
+    <div class="navbar-user">
+        <div style="text-align: right; margin-right: 10px;">
+            <div style="font-weight: 500;">{{ user.get_display_name }}</div>
+            <div style="font-size: 14px; color: #7f8c8d;">{{ user.get_role_display_with_admin }}</div>
+        </div>
+        <div class="user-avatar">{{ user.get_display_name|slice:':1'|upper }}{{ user.last_name|slice:':1'|upper }}</div>
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="content-area">
+    <!-- Header -->
+    <div class="page-header">
+        <h2 style="color: #2c3e50; margin-bottom: 10px;">
+            👥 Gestión de Usuarios
+            {% if user.role == 'solicitante' and user.empresa %}
+                - {{ user.empresa.nombre }}
+            {% endif %}
+        </h2>
+        <p style="color: #7f8c8d;">
+            {% if user.role == 'evaluador' or user.role == 'supervisor' or user.role == 'admin_tic' %}
+                Administra usuarios de todas las empresas del sistema
+            {% else %}
+                Administra los usuarios de tu empresa
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="dashboard-cards" style="margin-bottom: 30px;">
+        <div class="dashboard-card small">
+            <div class="card-header">
+                <div class="card-icon" style="background: #3498db;">👥</div>
+                <div>
+                    <div class="card-title">Total Usuarios</div>
+                    <div class="card-stat">{{ stats.total }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="dashboard-card small">
+            <div class="card-header">
+                <div class="card-icon" style="background: #27ae60;">✅</div>
+                <div>
+                    <div class="card-title">Activos</div>
+                    <div class="card-stat">{{ stats.activos }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="dashboard-card small">
+            <div class="card-header">
+                <div class="card-icon" style="background: #e74c3c;">❌</div>
+                <div>
+                    <div class="card-title">Inactivos</div>
+                    <div class="card-stat">{{ stats.inactivos }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="dashboard-card small">
+            <div class="card-header">
+                <div class="card-icon" style="background: #f39c12;">👑</div>
+                <div>
+                    <div class="card-title">Admin Empresa</div>
+                    <div class="card-stat">{{ stats.admin_empresa }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controles y filtros -->
+    <div class="toolbar" style="margin-bottom: 20px;">
+        <div class="toolbar-left">
+            {% if puede_crear %}
+            <a href="{% url 'accounts:crear_usuario' %}" class="btn btn-primary">
+                ➕ Crear Usuario
+            </a>
+            {% endif %}
+        </div>
+        
+        <div class="toolbar-right">
+            <form method="get" class="search-form" style="display: flex; gap: 10px; align-items: center;">
+                <input type="search" 
+                       name="q" 
+                       value="{{ busqueda }}" 
+                       placeholder="Buscar usuarios..." 
+                       class="form-control" 
+                       style="width: 250px;">
+                
+                {% if user.role == 'evaluador' or user.role == 'supervisor' or user.role == 'admin_tic' %}
+                <select name="empresa" class="form-control" style="width: 200px;">
+                    <option value="">Todas las empresas</option>
+                    {% for empresa in empresas_filtro %}
+                    <option value="{{ empresa.id }}" {% if empresa_filtro == empresa.id|stringformat:'s' %}selected{% endif %}>
+                        {{ empresa.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+                {% endif %}
+                
+                <select name="rol" class="form-control" style="width: 150px;">
+                    <option value="">Todos los roles</option>
+                    <option value="solicitante" {% if rol_filtro == 'solicitante' %}selected{% endif %}>Solicitante</option>
+                    <option value="evaluador" {% if rol_filtro == 'evaluador' %}selected{% endif %}>Evaluador</option>
+                    <option value="supervisor" {% if rol_filtro == 'supervisor' %}selected{% endif %}>Supervisor</option>
+                    <option value="oficial_acceso" {% if rol_filtro == 'oficial_acceso' %}selected{% endif %}>Oficial Acceso</option>
+                    <option value="admin_tic" {% if rol_filtro == 'admin_tic' %}selected{% endif %}>Admin TIC</option>
+                    <option value="direccion" {% if rol_filtro == 'direccion' %}selected{% endif %}>Dirección</option>
+                </select>
+                
+                <select name="estado" class="form-control" style="width: 120px;">
+                    <option value="">Todos</option>
+                    <option value="activo" {% if estado_filtro == 'activo' %}selected{% endif %}>Activos</option>
+                    <option value="inactivo" {% if estado_filtro == 'inactivo' %}selected{% endif %}>Inactivos</option>
+                    <option value="admin_empresa" {% if estado_filtro == 'admin_empresa' %}selected{% endif %}>Admin Empresa</option>
+                </select>
+                
+                <button type="submit" class="btn btn-secondary">🔍</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de usuarios -->
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Nombre Completo</th>
+                    <th>Email</th>
+                    <th>Empresa</th>
+                    <th>Rol</th>
+                    <th>Estado</th>
+                    <th>Admin Empresa</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for usuario in usuarios %}
+                <tr>
+                    <td>
+                        <strong>{{ usuario.username }}</strong><br>
+                        <small style="color: #7f8c8d;">{{ usuario.cedula_rnc }}</small>
+                    </td>
+                    <td>
+                        {{ usuario.get_full_name|default:"Sin nombre" }}<br>
+                        {% if usuario.telefono %}
+                        <small style="color: #7f8c8d;">📞 {{ usuario.telefono }}</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ usuario.email|default:"Sin email" }}</td>
+                    <td>
+                        {% if usuario.empresa %}
+                            <strong>{{ usuario.empresa.nombre }}</strong><br>
+                            <small style="color: #7f8c8d;">{{ usuario.empresa.rnc }}</small>
+                        {% else %}
+                            <span style="color: #95a5a6;">Sin empresa</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge badge-{{ usuario.role }}">{{ usuario.get_role_display }}</span>
+                    </td>
+                    <td>
+                        {% if usuario.is_active %}
+                            <span class="badge badge-success">Activo</span>
+                        {% else %}
+                            <span class="badge badge-danger">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if usuario.es_admin_empresa %}
+                            <span class="badge badge-warning">👑 Admin</span>
+                            {% if usuario.puede_crear_usuarios %}
+                                <br><small style="color: #f39c12;">Puede crear usuarios</small>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge badge-secondary">Usuario</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <a href="{% url 'accounts:editar_usuario' usuario.id %}"
+                               class="btn btn-sm btn-primary"
+                               title="Editar usuario">
+                                ✏️
+                            </a>
+
+                            <a href="{% url 'accounts:historial_usuario' usuario.id %}"
+                               class="btn btn-sm btn-info"
+                               title="Ver historial de actividad">
+                                📋
+                            </a>
+
+                            {% if user.role == 'evaluador' or user.role == 'supervisor' or user.role == 'admin_tic' %}
+                            <button onclick="confirmarToggleAdmin({{ usuario.id }}, {{ usuario.es_admin_empresa|yesno:'true,false' }}, '{{ usuario.username }}')"
+                                    class="btn btn-sm {% if usuario.es_admin_empresa %}btn-warning{% else %}btn-secondary{% endif %}"
+                                    title="{% if usuario.es_admin_empresa %}Remover como admin de empresa{% else %}Convertir en admin de empresa{% endif %}">
+                                👑
+                            </button>
+                            {% endif %}
+
+                            {% if usuario != user %}
+                            <button onclick="confirmarToggleActivo({{ usuario.id }}, {{ usuario.activo|yesno:'true,false' }}, '{{ usuario.username }}')"
+                                    class="btn btn-sm {% if usuario.activo %}btn-success{% else %}btn-secondary{% endif %}"
+                                    title="{% if usuario.activo %}Desactivar usuario{% else %}Activar usuario{% endif %}">
+                                {% if usuario.activo %}✅{% else %}⭕{% endif %}
+                            </button>
+
+                            <button onclick="confirmarEliminarUsuario({{ usuario.id }}, '{{ usuario.username }}')"
+                                    class="btn btn-sm btn-danger"
+                                    title="Eliminar usuario">
+                                🗑️
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 40px; color: #7f8c8d;">
+                        <div style="font-size: 48px; margin-bottom: 20px;">👥</div>
+                        <h3>No se encontraron usuarios</h3>
+                        <p>{% if busqueda or empresa_filtro or rol_filtro or estado_filtro %}Intenta ajustar los filtros de búsqueda{% else %}No hay usuarios registrados{% endif %}</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginación -->
+    {% if is_paginated %}
+    <div class="pagination-container">
+        <div class="pagination">
+            {% if usuarios.has_previous %}
+                <a href="?page=1{% if busqueda %}&q={{ busqueda }}{% endif %}{% if empresa_filtro %}&empresa={{ empresa_filtro }}{% endif %}{% if rol_filtro %}&rol={{ rol_filtro }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}" class="page-link">Primera</a>
+                <a href="?page={{ usuarios.previous_page_number }}{% if busqueda %}&q={{ busqueda }}{% endif %}{% if empresa_filtro %}&empresa={{ empresa_filtro }}{% endif %}{% if rol_filtro %}&rol={{ rol_filtro }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}" class="page-link">Anterior</a>
+            {% endif %}
+            
+            <span class="page-info">
+                Página {{ usuarios.number }} de {{ usuarios.paginator.num_pages }}
+            </span>
+            
+            {% if usuarios.has_next %}
+                <a href="?page={{ usuarios.next_page_number }}{% if busqueda %}&q={{ busqueda }}{% endif %}{% if empresa_filtro %}&empresa={{ empresa_filtro }}{% endif %}{% if rol_filtro %}&rol={{ rol_filtro }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}" class="page-link">Siguiente</a>
+                <a href="?page={{ usuarios.paginator.num_pages }}{% if busqueda %}&q={{ busqueda }}{% endif %}{% if empresa_filtro %}&empresa={{ empresa_filtro }}{% endif %}{% if rol_filtro %}&rol={{ rol_filtro }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}" class="page-link">Última</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Función para obtener el token CSRF
+function getCsrfToken() {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrfToken) {
+        return csrfToken.value;
+    }
+    
+    // Fallback: buscar en las cookies
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'csrftoken') {
+            return value;
+        }
+    }
+    
+    console.error('No se pudo obtener el token CSRF');
+    return null;
+}
+
+function toggleAdminEmpresa(usuarioId) {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    const csrfToken = getCsrfToken();
+    
+    if (!csrfToken) {
+        alert('Error: Token CSRF no disponible. Recarga la página.');
+        return;
+    }
+    
+    // Mostrar loading
+    button.innerHTML = '⏳';
+    button.disabled = true;
+    
+    const url = `{% url 'accounts:toggle_admin_empresa' 0 %}`.replace('0', usuarioId);
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Mostrar mensaje de éxito brevemente
+            button.innerHTML = '✅';
+            
+            // Crear notificación de éxito
+            mostrarNotificacion(data.message, 'success');
+            
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            throw new Error(data.error || 'Error desconocido');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        button.innerHTML = originalText;
+        button.disabled = false;
+        
+        mostrarNotificacion('Error al cambiar el estado del usuario: ' + error.message, 'error');
+    });
+}
+
+// Función para mostrar notificaciones temporales
+function mostrarNotificacion(mensaje, tipo = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${tipo}`;
+    notification.innerHTML = `
+        <span>${mensaje}</span>
+        <button onclick="this.parentElement.remove()" style="background: none; border: none; color: inherit; margin-left: 10px; cursor: pointer;">×</button>
+    `;
+    
+    // Agregar estilos inline
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 5px;
+        color: white;
+        font-weight: bold;
+        z-index: 1000;
+        max-width: 400px;
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.3s ease;
+    `;
+    
+    if (tipo === 'success') {
+        notification.style.backgroundColor = '#27ae60';
+    } else if (tipo === 'error') {
+        notification.style.backgroundColor = '#e74c3c';
+    } else {
+        notification.style.backgroundColor = '#3498db';
+    }
+    
+    document.body.appendChild(notification);
+    
+    // Animación de entrada
+    setTimeout(() => {
+        notification.style.opacity = '1';
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 300);
+    }, 4000);
+}
+
+// Agregar confirmación para acciones importantes
+function confirmarToggleAdmin(usuarioId, esAdmin, nombreUsuario) {
+    const accion = esAdmin ? 'remover como admin' : 'convertir en admin';
+    const mensaje = `¿Estás seguro de que quieres ${accion} al usuario "${nombreUsuario}"?`;
+
+    if (confirm(mensaje)) {
+        toggleAdminEmpresa(usuarioId);
+    }
+}
+
+// Función para toggle activo/inactivo de usuario
+function toggleUsuarioActivo(usuarioId) {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    const csrfToken = getCsrfToken();
+
+    if (!csrfToken) {
+        alert('Error: Token CSRF no disponible. Recarga la página.');
+        return;
+    }
+
+    // Mostrar loading
+    button.innerHTML = '⏳';
+    button.disabled = true;
+
+    const url = `{% url 'accounts:toggle_usuario_activo' 0 %}`.replace('0', usuarioId);
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Mostrar mensaje de éxito
+            button.innerHTML = '✅';
+
+            // Crear notificación de éxito
+            mostrarNotificacion(data.message, 'success');
+
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            throw new Error(data.error || 'Error desconocido');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        button.innerHTML = originalText;
+        button.disabled = false;
+
+        mostrarNotificacion('Error al cambiar el estado del usuario: ' + error.message, 'error');
+    });
+}
+
+// Confirmación para activar/desactivar usuario
+function confirmarToggleActivo(usuarioId, estaActivo, nombreUsuario) {
+    const accion = estaActivo ? 'desactivar' : 'activar';
+    const mensaje = `¿Estás seguro de que quieres ${accion} al usuario "${nombreUsuario}"?`;
+
+    if (confirm(mensaje)) {
+        toggleUsuarioActivo(usuarioId);
+    }
+}
+
+// Confirmación para eliminar usuario con modal
+function confirmarEliminarUsuario(usuarioId, nombreUsuario) {
+    const mensaje = `¿Estás seguro de que quieres ELIMINAR permanentemente al usuario "${nombreUsuario}"?\n\nEsta acción NO se puede deshacer.`;
+
+    if (confirm(mensaje)) {
+        // Redirigir a la URL de eliminación
+        window.location.href = `{% url 'accounts:eliminar_usuario' 0 %}`.replace('0', usuarioId);
+    }
+}
+</script>
+
+<style>
+.badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.badge-solicitante { background: #3498db; color: white; }
+.badge-evaluador { background: #e74c3c; color: white; }
+.badge-supervisor { background: #9b59b6; color: white; }
+.badge-oficial_acceso { background: #f39c12; color: white; }
+.badge-admin_tic { background: #2c3e50; color: white; }
+.badge-direccion { background: #27ae60; color: white; }
+.badge-success { background: #27ae60; color: white; }
+.badge-danger { background: #e74c3c; color: white; }
+.badge-warning { background: #f39c12; color: white; }
+.badge-secondary { background: #95a5a6; color: white; }
+
+.action-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn:disabled:hover {
+    opacity: 0.6;
+}
+
+.table-container {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.search-form input, .search-form select {
+    height: 38px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0 12px;
+}
+
+.btn-info {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.btn-info:hover {
+    background-color: #138496;
+}
+</style>
+{% endblock %}

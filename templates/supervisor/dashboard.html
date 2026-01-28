@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard Supervisor | NaviPort RD{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li class="active">Dashboard</li>
+        <li>Escalamientos</li>
+        <li>Discrepancias</li>
+        <li><a href="{% url 'evaluacion:dashboard_rendimiento' %}" style="color: inherit; text-decoration: none;">📊 Reportes</a></li>
+        <li><a href="{% url 'evaluacion:gestionar_empresas' %}" style="color: inherit; text-decoration: none;">🏢 Empresas</a></li>
+        <li><a href="{% url 'empresas:registrar_empresa' %}" style="color: inherit; text-decoration: none;">➕ Registrar Empresa</a></li>
+        <li>Alertas</li>
+        <li><a href="{% url 'accounts:ayuda' %}" style="color: inherit; text-decoration: none;">❓ Ayuda</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div style="text-align: right; margin-right: 10px;">
+            <div class="user-name">{{ user.get_display_name }}</div>
+            <div style="font-size: 14px; color: #7f8c8d;">{{ user.get_role_display_with_admin }}</div>
+        </div>
+        <div class="user-avatar">{{ user.get_display_name|slice:':1'|upper }}{{ user.last_name|slice:':1'|upper }}</div>
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <h2 style="color: #2c3e50; margin-bottom: 10px;">Panel de Supervisión</h2>
+        <p style="color: #7f8c8d;">{{ user.get_display_name }} • Control de Calidad y Escalamiento</p>
+    </div>
+    {% if alertas %}
+    {% for alerta in alertas %}
+    <div class="notification-bar" style="background: {{ alerta.bg }}; border-left: 4px solid {{ alerta.color }};">
+        <span style="font-size: 20px;">🔔</span>
+        <div>
+            <strong style="color: {{ alerta.color }};">{{ alerta.tipo }}: {{ alerta.mensaje }}</strong>
+            <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">Requiere atención inmediata del supervisor.</p>
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+    <div class="dashboard-cards" style="margin-bottom: 30px;">
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #e74c3c;">🚨</div>
+                <div>
+                    <div class="card-title">Escalamientos</div>
+                    <div class="card-subtitle">{{ stats.escalamientos_pendientes }} pendientes</div>
+                </div>
+            </div>
+            <p style="color: #7f8c8d; margin-bottom: 20px;">Casos críticos que requieren intervención supervisorial.</p>
+            <button class="btn btn-danger">Revisar Casos</button>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #f39c12;">⚠️</div>
+                <div>
+                    <div class="card-title">Discrepancias</div>
+                    <div class="card-subtitle">{{ stats.discrepancias_pendientes }} reportadas</div>
+                </div>
+            </div>
+            <p style="color: #7f8c8d; margin-bottom: 20px;">Problemas de acceso reportados por oficiales en puerto.</p>
+            <button class="btn btn-warning">Gestionar</button>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #9b59b6;">🔔</div>
+                <div>
+                    <div class="card-title">Alertas Sistema</div>
+                    <div class="card-subtitle">{{ stats.alertas_activas }} activas</div>
+                </div>
+            </div>
+            <p style="color: #7f8c8d; margin-bottom: 20px;">Notificaciones automáticas del sistema de gestión.</p>
+            <button class="btn btn-primary">Ver Alertas</button>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #27ae60;">📊</div>
+                <div>
+                    <div class="card-title">Rendimiento</div>
+                    <div class="card-subtitle">Este mes</div>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
+                <div style="text-align: center;">
+                    <div style="font-size: 24px; font-weight: bold; color: #3498db;">{{ stats.solicitudes_procesadas }}</div>
+                    <div style="font-size: 14px; color: #7f8c8d;">Procesadas</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 24px; font-weight: bold; color: #27ae60;">{{ stats.porcentaje_aprobacion }}%</div>
+                    <div style="font-size: 14px; color: #7f8c8d;">Aprobación</div>
+                </div>
+            </div>
+            <button class="btn btn-success">Ver Estadísticas</button>
+        </div>
+    </div>
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
+        <div>
+            <div class="data-table">
+                <div class="table-header">
+                    <div class="table-title">🚨 Casos de Escalamiento</div>
+                    <button class="btn btn-primary">Actualizar</button>
+                </div>
+                <div class="table-content">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Tipo</th>
+                                <th>Evaluador</th>
+                                <th>Prioridad</th>
+                                <th>Tiempo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for e in escalamientos %}
+                            <tr style="background: #f9f9f9;">
+                                <td><strong>{{ e.codigo }}</strong></td>
+                                <td>{{ e.get_tipo_escalamiento_display }}</td>
+                                <td>{{ e.escalado_por.get_display_name|default:'-' }}</td>
+                                <td><span class="status-badge" style="background: {% if e.prioridad == 'critica' %}#e74c3c{% elif e.prioridad == 'alta' %}#f39c12{% elif e.prioridad == 'media' %}#3498db{% else %}#95a5a6{% endif %}; color: white;">{{ e.get_prioridad_display }}</span></td>
+                                <td style="color: {% if e.prioridad == 'critica' %}#e74c3c{% elif e.prioridad == 'alta' %}#f39c12{% elif e.prioridad == 'media' %}#3498db{% else %}#95a5a6{% endif %};">⏰ {{ e.creado_el|timesince }}</td>
+                                <td>
+                                    <a href="{% url 'supervisor:detalle_escalamiento' e.codigo %}" class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;">Resolver</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="6" style="text-align:center;">No hay escalamientos recientes.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="pagination" style="text-align:center; margin: 20px 0;">
+                {% if escalamientos.has_previous %}
+                    <a href="?esc_page={{ escalamientos.previous_page_number }}" class="btn btn-primary">Anterior</a>
+                {% endif %}
+                <span style="margin: 0 10px;">Página {{ escalamientos.number }} de {{ escalamientos.paginator.num_pages }}</span>
+                {% if escalamientos.has_next %}
+                    <a href="?esc_page={{ escalamientos.next_page_number }}" class="btn btn-primary">Siguiente</a>
+                {% endif %}
+            </div>
+            <div class="data-table" style="margin-top: 20px;">
+                <div class="table-header">
+                    <div class="table-title">⚠️ Discrepancias en Acceso</div>
+                    <button class="btn btn-warning">Ver Todas</button>
+                </div>
+                <div class="table-content">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Puerto</th>
+                                <th>Autorización</th>
+                                <th>Problema</th>
+                                <th>Oficial</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for d in discrepancias %}
+                            <tr>
+                                <td>{{ d.registro_acceso.autorizacion.puerto_nombre|default:'-' }}</td>
+                                <td>{{ d.registro_acceso.autorizacion.codigo }}</td>
+                                <td>{{ d.get_tipo_discrepancia_display }}</td>
+                                <td>{{ d.reportada_por.get_display_name }}</td>
+                                <td><span class="status-badge status-pending">{{ d.get_estado_display }}</span></td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="5" style="text-align:center;">No hay discrepancias recientes.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="pagination" style="text-align:center; margin: 20px 0;">
+                {% if discrepancias.has_previous %}
+                    <a href="?disc_page={{ discrepancias.previous_page_number }}" class="btn btn-primary">Anterior</a>
+                {% endif %}
+                <span style="margin: 0 10px;">Página {{ discrepancias.number }} de {{ discrepancias.paginator.num_pages }}</span>
+                {% if discrepancias.has_next %}
+                    <a href="?disc_page={{ discrepancias.next_page_number }}" class="btn btn-primary">Siguiente</a>
+                {% endif %}
+            </div>
+        </div>
+        <div>
+            <div class="form-container" style="margin-bottom: 20px;">
+                <h4 style="color: #2c3e50; margin-bottom: 15px;">📊 Resumen del Día</h4>
+                <div style="margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span style="font-size: 14px;">Solicitudes procesadas</span>
+                        <strong>{{ stats.solicitudes_procesadas }}</strong>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar green" style="width: {% if stats.solicitudes_procesadas > 0 %}85{% else %}0{% endif %}%;"></div>
+                    </div>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span style="font-size: 14px;">Tasa de aprobación</span>
+                        <strong>{{ stats.porcentaje_aprobacion }}%</strong>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar blue" style="width: {{ stats.porcentaje_aprobacion }}%;"></div>
+                    </div>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span style="font-size: 14px;">Escalamientos resueltos</span>
+                        <strong>{{ stats.escalamientos_resueltos }}</strong>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar orange" style="width: {% if stats.escalamientos_resueltos > 0 %}60{% else %}0{% endif %}%;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-container" style="margin-bottom: 20px;">
+                <h4 style="color: #2c3e50; margin-bottom: 15px;">🔔 Alertas del Sistema</h4>
+                {% for alerta in alertas %}
+                <div style="background: {{ alerta.bg }}; border-left: 4px solid {{ alerta.color }}; padding: 12px; border-radius: 6px; margin-bottom: 10px;">
+                    <div style="font-size: 12px; color: {{ alerta.color }}; font-weight: bold;">{{ alerta.tipo }}</div>
+                    <div style="font-size: 12px; color: {{ alerta.color }};">{{ alerta.mensaje }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="form-container">
+                <h4 style="color: #2c3e50; margin-bottom: 15px;">⚡ Acciones Rápidas</h4>
+                <button class="btn btn-danger" style="width: 100%; margin-bottom: 10px; font-size: 12px;">🚨 Resolver Críticos</button>
+                <button class="btn btn-warning" style="width: 100%; margin-bottom: 10px; font-size: 12px;">📊 Rebalancear Carga</button>
+                <button class="btn btn-primary" style="width: 100%; font-size: 12px;">📈 Generar Reporte</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

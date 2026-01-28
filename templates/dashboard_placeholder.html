@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | NaviPort RD{% endblock %}
+
+{% block content %}
+<div style="text-align:center; margin-top: 60px;">
+    <h2>Bienvenido, {{ user.get_display_name }}</h2>
+    <p>Este es un dashboard de ejemplo para el rol: <strong>{{ user.get_role_display_with_admin }}</strong></p>
+    <p>Pronto aquí verás tu panel personalizado.</p>
+</div>
+{% endblock %} 

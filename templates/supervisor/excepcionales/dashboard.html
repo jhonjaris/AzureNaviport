@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Solicitudes Excepcionales{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'supervisor:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'supervisor:lista_empresas_excepcionales' %}">Empresas Excepcionales</a></li>
+            <li class="breadcrumb-item active">Dashboard</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-chart-bar"></i> Dashboard de Solicitudes Excepcionales</h2>
+            <p class="text-muted mb-0">Estadísticas y métricas del sistema</p>
+        </div>
+        <a href="{% url 'supervisor:lista_empresas_excepcionales' %}" class="btn btn-primary">
+            <i class="fas fa-building"></i> Ver Empresas
+        </a>
+    </div>
+
+    <!-- Estadísticas Principales -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <i class="fas fa-building fa-3x text-primary mb-3"></i>
+                    <h2 class="mb-0">{{ total_empresas }}</h2>
+                    <p class="text-muted mb-0">Total Empresas</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <h2 class="mb-0">{{ empresas_con_permiso }}</h2>
+                    <p class="text-muted mb-0">Con Permiso Activo</p>
+                    <small class="text-success">{{ porcentaje_con_permiso }}% del total</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <i class="fas fa-file-signature fa-3x text-info mb-3"></i>
+                    <h2 class="mb-0">{{ aprobaciones_activas }}</h2>
+                    <p class="text-muted mb-0">Aprobaciones Activas</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <i class="fas fa-ban fa-3x text-warning mb-3"></i>
+                    <h2 class="mb-0">{{ aprobaciones_revocadas }}</h2>
+                    <p class="text-muted mb-0">Aprobaciones Revocadas</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Aprobaciones Recientes -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-clock"></i> Aprobaciones Recientes</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if aprobaciones_recientes %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Empresa</th>
+                                        <th>Aprobada Por</th>
+                                        <th>Fecha</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for aprobacion in aprobaciones_recientes %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ aprobacion.empresa.nombre }}</strong><br>
+                                            <small class="text-muted">{{ aprobacion.empresa.rnc }}</small>
+                                        </td>
+                                        <td>{{ aprobacion.aprobada_por.get_full_name }}</td>
+                                        <td>{{ aprobacion.fecha_aprobacion|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            {% if aprobacion.estado == 'activa' %}
+                                                <span class="badge bg-success">Activa</span>
+                                            {% elif aprobacion.estado == 'revocada' %}
+                                                <span class="badge bg-warning">Revocada</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Vencida</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'supervisor:historial_excepcionales' aprobacion.empresa.id %}"
+                                               class="btn btn-sm btn-info">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0">No hay aprobaciones recientes</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Aprobaciones Próximas a Vencer -->
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Próximas a Vencer</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if aprobaciones_por_vencer %}
+                        <div class="list-group list-group-flush">
+                            {% for aprobacion in aprobaciones_por_vencer %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong>{{ aprobacion.empresa.nombre }}</strong><br>
+                                            <small class="text-muted">
+                                                Vence: {{ aprobacion.fecha_vencimiento|date:"d/m/Y" }}
+                                            </small>
+                                            <br>
+                                            {% if aprobacion.dias_para_vencer <= 7 %}
+                                                <span class="badge bg-danger">{{ aprobacion.dias_para_vencer }} días</span>
+                                            {% else %}
+                                                <span class="badge bg-warning">{{ aprobacion.dias_para_vencer }} días</span>
+                                            {% endif %}
+                                        </div>
+                                        <a href="{% url 'supervisor:historial_excepcionales' aprobacion.empresa.id %}"
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                            <p class="text-muted mb-0">No hay aprobaciones próximas a vencer</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Estadísticas Adicionales -->
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Estadísticas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Total Aprobaciones:</span>
+                            <strong>{{ total_aprobaciones }}</strong>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Aprobaciones Activas:</span>
+                            <strong class="text-success">{{ aprobaciones_activas }}</strong>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Aprobaciones Revocadas:</span>
+                            <strong class="text-warning">{{ aprobaciones_revocadas }}</strong>
+                        </div>
+                    </div>
+                    <hr>
+                    <div>
+                        <div class="d-flex justify-content-between">
+                            <span>% Empresas con Permiso:</span>
+                            <strong>{{ porcentaje_con_permiso }}%</strong>
+                        </div>
+                        <div class="progress mt-2">
+                            <div class="progress-bar bg-success" style="width: {{ porcentaje_con_permiso }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

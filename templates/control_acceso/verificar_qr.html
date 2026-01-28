@@ -1,0 +1,304 @@
+{% extends 'base.html' %}
+
+{% block title %}Scanner QR | NaviPort RD{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD - Control Físico
+    </div>
+    <ul class="navbar-menu">
+        <li class="active">Scanner QR</li>
+        <li><a href="{% url 'control_acceso:dashboard' %}">Registros</a></li>
+        <li>Alertas</li>
+        <li>Reportes</li>
+    </ul>
+    <div class="navbar-user">
+        <div style="text-align: right; margin-right: 10px;">
+            <div style="font-weight: 500;">{{ user.get_display_name }}</div>
+            <div style="font-size: 14px; color: #7f8c8d;">{{ user.get_role_display_with_admin }}</div>
+        </div>
+        <div class="user-avatar">{{ user.get_display_name|slice:':1'|upper }}{{ user.last_name|slice:':1'|upper }}</div>
+    
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+
+<div class="content-area">
+    <!-- Botón de retorno al dashboard -->
+    <div style="margin-bottom: 20px;">
+        <a href="{% url 'control_acceso:dashboard' %}" class="btn" style="background: #6c757d; color: white; padding: 10px 20px;">
+            ← Volver al Dashboard
+        </a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; height: calc(100vh - 200px);">
+        <!-- Panel Izquierdo: Scanner QR -->
+        <div>
+            <h3 style="color: #2c3e50; margin-bottom: 20px;">📱 Scanner de Autorizaciones</h3>
+            
+            <!-- Área del Scanner -->
+            <div style="background: #2c3e50; border-radius: 12px; height: 350px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; margin-bottom: 20px;">
+                <div style="width: 200px; height: 200px; border: 3px solid #3498db; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">📱</div>
+                        <p>Posicione el QR aquí</p>
+                    </div>
+                </div>
+                <p style="opacity: 0.8;">Scanner activo - Esperando código QR</p>
+            </div>
+            
+            <!-- Botones de Control -->
+            <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                <button class="btn btn-primary" style="flex: 1;" onclick="activarCamara()">📷 Activar Cámara</button>
+                <button class="btn" style="flex: 1; background: #95a5a6; color: white;">📄 Buscar por Código</button>
+            </div>
+            
+            <!-- Formulario de Búsqueda Manual -->
+            <form method="post" class="form-group">
+                {% csrf_token %}
+                <label>Búsqueda Manual</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" name="codigo_qr" placeholder="Ingrese código de autorización o datos QR" style="flex: 1;" required>
+                    <button type="submit" class="btn btn-primary">🔍</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Panel Derecho: Resultado de Verificación -->
+        <div>
+            {% if autorizacion %}
+                <!-- Autorización Verificada -->
+                {% if error_message %}
+                <h3 style="color: #2c3e50; margin-bottom: 20px;">⚠️ Autorización Encontrada</h3>
+                {% else %}
+                <h3 style="color: #2c3e50; margin-bottom: 20px;">✅ Autorización Verificada</h3>
+                {% endif %}
+
+                <!-- Mensaje de advertencia si hay error -->
+                {% if error_message %}
+                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <strong style="color: #856404;">{{ error_message }}</strong>
+                </div>
+                {% endif %}
+
+                <div class="form-container" style="margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                        <div style="width: 60px; height: 60px; background: {% if error_message %}#f39c12{% else %}#27ae60{% endif %}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; margin-right: 15px;">{% if error_message %}⚠{% else %}✓{% endif %}</div>
+                        <div>
+                            <h4 style="color: {% if error_message %}#f39c12{% else %}#27ae60{% endif %}; margin-bottom: 5px;">{% if error_message %}Autorización {{ autorizacion.get_estado_display }}{% else %}Autorización Válida{% endif %}</h4>
+                            <p style="color: #7f8c8d;">{{ autorizacion.codigo }}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Detalles de la Autorización -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        <div>
+                            <strong>Empresa:</strong>
+                            <p>{{ autorizacion.empresa_nombre }}</p>
+                        </div>
+                        <div>
+                            <strong>Representante:</strong>
+                            <p>{{ autorizacion.representante_nombre }}</p>
+                        </div>
+                        <div>
+                            <strong>Válida hasta:</strong>
+                            <p style="color: {% if autorizacion.esta_vigente %}#27ae60{% else %}#e74c3c{% endif %};">
+                                {{ autorizacion.valida_hasta|date:'d/m/Y H:i' }}
+                            </p>
+                        </div>
+                        <div>
+                            <strong>Motivo:</strong>
+                            <p>{{ autorizacion.motivo_acceso }}</p>
+                        </div>
+                        <div>
+                            <strong>Puerto:</strong>
+                            <p>{{ autorizacion.puerto_nombre }}</p>
+                        </div>
+                        <div>
+                            <strong>Estado:</strong>
+                            <p style="color: {% if autorizacion.estado == 'activa' %}#27ae60{% else %}#e74c3c{% endif %};">
+                                {{ autorizacion.get_estado_display }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Vehículos Autorizados -->
+                    {% if autorizacion.vehiculos_autorizados %}
+                    <div style="margin-bottom: 20px;">
+                        <strong>Vehículos Autorizados:</strong>
+                        <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-top: 5px;">
+                            {% for vehiculo in autorizacion.vehiculos_autorizados %}
+                                <p style="margin: 2px 0;">
+                                    <strong>{{ vehiculo.placa }}</strong> - {{ vehiculo.tipo }} 
+                                    (Conductor: {{ vehiculo.conductor }})
+                                </p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Formulario de Acción -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <!-- Autorizar Ingreso -->
+                        <form method="post" action="{% url 'control_acceso:autorizar_ingreso' autorizacion.codigo %}" style="flex: 1;">
+                            {% csrf_token %}
+                            <input type="hidden" name="vehiculo_placa" value="">
+                            <input type="hidden" name="conductor_nombre" value="">
+                            <input type="hidden" name="observaciones" value="">
+                            <button type="submit" class="btn btn-success" style="width: 100%; padding: 15px;"
+                                    {% if error_message or not autorizacion.esta_vigente %}disabled{% endif %}>
+                                ✅ Autorizar Ingreso
+                            </button>
+                        </form>
+
+                        <!-- Denegar Acceso -->
+                        <form method="post" action="{% url 'control_acceso:denegar_acceso' autorizacion.codigo %}" style="flex: 1;">
+                            {% csrf_token %}
+                            <input type="hidden" name="vehiculo_placa" value="">
+                            <input type="hidden" name="conductor_nombre" value="">
+                            <input type="hidden" name="motivo_denegacion" value="Denegado desde scanner QR">
+                            <button type="submit" class="btn btn-danger" style="width: 100%; padding: 15px;"
+                                    {% if error_message %}disabled{% endif %}>
+                                ❌ Denegar Acceso
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- Reportar Discrepancia -->
+                    <form method="post" action="{% url 'control_acceso:reportar_discrepancia' autorizacion.codigo %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="vehiculo_placa" value="">
+                        <input type="hidden" name="conductor_nombre" value="">
+                        <input type="hidden" name="tipo_discrepancia" value="otros">
+                        <input type="hidden" name="descripcion" value="Discrepancia reportada desde scanner QR">
+                        <button type="submit" class="btn" style="width: 100%; background: #f39c12; color: white; padding: 10px;">
+                            ⚠️ Reportar Discrepancia
+                        </button>
+                    </form>
+
+                    <!-- Botón para volver al dashboard -->
+                    <div style="margin-top: 15px;">
+                        <a href="{% url 'control_acceso:dashboard' %}" class="btn" style="width: 100%; background: #6c757d; color: white; padding: 12px; text-align: center; display: block; text-decoration: none;">
+                            🏠 Volver al Dashboard
+                        </a>
+                    </div>
+                </div>
+            {% elif error_message %}
+                <!-- Error sin autorización (no encontrada) -->
+                <h3 style="color: #2c3e50; margin-bottom: 20px;">❌ Error en Búsqueda</h3>
+                <div class="form-container" style="margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                        <div style="width: 60px; height: 60px; background: #e74c3c; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; margin-right: 15px;">❌</div>
+                        <div>
+                            <h4 style="color: #e74c3c; margin-bottom: 5px;">No Encontrado</h4>
+                            <p style="color: #7f8c8d;">{{ error_message }}</p>
+                        </div>
+                    </div>
+                    <p style="color: #7f8c8d; font-size: 14px; margin-bottom: 20px;">Verifique el código e intente nuevamente.</p>
+
+                    <!-- Botón para volver al dashboard -->
+                    <a href="{% url 'control_acceso:dashboard' %}" class="btn" style="width: 100%; background: #6c757d; color: white; padding: 12px; text-align: center; display: block; text-decoration: none;">
+                        🏠 Volver al Dashboard
+                    </a>
+                </div>
+            {% else %}
+                <!-- Estado Inicial -->
+                <h3 style="color: #2c3e50; margin-bottom: 20px;">🔍 Esperando Verificación</h3>
+                <div class="form-container" style="text-align: center; padding: 40px;">
+                    <div style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;">📱</div>
+                    <p style="color: #7f8c8d;">Escanee un código QR o ingrese un código de autorización para verificar el acceso.</p>
+                </div>
+            {% endif %}
+            
+            <!-- Verificaciones Adicionales -->
+            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h4 style="color: #856404; margin-bottom: 10px;">⚠️ Verificaciones Adicionales</h4>
+                <ul style="color: #856404; margin: 0; padding-left: 20px;">
+                    <li>Verificar identidad del conductor</li>
+                    <li>Confirmar coincidencia de vehículo</li>
+                    <li>Revisar documentos físicos si es necesario</li>
+                </ul>
+            </div>
+            
+            <!-- Últimos Ingresos -->
+            <div class="data-table" style="font-size: 12px;">
+                <div class="table-header">
+                    <div class="table-title">Últimos Ingresos</div>
+                </div>
+                <div class="table-content">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Hora</th>
+                                <th>Empresa</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{{ "now"|date:"H:i" }}</td>
+                                <td>Sistema Activo</td>
+                                <td><span class="status-badge status-approved">Esperando</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.status-approved {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.status-rejected {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-group input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+</style>
+
+<script>
+function activarCamara() {
+    // Placeholder para funcionalidad de cámara QR
+    alert('Funcionalidad de cámara QR en desarrollo. Use la búsqueda manual por ahora.');
+}
+
+// Auto-refresh cada 30 segundos para mantener la información actualizada
+setTimeout(function() {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}

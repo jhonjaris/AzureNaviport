@@ -1,0 +1,386 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Empresas | NaviPort RD{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar_evaluador.html' with active_page='config' %}
+
+<div class="content-area">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <div>
+            <h2 style="color: #2c3e50; margin-bottom: 10px;">Gestión de Empresas</h2>
+            <p style="color: #7f8c8d;">{{ user.get_display_name }} • Evaluador Portuario</p>
+        </div>
+        <a href="{% url 'evaluacion:crear_empresa' %}" class="btn btn-primary">
+            <span style="margin-right: 5px;">➕</span>Registrar Nueva Empresa
+        </a>
+    </div>
+
+    <!-- Estadísticas Rápidas -->
+    <div class="dashboard-cards" style="margin-bottom: 30px; grid-template-columns: repeat(5, 1fr);">
+        <div class="dashboard-card" style="padding: 15px;">
+            <div class="card-icon" style="background: #3498db; font-size: 18px;">🏢</div>
+            <div style="margin-top: 10px;">
+                <div style="font-size: 24px; font-weight: bold; color: #3498db;">{{ stats.total }}</div>
+                <div style="font-size: 14px; color: #7f8c8d;">Total</div>
+            </div>
+        </div>
+        <div class="dashboard-card" style="padding: 15px;">
+            <div class="card-icon" style="background: #27ae60; font-size: 18px;">✅</div>
+            <div style="margin-top: 10px;">
+                <div style="font-size: 24px; font-weight: bold; color: #27ae60;">{{ stats.vigentes }}</div>
+                <div style="font-size: 14px; color: #7f8c8d;">Vigentes</div>
+            </div>
+        </div>
+        <div class="dashboard-card" style="padding: 15px;">
+            <div class="card-icon" style="background: #f39c12; font-size: 18px;">⚠️</div>
+            <div style="margin-top: 10px;">
+                <div style="font-size: 24px; font-weight: bold; color: #f39c12;">{{ stats.proximas_vencer }}</div>
+                <div style="font-size: 14px; color: #7f8c8d;">Por Vencer</div>
+            </div>
+        </div>
+        <div class="dashboard-card" style="padding: 15px;">
+            <div class="card-icon" style="background: #e74c3c; font-size: 18px;">❌</div>
+            <div style="margin-top: 10px;">
+                <div style="font-size: 24px; font-weight: bold; color: #e74c3c;">{{ stats.vencidas }}</div>
+                <div style="font-size: 14px; color: #7f8c8d;">Vencidas</div>
+            </div>
+        </div>
+        <div class="dashboard-card" style="padding: 15px;">
+            <div class="card-icon" style="background: #95a5a6; font-size: 18px;">📄</div>
+            <div style="margin-top: 10px;">
+                <div style="font-size: 24px; font-weight: bold; color: #95a5a6;">{{ stats.sin_licencia }}</div>
+                <div style="font-size: 14px; color: #7f8c8d;">Sin Licencia</div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Controles de Búsqueda y Filtro -->
+    <div class="data-table">
+        <div class="table-header">
+            <div class="table-title">Lista de Empresas Registradas</div>
+        </div>
+        
+        <div style="padding: 20px; background: #f8f9fa; border-bottom: 1px solid #dee2e6;">
+            <form method="GET" style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">Buscar:</label>
+                    <input type="text" name="q" value="{{ busqueda }}" 
+                           placeholder="Nombre, RNC o licencia..." 
+                           style="width: 100%; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px;">
+                </div>
+                <div style="min-width: 150px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">Estado:</label>
+                    <select name="estado" style="width: 100%; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px;">
+                        <option value="">Todos</option>
+                        <option value="vigente" {% if estado_licencia == 'vigente' %}selected{% endif %}>Vigentes</option>
+                        <option value="proxima_vencer" {% if estado_licencia == 'proxima_vencer' %}selected{% endif %}>Próximas a Vencer</option>
+                        <option value="vencida" {% if estado_licencia == 'vencida' %}selected{% endif %}>Vencidas</option>
+                        <option value="sin_licencia" {% if estado_licencia == 'sin_licencia' %}selected{% endif %}>Sin Licencia</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">🔍 Buscar</button>
+                <a href="{% url 'evaluacion:gestionar_empresas' %}" class="btn" style="background: #6c757d; color: white;">Limpiar</a>
+            </form>
+        </div>
+
+        <!-- Botones de Exportación -->
+        <div style="padding: 15px 20px; background: #ffffff; border-bottom: 2px solid #3498db; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong style="color: #2c3e50; font-size: 15px;">📊 Exportar Listado:</strong>
+                <span style="color: #7f8c8d; font-size: 13px; margin-left: 10px;">
+                    {% if busqueda or estado_licencia %}
+                        (Exportará {{ empresas|length }} resultados filtrados)
+                    {% else %}
+                        (Exportará todas las empresas)
+                    {% endif %}
+                </span>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <a href="{% url 'evaluacion:exportar_empresas_csv' %}?{% if busqueda %}q={{ busqueda }}&{% endif %}{% if estado_licencia %}estado={{ estado_licencia }}{% endif %}"
+                   class="btn-export btn-export-csv"
+                   title="Exportar a formato CSV (Excel)">
+                    📄 CSV
+                </a>
+                <a href="{% url 'evaluacion:exportar_empresas_xlsx' %}?{% if busqueda %}q={{ busqueda }}&{% endif %}{% if estado_licencia %}estado={{ estado_licencia }}{% endif %}"
+                   class="btn-export btn-export-xlsx"
+                   title="Exportar a formato Excel (XLSX)">
+                    📊 Excel
+                </a>
+                <a href="{% url 'evaluacion:exportar_empresas_pdf' %}?{% if busqueda %}q={{ busqueda }}&{% endif %}{% if estado_licencia %}estado={{ estado_licencia }}{% endif %}"
+                   class="btn-export btn-export-pdf"
+                   title="Exportar a formato PDF">
+                    📑 PDF
+                </a>
+            </div>
+        </div>
+
+        <div class="table-content">
+            {% if empresas %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>RNC</th>
+                        <th>Empresa</th>
+                        <th>Nº Licencia</th>
+                        <th>Expedición</th>
+                        <th>Expiración VUCE</th>
+                        <th>Exp. Contrato</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for empresa in empresas %}
+                    {% with estado=empresa.estado_licencia %}
+                    <tr>
+                        <td><strong>{{ empresa.rnc }}</strong></td>
+                        <td>
+                            <div>{{ empresa.nombre }}</div>
+                            <small style="color: #6c757d;">{{ empresa.representante_legal.get_display_name }}</small>
+                        </td>
+                        <td>{{ empresa.numero_licencia|default:"N/A" }}</td>
+                        <td>{{ empresa.fecha_expedicion_licencia|date:"d/m/Y"|default:"N/A" }}</td>
+                        <td>{{ empresa.fecha_expiracion_licencia|date:"d/m/Y"|default:"N/A" }}</td>
+                        <td>{{ empresa.fecha_expiracion_contrato|date:"d/m/Y"|default:"N/A" }}</td>
+                        <td>
+                            {% if estado.color == 'green' %}
+                                <span style="background: #27ae60; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;">
+                                    {{ estado.texto }}
+                                </span>
+                            {% elif estado.color == 'orange' %}
+                                <span style="background: #f39c12; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;">
+                                    {{ estado.texto }}
+                                </span>
+                            {% elif estado.color == 'red' %}
+                                <span style="background: #e74c3c; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;">
+                                    {{ estado.texto }}
+                                </span>
+                            {% else %}
+                                <span style="background: #95a5a6; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;">
+                                    {{ estado.texto }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'evaluacion:editar_empresa' empresa.id %}" 
+                               class="btn btn-primary" style="padding: 4px 8px; font-size: 11px; margin-right: 5px;" 
+                               title="Editar">✏️</a>
+                            <a href="{% url 'evaluacion:renovar_licencia' empresa.id %}" 
+                               class="btn btn-success" style="padding: 4px 8px; font-size: 11px; margin-right: 5px;" 
+                               title="Renovar">🔄</a>
+                            <a href="{% url 'evaluacion:eliminar_empresa' empresa.id %}" 
+                               class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" 
+                               title="Eliminar"
+                               onclick="return confirm('¿Está seguro de eliminar esta empresa?')">🗑️</a>
+                        </td>
+                    </tr>
+                    {% endwith %}
+                {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Paginación -->
+            {% if is_paginated %}
+            <div style="padding: 20px; text-align: center; background: #f8f9fa; border-top: 1px solid #dee2e6;">
+                <div style="display: flex; justify-content: center; align-items: center; gap: 10px;">
+                    {% if empresas.has_previous %}
+                        <a href="?{% if busqueda %}q={{ busqueda }}&{% endif %}{% if estado_licencia %}estado={{ estado_licencia }}&{% endif %}page=1" class="btn btn-sm">« Primera</a>
+                        <a href="?{% if busqueda %}q={{ busqueda }}&{% endif %}{% if estado_licencia %}estado={{ estado_licencia }}&{% endif %}page={{ empresas.previous_page_number }}" class="btn btn-sm">‹ Anterior</a>
+                    {% endif %}
+                    
+                    <span style="padding: 0 15px; color: #6c757d;">
+                        Página {{ empresas.number }} de {{ empresas.paginator.num_pages }}
+                    </span>
+                    
+                    {% if empresas.has_next %}
+                        <a href="?{% if busqueda %}q={{ busqueda }}&{% endif %}{% if estado_licencia %}estado={{ estado_licencia }}&{% endif %}page={{ empresas.next_page_number }}" class="btn btn-sm">Siguiente ›</a>
+                        <a href="?{% if busqueda %}q={{ busqueda }}&{% endif %}{% if estado_licencia %}estado={{ estado_licencia }}&{% endif %}page={{ empresas.paginator.num_pages }}" class="btn btn-sm">Última »</a>
+                    {% endif %}
+                </div>
+                <div style="margin-top: 10px; font-size: 14px; color: #6c757d;">
+                    Mostrando {{ empresas|length }} de {{ empresas.paginator.count }} empresas
+                </div>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div style="padding: 40px; text-align: center;">
+                <div style="font-size: 48px; margin-bottom: 20px;">🏢</div>
+                <h3 style="color: #6c757d; margin-bottom: 10px;">No se encontraron empresas</h3>
+                <p style="color: #adb5bd;">{% if busqueda or estado_licencia %}Intenta ajustar tus filtros de búsqueda{% else %}Comienza registrando la primera empresa{% endif %}</p>
+                <a href="{% url 'evaluacion:crear_empresa' %}" class="btn btn-primary" style="margin-top: 20px;">
+                    ➕ Registrar Primera Empresa
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Búsqueda en tiempo real (opcional)
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.querySelector('input[name="q"]');
+    let searchTimeout;
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (this.value.length >= 2 || this.value.length === 0) {
+                    // Auto-submit después de 500ms de inactividad
+                    this.closest('form').submit();
+                }
+            }, 500);
+        });
+    }
+    
+    // Efectos hover para los botones de gestión rápida
+    const btnsGestion = document.querySelectorAll('.btn[href*="evaluacion:"]');
+    btnsGestion.forEach(btn => {
+        btn.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        });
+        
+        btn.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = 'none';
+        });
+    });
+});
+
+// Función para mostrar guía rápida
+function mostrarGuiaRapida() {
+    const guiaModal = `
+        <div id="guiaModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+            <div style="background: white; border-radius: 12px; padding: 30px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; position: relative;">
+                <button onclick="cerrarGuiaRapida()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">×</button>
+                
+                <h3 style="color: #2c3e50; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    💡 Guía Rápida - Gestión de Servicios y Licencias
+                </h3>
+                
+                <div style="margin-bottom: 25px;">
+                    <h4 style="color: #667eea; margin-bottom: 10px;">🛡️ Gestión de Servicios</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 8px;">• <strong>Crear Servicio:</strong> Define nuevos servicios portuarios (ej: Carga General, Contenedores)</li>
+                        <li style="margin-bottom: 8px;">• <strong>Código único:</strong> Cada servicio debe tener un código único (ej: CG-001, CNT-002)</li>
+                        <li style="margin-bottom: 8px;">• <strong>Estado activo:</strong> Solo servicios activos pueden asignarse a empresas</li>
+                    </ul>
+                </div>
+                
+                <div style="margin-bottom: 25px;">
+                    <h4 style="color: #f39c12; margin-bottom: 10px;">🏷️ Gestión de Tipos de Licencia</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 8px;">• <strong>Crear Tipo:</strong> Define paquetes de servicios predefinidos</li>
+                        <li style="margin-bottom: 8px;">• <strong>Servicios incluidos:</strong> Selecciona qué servicios se incluyen automáticamente</li>
+                        <li style="margin-bottom: 8px;">• <strong>Asignación automática:</strong> Al asignar un tipo, la empresa recibe todos sus servicios</li>
+                    </ul>
+                </div>
+                
+                <div style="margin-bottom: 25px;">
+                    <h4 style="color: #27ae60; margin-bottom: 10px;">🏢 Flujo de Trabajo Recomendado</h4>
+                    <ol style="list-style: none; padding: 0; counter-reset: step;">
+                        <li style="counter-increment: step; margin-bottom: 8px; position: relative; padding-left: 25px;">
+                            <span style="position: absolute; left: 0; top: 0; background: #27ae60; color: white; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;" data-counter></span>
+                            <strong>Crear Servicios:</strong> Define todos los servicios que tu puerto ofrece
+                        </li>
+                        <li style="counter-increment: step; margin-bottom: 8px; position: relative; padding-left: 25px;">
+                            <span style="position: absolute; left: 0; top: 0; background: #f39c12; color: white; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;" data-counter></span>
+                            <strong>Crear Tipos de Licencia:</strong> Agrupa servicios en paquetes lógicos
+                        </li>
+                        <li style="counter-increment: step; margin-bottom: 8px; position: relative; padding-left: 25px;">
+                            <span style="position: absolute; left: 0; top: 0; background: #3498db; color: white; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;" data-counter></span>
+                            <strong>Asignar a Empresas:</strong> Selecciona tipo de licencia y servicios adicionales
+                        </li>
+                        <li style="counter-increment: step; margin-bottom: 8px; position: relative; padding-left: 25px;">
+                            <span style="position: absolute; left: 0; top: 0; background: #9b59b6; color: white; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;" data-counter></span>
+                            <strong>Verificar Solicitudes:</strong> Las empresas solo podrán solicitar servicios autorizados
+                        </li>
+                    </ol>
+                </div>
+                
+                <div style="text-align: center;">
+                    <button onclick="cerrarGuiaRapida()" style="background: #667eea; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 500; cursor: pointer;">
+                        Entendido
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', guiaModal);
+    
+    // Agregar números a los pasos
+    setTimeout(() => {
+        document.querySelectorAll('[data-counter]').forEach((el, index) => {
+            el.textContent = index + 1;
+        });
+    }, 10);
+}
+
+function cerrarGuiaRapida() {
+    const modal = document.getElementById('guiaModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+</script>
+
+<style>
+/* Estilos para botones de exportación */
+.btn-export {
+    padding: 8px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s;
+    display: inline-block;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+.btn-export:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.btn-export-csv {
+    background: #27ae60;
+    color: white;
+    border-color: #27ae60;
+}
+
+.btn-export-csv:hover {
+    background: #229954;
+    border-color: #229954;
+}
+
+.btn-export-xlsx {
+    background: #2ecc71;
+    color: white;
+    border-color: #2ecc71;
+}
+
+.btn-export-xlsx:hover {
+    background: #27ae60;
+    border-color: #27ae60;
+}
+
+.btn-export-pdf {
+    background: #e74c3c;
+    color: white;
+    border-color: #e74c3c;
+}
+
+.btn-export-pdf:hover {
+    background: #c0392b;
+    border-color: #c0392b;
+}
+</style>
+
+{% endblock %}

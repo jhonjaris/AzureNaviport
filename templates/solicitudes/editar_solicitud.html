@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Solicitud #{{ solicitud.id }} | NaviPort RD{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li>Dashboard</li>
+        <li>Solicitudes</li>
+        <li>Autorizaciones</li>
+        <li>Historial</li>
+    </ul>
+    <div class="navbar-user">
+        <span>{{ solicitud.solicitante.get_display_name }}</span>
+        <div class="user-avatar">{{ solicitud.solicitante.get_display_name|slice:':1'|upper }}{{ solicitud.solicitante.last_name|slice:':1'|upper }}</div>
+    
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <h2 style="color: #2c3e50; margin-bottom: 10px;">Editar Solicitud #{{ solicitud.id }}</h2>
+        <p style="color: #7f8c8d;">Modifique los campos necesarios y guarde los cambios.</p>
+    </div>
+    <div class="form-container">
+        <h3 style="color: #2c3e50; margin-bottom: 25px; border-bottom: 2px solid #e9ecef; padding-bottom: 10px;">✏️ Editar Información de la Solicitud</h3>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Puerto de Destino *</label>
+                    {{ form.puerto_destino }}
+                </div>
+                <div class="form-group">
+                    <label>Motivo del Acceso *</label>
+                    {{ form.motivo_acceso }}
+                </div>
+                <div class="form-group">
+                    <label>Fecha de Ingreso *</label>
+                    {{ form.fecha_ingreso }}
+                </div>
+                <div class="form-group">
+                    <label>Hora de Ingreso *</label>
+                    {{ form.hora_ingreso }}
+                </div>
+                <div class="form-group">
+                    <label>Fecha de Salida *</label>
+                    {{ form.fecha_salida }}
+                </div>
+                <div class="form-group">
+                    <label>Hora de Salida *</label>
+                    {{ form.hora_salida }}
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Descripción Detallada *</label>
+                {{ form.descripcion }}
+            </div>
+            <div style="display: flex; gap: 20px; justify-content: center; margin-top: 30px;">
+                <a href="{% url 'solicitudes:detalle_solicitud' solicitud.id %}" class="btn" style="background: #95a5a6; color: white;">Cancelar</a>
+                <button class="btn btn-primary" style="padding: 15px 30px;">💾 Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 

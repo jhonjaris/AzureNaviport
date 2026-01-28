@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Vehículo | NaviPort RD</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% load static %}{% static 'css/styles.css' %}">
+    <style>
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        .header-section {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+        }
+        .field-group {
+            margin-bottom: 1.5rem;
+        }
+        .field-group label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+        .required-field {
+            color: #dc3545;
+        }
+        .form-control:focus {
+            border-color: #28a745;
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+        }
+        .btn-create {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+        }
+        .btn-create:hover {
+            background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+            color: white;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        .info-box {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'accounts:dashboard' %}">🚢 NaviPort RD</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:dashboard' %}">🏠 Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'gestion_vehiculos:dashboard' %}">🚗 Vehículos</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            👤 {{ user.first_name }} {{ user.last_name }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'accounts:logout' %}">🚪 Cerrar Sesión</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Header -->
+        <div class="header-section">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-2">🚗 Crear Nuevo Vehículo</h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0" style="background: transparent;">
+                            <li class="breadcrumb-item"><a href="{% url 'gestion_vehiculos:dashboard' %}" style="color: #e9ecef;">Vehículos</a></li>
+                            <li class="breadcrumb-item active" style="color: white;">Crear Vehículo</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a href="{% url 'gestion_vehiculos:dashboard' %}" class="btn btn-outline-light">
+                        ← Volver al Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información -->
+        <div class="info-box">
+            <h6 class="text-primary mb-2">📋 Información Importante</h6>
+            <ul class="mb-0 small">
+                <li><strong>Placa:</strong> Debe seguir el formato dominicano (A123456 o AB123456)</li>
+                <li><strong>Validación:</strong> Se verificará que no exista otro vehículo con la misma placa</li>
+                <li><strong>Empresa:</strong> El vehículo se asignará automáticamente a tu empresa</li>
+                <li><strong>Documentos:</strong> Podrás subir documentos después de crear el vehículo</li>
+            </ul>
+        </div>
+
+        <!-- Formulario de Creación -->
+        <div class="form-container">
+            <form method="post" id="formCrearVehiculo">
+                {% csrf_token %}
+
+                <!-- Información Básica -->
+                <div class="mb-4">
+                    <h4 class="text-primary mb-3">📋 Información Básica</h4>
+
+                    <div class="form-row">
+                        <div class="field-group">
+                            <label for="{{ form.placa.id_for_label }}">{{ form.placa.label }} <span class="required-field">*</span></label>
+                            {{ form.placa }}
+                            {% if form.placa.help_text %}
+                                <small class="form-text text-muted">{{ form.placa.help_text }}</small>
+                            {% endif %}
+                            {% if form.placa.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.placa.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="field-group">
+                            <label for="{{ form.tipo_vehiculo.id_for_label }}">{{ form.tipo_vehiculo.label }} <span class="required-field">*</span></label>
+                            {{ form.tipo_vehiculo }}
+                            {% if form.tipo_vehiculo.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.tipo_vehiculo.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="field-group">
+                            <label for="{{ form.marca.id_for_label }}">{{ form.marca.label }} <span class="required-field">*</span></label>
+                            {{ form.marca }}
+                            {% if form.marca.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.marca.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="field-group">
+                            <label for="{{ form.modelo.id_for_label }}">{{ form.modelo.label }} <span class="required-field">*</span></label>
+                            {{ form.modelo }}
+                            {% if form.modelo.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.modelo.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="field-group">
+                            <label for="{{ form.ano.id_for_label }}">{{ form.ano.label }} <span class="required-field">*</span></label>
+                            {{ form.ano }}
+                            {% if form.ano.help_text %}
+                                <small class="form-text text-muted">{{ form.ano.help_text }}</small>
+                            {% endif %}
+                            {% if form.ano.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.ano.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="field-group">
+                            <label for="{{ form.color.id_for_label }}">{{ form.color.label }} <span class="required-field">*</span></label>
+                            {{ form.color }}
+                            {% if form.color.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.color.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información Adicional -->
+                <div class="mb-4">
+                    <h4 class="text-primary mb-3">🔧 Información Adicional (Opcional)</h4>
+
+                    <div class="form-row">
+                        <div class="field-group">
+                            <label for="{{ form.numero_chasis.id_for_label }}">{{ form.numero_chasis.label }}</label>
+                            {{ form.numero_chasis }}
+                            {% if form.numero_chasis.help_text %}
+                                <small class="form-text text-muted">{{ form.numero_chasis.help_text }}</small>
+                            {% endif %}
+                            {% if form.numero_chasis.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.numero_chasis.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="field-group">
+                            <label for="{{ form.numero_motor.id_for_label }}">{{ form.numero_motor.label }}</label>
+                            {{ form.numero_motor }}
+                            {% if form.numero_motor.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.numero_motor.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información de Asignación -->
+                <div class="mb-4">
+                    <h4 class="text-secondary mb-3">🏢 Información de Asignación</h4>
+                    <div class="bg-light p-3 rounded">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Empresa Propietaria:</strong><br>
+                                {% if user.empresa %}
+                                    {{ user.empresa.nombre }}
+                                {% else %}
+                                    <span class="text-muted">Sin empresa asignada</span>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Registrado por:</strong><br>
+                                {{ user.first_name }} {{ user.last_name }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                    <div>
+                        <small class="text-muted">
+                            <span class="required-field">*</span> Campos obligatorios
+                        </small>
+                    </div>
+                    <div>
+                        <a href="{% url 'gestion_vehiculos:dashboard' %}"
+                           class="btn btn-secondary me-2">
+                            🚫 Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-create">
+                            ✅ Crear Vehículo
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-convertir placa a mayúsculas
+            const placaInput = document.getElementById('id_placa');
+            if (placaInput) {
+                placaInput.addEventListener('input', function() {
+                    this.value = this.value.toUpperCase();
+                });
+
+                // Validación en tiempo real de la placa
+                placaInput.addEventListener('blur', function() {
+                    const placa = this.value;
+                    const pattern = /^[A-Z]{1,2}\d{6}$/;
+
+                    if (placa && !pattern.test(placa)) {
+                        this.classList.add('is-invalid');
+                        // Encontrar o crear div de error
+                        let errorDiv = this.parentNode.querySelector('.invalid-feedback');
+                        if (!errorDiv) {
+                            errorDiv = document.createElement('div');
+                            errorDiv.className = 'invalid-feedback d-block';
+                            this.parentNode.appendChild(errorDiv);
+                        }
+                        errorDiv.textContent = 'La placa debe tener formato A123456 o AB123456';
+                    } else {
+                        this.classList.remove('is-invalid');
+                        const errorDiv = this.parentNode.querySelector('.invalid-feedback');
+                        if (errorDiv) {
+                            errorDiv.remove();
+                        }
+                    }
+                });
+            }
+
+            // Validación del año
+            const anoInput = document.getElementById('id_ano');
+            if (anoInput) {
+                anoInput.addEventListener('blur', function() {
+                    const ano = parseInt(this.value);
+                    const currentYear = new Date().getFullYear();
+
+                    if (ano && (ano < 1900 || ano > currentYear + 1)) {
+                        this.classList.add('is-invalid');
+                        let errorDiv = this.parentNode.querySelector('.invalid-feedback');
+                        if (!errorDiv) {
+                            errorDiv = document.createElement('div');
+                            errorDiv.className = 'invalid-feedback d-block';
+                            this.parentNode.appendChild(errorDiv);
+                        }
+                        errorDiv.textContent = `El año debe estar entre 1900 y ${currentYear + 1}`;
+                    } else {
+                        this.classList.remove('is-invalid');
+                        const errorDiv = this.parentNode.querySelector('.invalid-feedback');
+                        if (errorDiv) {
+                            errorDiv.remove();
+                        }
+                    }
+                });
+            }
+
+            // Confirmación antes de enviar
+            const form = document.getElementById('formCrearVehiculo');
+            form.addEventListener('submit', function(e) {
+                const placa = document.getElementById('id_placa')?.value || '';
+                const marca = document.getElementById('id_marca')?.value || '';
+                const modelo = document.getElementById('id_modelo')?.value || '';
+
+                if (placa && marca && modelo) {
+                    if (!confirm(`¿Confirmar creación del vehículo ${placa} - ${marca} ${modelo}?`)) {
+                        e.preventDefault();
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,694 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard Evaluador | NaviPort RD{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar_evaluador.html' with active_page='dashboard' %}
+
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <h2 style="color: #2c3e50; margin-bottom: 10px;">Panel de Evaluación</h2>
+        <p style="color: #7f8c8d;">{{ user.get_display_name }} • Evaluador Portuario</p>
+    </div>
+    {% if stats.vencidas_hoy > 0 %}
+    <div class="notification-bar">
+        <span style="font-size: 20px;">⏰</span>
+        <div>
+            <strong>Tienes {{ stats.vencidas_hoy }} solicitud{{ stats.vencidas_hoy|pluralize:"es" }} que vence{{ stats.vencidas_hoy|pluralize:"n" }} hoy</strong>
+            <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">Revisa las solicitudes prioritarias para evitar vencimientos.</p>
+        </div>
+    </div>
+    {% endif %}
+    <div class="dashboard-cards">
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #e74c3c;">📋</div>
+                <div>
+                    <div class="card-title">Nuevas Solicitudes</div>
+                    <div style="display: flex; align-items: baseline; gap: 8px; margin: 5px 0;">
+                        <span style="font-size: 36px; font-weight: bold; color: #e74c3c;">{{ stats.pendientes_revision }}</span>
+                        <span style="font-size: 16px; color: #7f8c8d;">solicitudes</span>
+                    </div>
+                </div>
+            </div>
+            <p style="color: #7f8c8d; margin-bottom: 20px; font-size: 13px;">Solicitudes nuevas que requieren evaluación inmediata.</p>
+            <a href="{% url 'evaluacion:nuevas_solicitudes' %}" class="btn btn-danger">Ver Nuevas</a>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #f39c12;">👤</div>
+                <div>
+                    <div class="card-title">Mis Solicitudes</div>
+                    <div style="display: flex; align-items: baseline; gap: 8px; margin: 5px 0;">
+                        <span style="font-size: 36px; font-weight: bold; color: #f39c12;">{{ stats.mis_asignadas }}</span>
+                        <span style="font-size: 16px; color: #7f8c8d;">en proceso</span>
+                    </div>
+                </div>
+            </div>
+            <div style="margin: 15px 0;">
+                <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px;">
+                    <span>Progreso</span>
+                    <span>{{ stats.mis_asignadas }}/{{ stats.mis_asignadas|add:stats.evaluadas_mes }}</span>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar orange" style="width: {% if stats.mis_asignadas > 0 %}75{% else %}0{% endif %}%;"></div>
+                </div>
+            </div>
+            <a href="{% url 'evaluacion:mis_solicitudes' %}" class="btn btn-warning">Ver</a>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #9b59b6;">⚡</div>
+                <div>
+                    <div class="card-title">Prioridad Crítica</div>
+                    <div style="display: flex; align-items: baseline; gap: 8px; margin: 5px 0;">
+                        <span style="font-size: 36px; font-weight: bold; color: #9b59b6;">{{ stats.criticas }}</span>
+                        <span style="font-size: 16px; color: #7f8c8d;">solicitudes</span>
+                    </div>
+                </div>
+            </div>
+            <p style="color: #7f8c8d; margin-bottom: 20px; font-size: 13px;">Solicitudes VIP y de alta prioridad que requieren atención inmediata.</p>
+            <button class="btn btn-primary">Revisar Críticas</button>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon" style="background: #27ae60;">📊</div>
+                <div>
+                    <div class="card-title">Estadísticas</div>
+                    <div class="card-subtitle">Este mes</div>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
+                <div style="text-align: center;">
+                    <div style="font-size: 32px; font-weight: bold; color: #e74c3c;">{{ stats.vencidas_hoy }}</div>
+                    <div style="font-size: 13px; color: #7f8c8d;">Vencen Hoy</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 32px; font-weight: bold; color: #27ae60;">{{ stats.porcentaje_aprobacion }}%</div>
+                    <div style="font-size: 13px; color: #7f8c8d;">Aprobación</div>
+                </div>
+            </div>
+            <button class="btn btn-success">Ver Estadísticas</button>
+        </div>
+    </div>
+
+<!-- Tabla de Solicitudes con Filtros -->
+<div class="data-table" style="margin-top: 40px;">
+    <div class="table-header">
+        <div class="table-title">
+            {% if tiene_filtros %}
+                Solicitudes Filtradas
+            {% else %}
+                Solicitudes
+            {% endif %}
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <button onclick="actualizarTabla()" class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;">
+                🔄 Actualizar
+            </button>
+            <span id="contador-actualizacion" style="font-size: 12px; color: #6c757d; font-weight: 500;">
+                ⏱️ Próxima actualización en 5:00
+            </span>
+        </div>
+    </div>
+    
+    <!-- Controles de Búsqueda y Filtro -->
+    <div style="padding: 20px; background: #f8f9fa; border-bottom: 1px solid #dee2e6;">
+        <form method="GET" style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">Buscar:</label>
+                <input type="text" name="q" value="{{ busqueda }}" 
+                       placeholder="ID, empresa, solicitante..." 
+                       style="width: 100%; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px;">
+            </div>
+            <div style="min-width: 150px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">Estado:</label>
+                <select name="estado" style="width: 100%; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px;">
+                    <option value="">Todos</option>
+                    <option value="sin_asignar" {% if estado_filtro == 'sin_asignar' %}selected{% endif %}>Sin Asignar</option>
+                    <option value="pendiente" {% if estado_filtro == 'pendiente' %}selected{% endif %}>Pendientes</option>
+                    <option value="en_revision" {% if estado_filtro == 'en_revision' %}selected{% endif %}>En Revisión</option>
+                    <option value="evaluadas" {% if estado_filtro == 'evaluadas' %}selected{% endif %}>Evaluadas</option>
+                    <option value="aprobada" {% if estado_filtro == 'aprobada' %}selected{% endif %}>Aprobadas</option>
+                    <option value="rechazada" {% if estado_filtro == 'rechazada' %}selected{% endif %}>Rechazadas</option>
+                    <option value="documentos_faltantes" {% if estado_filtro == 'documentos_faltantes' %}selected{% endif %}>Docs. Faltantes</option>
+                    <option value="escalada" {% if estado_filtro == 'escalada' %}selected{% endif %}>Escaladas</option>
+                    <option value="vencidas" {% if estado_filtro == 'vencidas' %}selected{% endif %}>Vencidas</option>
+                </select>
+            </div>
+            <div style="min-width: 120px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">Prioridad:</label>
+                <select name="prioridad" style="width: 100%; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px;">
+                    <option value="">Todas</option>
+                    <option value="baja" {% if prioridad_filtro == 'baja' %}selected{% endif %}>Baja</option>
+                    <option value="normal" {% if prioridad_filtro == 'normal' %}selected{% endif %}>Normal</option>
+                    <option value="alta" {% if prioridad_filtro == 'alta' %}selected{% endif %}>Alta</option>
+                    <option value="critica" {% if prioridad_filtro == 'critica' %}selected{% endif %}>Crítica</option>
+                    <option value="vip" {% if prioridad_filtro == 'vip' %}selected{% endif %}>VIP</option>
+                </select>
+            </div>
+            <div style="min-width: 120px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">Por página:</label>
+                <select name="per_page" style="width: 100%; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px;">
+                    <option value="10" {% if request.GET.per_page == '10' %}selected{% endif %}>10</option>
+                    <option value="25" {% if request.GET.per_page == '25' or not request.GET.per_page %}selected{% endif %}>25</option>
+                    <option value="50" {% if request.GET.per_page == '50' %}selected{% endif %}>50</option>
+                    <option value="100" {% if request.GET.per_page == '100' %}selected{% endif %}>100</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">🔍 Buscar</button>
+            <a href="{% url 'evaluacion:dashboard' %}" class="btn" style="background: #6c757d; color: white;">Limpiar</a>
+        </form>
+    </div>
+    
+    {% if solicitudes %}
+    <div class="table-content">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Solicitante</th>
+                    <th>Empresa</th>
+                    <th>Puerto</th>
+                    <th>Motivo</th>
+                    <th>Solicitud</th>
+                    <th>Servicio</th>
+                    <th style="min-width: 110px;">Tiempo Compromiso</th>
+                    <th style="width: 70px;">Prioridad</th>
+                    <th style="width: 90px;">Estado</th>
+                    <th style="min-width: 180px;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for s in solicitudes %}
+                {% with estado_info=s.estado_con_color %}
+                <tr>
+                    <td><strong>{{ s.id }}</strong></td>
+                    <td>{{ s.solicitante.get_display_name }}</td>
+                    <td>{{ s.empresa.nombre }}</td>
+                    <td>{{ s.puerto_destino }}</td>
+                    <td>{{ s.motivo_acceso }}</td>
+                    <td>{{ s.enviada_el|date:"d/m/Y" }}<br><small>{{ s.enviada_el|date:"g:i A" }}</small></td>
+                    <td>{{ s.fecha_ingreso|date:"d/m/Y" }}<br><small>{{ s.hora_ingreso|date:"g:i A" }}</small></td>
+                    <td>
+                        {% if s.vence_el %}
+                            <span id="tiempo-{{ s.id }}" 
+                                  data-vence="{{ s.vence_el|date:'c' }}"
+                                  style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; color: white;">
+                                Calculando...
+                            </span>
+                        {% else %}
+                            <span style="background: #95a5a6; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;">
+                                N/A
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if s.prioridad == 'vip' %}
+                            <span style="background: #e74c3c; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500; white-space: nowrap;">
+                                VIP
+                            </span>
+                        {% elif s.prioridad == 'critica' %}
+                            <span style="background: #c0392b; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500; white-space: nowrap;">
+                                Crítica
+                            </span>
+                        {% elif s.prioridad == 'alta' %}
+                            <span style="background: #f39c12; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500; white-space: nowrap;">
+                                Alta
+                            </span>
+                        {% elif s.prioridad == 'normal' %}
+                            <span style="background: #3498db; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500; white-space: nowrap;">
+                                Normal
+                            </span>
+                        {% else %}
+                            <span style="background: #95a5a6; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500; white-space: nowrap;">
+                                Baja
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span style="background: {{ estado_info.bg_color }}; color: {{ estado_info.text_color|default:'white' }}; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500; white-space: nowrap; display: inline-block; max-width: 80px; overflow: hidden; text-overflow: ellipsis;">
+                            {{ estado_info.texto }}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="display: flex; flex-direction: column; gap: 5px; align-items: flex-start;">
+                            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                                {% if s.estado == 'pendiente' or s.estado == 'en_revision' or s.estado == 'recibido' or s.estado == 'sin_asignar' %}
+                                    <a href="{% url 'evaluacion:evaluar_solicitud' s.id %}" class="btn btn-primary" style="padding: 4px 8px; font-size: 11px; white-space: nowrap;">📋 Evaluar</a>
+                                {% else %}
+                                    <a href="{% url 'evaluacion:evaluar_solicitud' s.id %}" class="btn" style="padding: 4px 8px; font-size: 11px; background: #6c757d; color: white; white-space: nowrap;">👁️ Ver</a>
+                                {% endif %}
+                                {% if s.estado == 'aprobada' %}
+                                    <a href="{% url 'solicitudes:imprimir_autorizacion' s.id %}" target="_blank" class="btn" style="padding: 4px 8px; font-size: 11px; background: #27ae60; color: white; white-space: nowrap;">🖨️ Imprimir</a>
+                                {% endif %}
+                                {% if s.estado != 'borrador' and s.estado != 'aprobada' and s.estado != 'rechazada' %}
+                                    <button onclick="mostrarModalAsignacion({{ s.id }})" class="btn" style="padding: 4px 8px; font-size: 11px; background: {% if s.estado == 'sin_asignar' %}#e74c3c{% else %}#f39c12{% endif %}; color: white; border: none; cursor: pointer; white-space: nowrap;">
+                                        {% if s.evaluador_asignado %}👤 Reasignar{% else %}👤 Asignar{% endif %}
+                                    </button>
+                                {% endif %}
+                            </div>
+                            {% if s.evaluador_asignado %}
+                                <div style="font-size: 10px; color: #6c757d; white-space: nowrap; max-width: 160px; overflow: hidden; text-overflow: ellipsis;" title="{{ s.evaluador_asignado.get_display_name }}">
+                                    👤 {{ s.evaluador_asignado.get_display_name }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endwith %}
+            {% empty %}
+                <tr><td colspan="11" style="text-align:center; padding: 30px; color: #7f8c8d;">
+                    {% if tiene_filtros %}
+                        No se encontraron solicitudes con los filtros aplicados.
+                    {% else %}
+                        No hay solicitudes para evaluar en este momento.
+                    {% endif %}
+                </td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Paginación -->
+    {% if is_paginated %}
+    <div style="padding: 20px; background: #f8f9fa; border-top: 1px solid #dee2e6;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <!-- Información de registros -->
+            <div style="color: #6c757d; font-size: 14px;">
+                Mostrando {{ solicitudes.start_index }} - {{ solicitudes.end_index }} de {{ solicitudes.paginator.count }} solicitudes
+                ({{ request.GET.per_page|default:"25" }} por página)
+            </div>
+            
+            <!-- Controles de paginación -->
+            <div style="display: flex; align-items: center; gap: 10px;">
+                {% if solicitudes.has_previous %}
+                    <a href="?{% if busqueda %}q={{ busqueda }}&{% endif %}{% if estado_filtro %}estado={{ estado_filtro }}&{% endif %}{% if prioridad_filtro %}prioridad={{ prioridad_filtro }}&{% endif %}{% if request.GET.per_page %}per_page={{ request.GET.per_page }}&{% endif %}page=1" class="btn btn-sm">« Primera</a>
+                    <a href="?{% if busqueda %}q={{ busqueda }}&{% endif %}{% if estado_filtro %}estado={{ estado_filtro }}&{% endif %}{% if prioridad_filtro %}prioridad={{ prioridad_filtro }}&{% endif %}{% if request.GET.per_page %}per_page={{ request.GET.per_page }}&{% endif %}page={{ solicitudes.previous_page_number }}" class="btn btn-sm">‹ Anterior</a>
+                {% endif %}
+                
+                <span style="margin: 0 15px; color: #6c757d;">
+                    Página {{ solicitudes.number }} de {{ solicitudes.paginator.num_pages }}
+                </span>
+                
+                {% if solicitudes.has_next %}
+                    <a href="?{% if busqueda %}q={{ busqueda }}&{% endif %}{% if estado_filtro %}estado={{ estado_filtro }}&{% endif %}{% if prioridad_filtro %}prioridad={{ prioridad_filtro }}&{% endif %}{% if request.GET.per_page %}per_page={{ request.GET.per_page }}&{% endif %}page={{ solicitudes.next_page_number }}" class="btn btn-sm">Siguiente ›</a>
+                    <a href="?{% if busqueda %}q={{ busqueda }}&{% endif %}{% if estado_filtro %}estado={{ estado_filtro }}&{% endif %}{% if prioridad_filtro %}prioridad={{ prioridad_filtro }}&{% endif %}{% if request.GET.per_page %}per_page={{ request.GET.per_page }}&{% endif %}page={{ solicitudes.paginator.num_pages }}" class="btn btn-sm">Última »</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+
+<!-- Modal para Asignación de Evaluador -->
+<div id="modalAsignacion" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; width: 90%; max-width: 500px; max-height: 85vh; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; border-bottom: 1px solid #dee2e6; flex-shrink: 0;">
+            <h3 style="margin: 0; color: #2c3e50;">👤 Asignar Evaluador</h3>
+            <button onclick="cerrarModalAsignacion()" style="background: none; border: none; font-size: 24px; color: #6c757d; cursor: pointer;">&times;</button>
+        </div>
+
+        <div id="contenidoModal" style="overflow-y: auto; padding: 20px 30px; flex: 1;">
+            <div style="text-align: center; padding: 20px;">
+                <div style="color: #6c757d;">🔄 Cargando evaluadores disponibles...</div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid #dee2e6; padding: 15px 30px; flex-shrink: 0;">
+            <button onclick="cerrarModalAsignacion()" class="btn" style="background: #6c757d; color: white;">Cancelar</button>
+            <button id="btnConfirmarAsignacion" onclick="confirmarAsignacion()" class="btn btn-primary" disabled>
+                Asignar Evaluador
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+console.log('Script del dashboard iniciado'); // Debug test
+
+// Variables globales para la asignación
+let solicitudIdActual = null;
+let evaluadorSeleccionado = null;
+
+// Funciones de asignación de evaluador
+function mostrarModalAsignacion(solicitudId) {
+    solicitudIdActual = solicitudId;
+    evaluadorSeleccionado = null;
+
+    // Mostrar modal
+    document.getElementById('modalAsignacion').style.display = 'flex';
+
+    // Cargar evaluadores disponibles
+    cargarEvaluadores(solicitudId);
+}
+
+function cerrarModalAsignacion() {
+    document.getElementById('modalAsignacion').style.display = 'none';
+    solicitudIdActual = null;
+    evaluadorSeleccionado = null;
+}
+
+function cargarEvaluadores(solicitudId) {
+    const contenido = document.getElementById('contenidoModal');
+
+    fetch(`/evaluacion/asignar/${solicitudId}/`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        let html = `
+            <div style="margin-bottom: 15px;">
+                <p style="color: #6c757d; margin-bottom: 15px;">
+                    Seleccione el evaluador que atenderá la solicitud #${solicitudId}:
+                </p>
+            </div>
+        `;
+
+        // Agregar opción "Asignarme a mí" (usuario actual) si está disponible
+        if (data.usuario_actual) {
+            html += `
+                <div style="border: 2px solid #3498db; background: #ebf5fb; border-radius: 6px; padding: 15px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s;"
+                     onclick="seleccionarEvaluador(${data.usuario_actual.id}, '${data.usuario_actual.nombre}')"
+                     data-evaluador-id="${data.usuario_actual.id}">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 500; color: #2c3e50; margin-bottom: 5px;">
+                                👤 ${data.usuario_actual.nombre} (Asignarme a mí)
+                            </div>
+                            <div style="font-size: 12px; color: #6c757d;">
+                                📋 ${data.usuario_actual.solicitudes_asignadas} solicitudes asignadas
+                            </div>
+                        </div>
+                        <div style="width: 20px; height: 20px; border: 2px solid #dee2e6; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <span style="color: #27ae60; font-weight: bold; font-size: 12px; display: none;">✓</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Agregar otros evaluadores
+        if (data.evaluadores && data.evaluadores.length > 0) {
+            data.evaluadores.forEach(evaluador => {
+                html += `
+                    <div style="border: 1px solid #dee2e6; border-radius: 6px; padding: 15px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s;"
+                         onclick="seleccionarEvaluador(${evaluador.id}, '${evaluador.nombre}')"
+                         data-evaluador-id="${evaluador.id}">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-weight: 500; color: #2c3e50; margin-bottom: 5px;">
+                                    👤 ${evaluador.nombre}
+                                </div>
+                                <div style="font-size: 12px; color: #6c757d;">
+                                    📋 ${evaluador.solicitudes_asignadas} solicitudes asignadas
+                                </div>
+                            </div>
+                            <div style="width: 20px; height: 20px; border: 2px solid #dee2e6; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <span style="color: #27ae60; font-weight: bold; font-size: 12px; display: none;">✓</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        contenido.innerHTML = html;
+
+        // Mostrar mensaje si no hay evaluadores disponibles
+        if (!data.usuario_actual && (!data.evaluadores || data.evaluadores.length === 0)) {
+            contenido.innerHTML = `
+                <div style="text-align: center; padding: 20px; color: #6c757d;">
+                    <div style="font-size: 48px; margin-bottom: 15px;">👥</div>
+                    <p>No hay evaluadores disponibles en este momento.</p>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        contenido.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: #e74c3c;">
+                <div style="font-size: 48px; margin-bottom: 15px;">⚠️</div>
+                <p>Error al cargar los evaluadores. Inténtelo nuevamente.</p>
+            </div>
+        `;
+    });
+}
+
+function seleccionarEvaluador(evaluadorId, evaluadorNombre) {
+    // Limpiar selección anterior
+    document.querySelectorAll('[data-evaluador-id]').forEach(div => {
+        div.style.borderColor = '#dee2e6';
+        div.style.backgroundColor = 'transparent';
+        div.querySelector('span').style.display = 'none';
+    });
+    
+    // Marcar el evaluador seleccionado
+    const divEvaluador = document.querySelector(`[data-evaluador-id="${evaluadorId}"]`);
+    if (divEvaluador) {
+        divEvaluador.style.borderColor = '#27ae60';
+        divEvaluador.style.backgroundColor = '#f8fff9';
+        divEvaluador.querySelector('span').style.display = 'inline';
+    }
+    
+    // Guardar selección
+    evaluadorSeleccionado = {id: evaluadorId, nombre: evaluadorNombre};
+    
+    // Habilitar botón de confirmación
+    document.getElementById('btnConfirmarAsignacion').disabled = false;
+}
+
+function confirmarAsignacion() {
+    if (!evaluadorSeleccionado || !solicitudIdActual) {
+        alert('Error: Selección incompleta');
+        return;
+    }
+    
+    const boton = document.getElementById('btnConfirmarAsignacion');
+    boton.disabled = true;
+    boton.textContent = 'Asignando...';
+    
+    // Enviar asignación
+    fetch(`/evaluacion/asignar/${solicitudIdActual}/`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]') ? 
+                          document.querySelector('[name=csrfmiddlewaretoken]').value : 
+                          getCookie('csrftoken')
+        },
+        body: `evaluador_id=${evaluadorSeleccionado.id}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mostrar mensaje de éxito y recargar página
+            alert(`Solicitud #${solicitudIdActual} asignada exitosamente a ${evaluadorSeleccionado.nombre}`);
+            window.location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'No se pudo completar la asignación'));
+            boton.disabled = false;
+            boton.textContent = 'Asignar Evaluador';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error de conexión. Inténtelo nuevamente.');
+        boton.disabled = false;
+        boton.textContent = 'Asignar Evaluador';
+    });
+}
+
+// Función auxiliar para obtener el CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+let tiempoRestante = 300; // 5 minutos en segundos
+let contadorInterval;
+
+function actualizarTiempo() {
+    const minutos = Math.floor(tiempoRestante / 60);
+    const segundos = tiempoRestante % 60;
+    const display = `${minutos}:${segundos.toString().padStart(2, '0')}`;
+    
+    // Actualizar el elemento completo, no solo el span interno
+    const elemento = document.getElementById('contador-actualizacion');
+    if (elemento) {
+        elemento.innerHTML = `⏱️ Próxima actualización en ${display}`;
+        console.log('Tiempo actualizado a:', display);
+        
+        // Cambiar color según el tiempo restante
+        if (tiempoRestante <= 30) {
+            elemento.style.color = '#e74c3c'; // Rojo en los últimos 30 segundos
+        } else if (tiempoRestante <= 60) {
+            elemento.style.color = '#f39c12'; // Naranja en el último minuto
+        } else {
+            elemento.style.color = '#6c757d'; // Gris normal
+        }
+    } else {
+        console.error('Elemento contador-actualizacion no encontrado');
+    }
+    
+    tiempoRestante--;
+    if (tiempoRestante < 0) {
+        tiempoRestante = 300; // Reiniciar
+        console.log('Reiniciando contador a 5:00');
+        // Aquí deberíamos recargar la tabla
+        window.location.reload();
+    }
+}
+
+function iniciarContador() {
+    console.log('Iniciando contador simple');
+    actualizarTiempo(); // Actualizar inmediatamente
+    contadorInterval = setInterval(actualizarTiempo, 1000);
+    
+    // También iniciar los relojes de tiempo compromiso
+    iniciarRelojes();
+}
+
+function iniciarRelojes() {
+    // Actualizar relojes inmediatamente
+    actualizarRelojes();
+    
+    // Actualizar relojes cada segundo
+    setInterval(() => {
+        actualizarRelojes();
+    }, 1000);
+}
+
+function actualizarRelojes() {
+    const ahora = new Date();
+    
+    // Buscar todos los elementos de tiempo
+    document.querySelectorAll('[id^="tiempo-"]').forEach(elemento => {
+        const fechaVence = elemento.getAttribute('data-vence');
+        if (!fechaVence) return;
+        
+        const vencimiento = new Date(fechaVence);
+        const diferencia = vencimiento - ahora;
+        
+        let texto, color;
+        
+        if (diferencia <= 0) {
+            // Vencida
+            texto = '⏰ Vencida';
+            color = '#e74c3c';
+        } else {
+            // Calcular tiempo restante
+            const segundosTotales = Math.floor(diferencia / 1000);
+            const dias = Math.floor(segundosTotales / 86400);
+            const horas = Math.floor((segundosTotales % 86400) / 3600);
+            const minutos = Math.floor((segundosTotales % 3600) / 60);
+            const segundos = segundosTotales % 60;
+            
+            if (dias > 0) {
+                texto = `${dias}d ${horas}h`;
+                color = '#27ae60'; // Verde
+            } else if (horas > 0) {
+                texto = `${horas}h ${minutos}m`;
+                color = '#f39c12'; // Naranja
+            } else if (minutos > 0) {
+                texto = `${minutos}m ${segundos}s`;
+                color = '#e74c3c'; // Rojo
+            } else {
+                texto = `${segundos}s`;
+                color = '#c0392b'; // Rojo oscuro para últimos segundos
+            }
+        }
+        
+        // Actualizar elemento
+        elemento.textContent = texto;
+        elemento.style.backgroundColor = color;
+    });
+}
+
+function actualizarTabla() {
+    // Mostrar indicador de carga
+    const boton = document.querySelector('button[onclick="actualizarTabla()"]');
+    const textoOriginal = boton.innerHTML;
+    boton.innerHTML = '⏳ Actualizando...';
+    boton.disabled = true;
+    
+    // Recargar la página manteniendo los filtros actuales
+    const urlParams = new URLSearchParams(window.location.search);
+    const nuevaUrl = window.location.pathname + '?' + urlParams.toString();
+    
+    // Usar fetch para actualizar solo el contenido necesario
+    fetch(nuevaUrl, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            // Si la respuesta es exitosa, recargar la página
+            window.location.reload();
+        } else {
+            throw new Error('Error en la actualización');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Restaurar botón en caso de error
+        boton.innerHTML = textoOriginal;
+        boton.disabled = false;
+        
+        // Mostrar mensaje de error temporal
+        const contador = document.getElementById('contador-actualizacion');
+        if (contador) {
+            const textoOriginalContador = contador.textContent;
+            contador.textContent = 'Error al actualizar';
+            contador.style.color = '#e74c3c';
+            
+            setTimeout(() => {
+                contador.textContent = textoOriginalContador;
+                contador.style.color = '#6c757d';
+            }, 3000);
+        }
+    });
+    
+    // Reiniciar contador
+    tiempoRestante = 300;
+}
+
+// Pausar auto-refresh cuando la pestaña no está visible
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        clearInterval(contadorInterval);
+    } else {
+        iniciarContador();
+    }
+});
+
+// Iniciar cuando la página carga
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, iniciando contadores...');
+    iniciarContador();
+});
+
+// Limpiar intervalos al salir de la página
+window.addEventListener('beforeunload', () => {
+    clearInterval(contadorInterval);
+});
+</script>
+
+{% endblock %} 

@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Eliminar Configuración de Email{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="content-header">
+        <div class="header-with-back">
+            <a href="{% url 'evaluacion:configuracion_email' %}" class="back-btn">
+                🔙 Volver a Correo de Notificaciones
+            </a>
+            <h1>🗑️ Eliminar Configuración de Email</h1>
+        </div>
+        <p class="subtitle">Esta acción no se puede deshacer</p>
+    </div>
+
+    <div class="delete-container">
+        <div class="config-preview">
+            <div class="config-card">
+                <div class="config-header">
+                    <div class="config-provider">
+                        <span class="provider-icon">{{ configuracion.icono_proveedor }}</span>
+                        <strong>{{ configuracion.get_tipo_proveedor_display }}</strong>
+                    </div>
+                </div>
+                
+                <div class="config-body">
+                    <div class="config-name">
+                        <strong>{{ configuracion.nombre }}</strong>
+                    </div>
+                    
+                    <div class="config-details">
+                        <div class="config-email">{{ configuracion.email_host_user }}</div>
+                        <div class="config-server">
+                            🖥️ {{ configuracion.email_host }}:{{ configuracion.email_port }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="config-footer">
+                    <div class="config-stats">
+                        <span class="stat">{{ configuracion.total_emails_sent }} emails enviados</span>
+                        {% if configuracion.last_test_date %}
+                        <span class="stat">Última prueba: <strong>{{ configuracion.last_test_date|date:"d/m/Y H:i" }}</strong></span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="warning-message">
+            <div class="warning-icon">⚠️</div>
+            <div class="warning-content">
+                <h3>¿Está seguro de que desea eliminar esta configuración?</h3>
+                <p>Esta acción eliminará permanentemente la configuración de email <strong>"{{ configuracion.nombre }}"</strong> y no se puede deshacer.</p>
+                
+                {% if configuracion.total_emails_sent > 0 %}
+                <p class="warning-detail">
+                    Esta configuración ha enviado <strong>{{ configuracion.total_emails_sent }} emails</strong> hasta la fecha.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <form method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">
+                    🗑️ Eliminar Configuración
+                </button>
+            </form>
+            <a href="{% url 'evaluacion:configuracion_email' %}" class="btn btn-outline">
+                ← Volver a Correo de Notificaciones
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.delete-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.config-preview {
+    margin-bottom: 2rem;
+}
+
+.config-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 2px solid #fecaca;
+    overflow: hidden;
+}
+
+.config-header {
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: #fef2f2;
+}
+
+.config-provider {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.provider-icon {
+    font-size: 1.5rem;
+}
+
+.config-body {
+    padding: 1rem;
+}
+
+.config-name {
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.config-details {
+    margin-bottom: 1rem;
+}
+
+.config-email {
+    color: #6b7280;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+.config-server {
+    color: #9ca3af;
+    font-size: 0.85rem;
+}
+
+.config-footer {
+    padding: 1rem;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.config-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.stat {
+    color: #6b7280;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.warning-message {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.warning-icon {
+    font-size: 2rem;
+    color: #dc2626;
+    flex-shrink: 0;
+}
+
+.warning-content h3 {
+    color: #991b1b;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.warning-content p {
+    color: #7f1d1d;
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+}
+
+.warning-detail {
+    font-weight: 600;
+    background: #fee2e2;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border-left: 4px solid #ef4444;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-size: 0.95rem;
+}
+
+.btn-danger {
+    background: #dc2626;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #b91c1c;
+}
+
+.btn-outline {
+    background: transparent;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.btn-outline:hover {
+    background: #f9fafb;
+}
+
+.header-with-back {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.back-btn {
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.2s ease;
+    align-self: flex-start;
+}
+
+.back-btn:hover {
+    color: #374151;
+    text-decoration: none;
+}
+
+@media (max-width: 768px) {
+    .warning-message {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .header-with-back {
+        gap: 0.75rem;
+    }
+}
+</style>
+{% endblock %}

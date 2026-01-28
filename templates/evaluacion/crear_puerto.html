@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }} | NaviPort RD{% endblock %}
+
+{% block content %}
+<!-- Navbar -->
+{% include 'includes/navbar_evaluador.html' with active_page='config' %}
+
+<div class="content-area">
+    <!-- Breadcrumb -->
+    <div style="margin-bottom: 20px;">
+        <a href="{% url 'evaluacion:gestion_puertos' %}" style="color: #3498db; text-decoration: none;">← Volver a Gestión de Puertos</a>
+    </div>
+
+    <!-- Header -->
+    <div class="page-header" style="margin-bottom: 30px;">
+        <h2 style="color: #2c3e50; margin-bottom: 10px;">➕ {{ titulo }}</h2>
+        <p style="color: #7f8c8d;">Complete la información del nuevo puerto</p>
+    </div>
+
+    <!-- Formulario -->
+    <div class="form-container">
+        <form method="post" class="puerto-form">
+            {% csrf_token %}
+
+            <div class="form-grid">
+                <!-- Información Básica -->
+                <div class="form-section">
+                    <h3 class="form-section-title">🏢 Información Básica</h3>
+
+                    <div class="form-group">
+                        <label for="nombre">Nombre del Puerto *</label>
+                        <input type="text" id="nombre" name="nombre" required
+                               placeholder="Ej: Puerto Santo Domingo"
+                               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                        <small class="form-help">Nombre completo del puerto o marina</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="codigo">Código del Puerto *</label>
+                        <input type="text" id="codigo" name="codigo" required
+                               placeholder="Ej: PSD, HAINA, CAU"
+                               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; text-transform: uppercase;"
+                               maxlength="10">
+                        <small class="form-help">Código único de identificación (máximo 10 caracteres)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ubicacion">Ubicación</label>
+                        <input type="text" id="ubicacion" name="ubicacion"
+                               placeholder="Ej: Santo Domingo Este, República Dominicana"
+                               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                        <small class="form-help">Ubicación geográfica del puerto</small>
+                    </div>
+                </div>
+
+                <!-- Información Adicional -->
+                <div class="form-section">
+                    <h3 class="form-section-title">📝 Información Adicional</h3>
+
+                    <div class="form-group">
+                        <label for="descripcion">Descripción</label>
+                        <textarea id="descripcion" name="descripcion" rows="4"
+                                  placeholder="Descripción detallada del puerto, servicios que ofrece, características especiales..."
+                                  style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; resize: vertical;"></textarea>
+                        <small class="form-help">Información adicional sobre el puerto</small>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="info-box" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; padding: 15px;">
+                            <h4 style="color: #495057; margin-bottom: 10px;">ℹ️ Información Importante</h4>
+                            <ul style="color: #6c757d; margin: 0; padding-left: 20px;">
+                                <li>El puerto se creará en estado <strong>activo</strong> por defecto</li>
+                                <li>Después de crear el puerto, podrá agregar lugares específicos (muelles, oficinas, etc.)</li>
+                                <li>El código del puerto debe ser único en el sistema</li>
+                                <li>Todos los campos marcados con (*) son obligatorios</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    ➕ Crear Puerto
+                </button>
+                <a href="{% url 'evaluacion:gestion_puertos' %}" class="btn btn-secondary">
+                    ❌ Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.form-container {
+    background: white;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.form-section {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.form-section-title {
+    color: #2c3e50;
+    font-size: 18px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #ecf0f1;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+}
+
+.form-help {
+    display: block;
+    font-size: 12px;
+    color: #7f8c8d;
+    margin-top: 5px;
+}
+
+.form-actions {
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid #ecf0f1;
+}
+
+.form-actions .btn {
+    margin: 0 10px;
+}
+
+.info-box h4 {
+    margin-bottom: 10px;
+}
+
+.info-box ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.info-box li {
+    margin-bottom: 5px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .form-container {
+        margin: 0 15px;
+        padding: 20px;
+    }
+}
+</style>
+
+<script>
+// Auto-mayúsculas para el código
+document.getElementById('codigo').addEventListener('input', function(e) {
+    e.target.value = e.target.value.toUpperCase();
+});
+
+// Validación de formulario
+document.querySelector('.puerto-form').addEventListener('submit', function(e) {
+    const nombre = document.getElementById('nombre').value.trim();
+    const codigo = document.getElementById('codigo').value.trim();
+
+    if (!nombre || !codigo) {
+        e.preventDefault();
+        alert('Por favor complete todos los campos obligatorios.');
+        return false;
+    }
+
+    if (codigo.length < 2) {
+        e.preventDefault();
+        alert('El código del puerto debe tener al menos 2 caracteres.');
+        return false;
+    }
+});
+</script>
+
+{% endblock %}

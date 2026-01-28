@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Servicio | NaviPort RD{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar_evaluador.html' with active_page='config' %}
+
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+            <a href="{% url 'evaluacion:gestionar_servicios' %}" class="btn" style="background: #6c757d; color: white;">
+                ← Volver
+            </a>
+            <h2 style="color: #e74c3c; margin: 0;">🗑️ Eliminar Servicio</h2>
+        </div>
+        <p style="color: #7f8c8d;">{{ user.get_display_name }} • Evaluador Portuario</p>
+    </div>
+
+    <div class="data-table">
+        <div class="table-header" style="background: #f8d7da; color: #721c24;">
+            <div class="table-title">
+                ⚠️ Confirmar Eliminación de Servicio
+            </div>
+        </div>
+        
+        <div style="padding: 30px;">
+            <!-- Información del Servicio -->
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">Información del Servicio</h3>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div>
+                        <strong style="color: #495057;">Código:</strong>
+                        <div style="font-family: 'Courier New', monospace; font-weight: bold; color: #2c3e50; font-size: 16px;">
+                            {{ servicio.codigo }}
+                        </div>
+                    </div>
+                    <div>
+                        <strong style="color: #495057;">Nombre:</strong>
+                        <div style="color: #2c3e50; font-size: 16px;">
+                            {{ servicio.nombre }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <strong style="color: #495057;">Descripción:</strong>
+                    <div style="color: #6c757d; margin-top: 5px;">
+                        {{ servicio.descripcion|default:"Sin descripción" }}
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 20px; align-items: center;">
+                    <div>
+                        <strong style="color: #495057;">Estado:</strong>
+                        {% if servicio.activo %}
+                            <span class="badge" style="background: #d4edda; color: #155724; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 500; margin-left: 5px;">
+                                ✓ Activo
+                            </span>
+                        {% else %}
+                            <span class="badge" style="background: #f8d7da; color: #721c24; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 500; margin-left: 5px;">
+                                ✗ Inactivo
+                            </span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <strong style="color: #495057;">Creado:</strong>
+                        <span style="color: #6c757d;">{{ servicio.created_at|date:"d/m/Y H:i" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            {% if puede_eliminar %}
+                <!-- Confirmación de eliminación -->
+                <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+                    <div style="color: #856404; font-weight: 500; margin-bottom: 10px;">
+                        ⚠️ Confirmación Requerida
+                    </div>
+                    <div style="color: #856404;">
+                        ¿Estás seguro de que deseas eliminar este servicio? Esta acción no se puede deshacer.
+                    </div>
+                </div>
+
+                <form method="POST">
+                    {% csrf_token %}
+                    <div style="padding-top: 20px; border-top: 1px solid #dee2e6; display: flex; gap: 15px; justify-content: flex-end;">
+                        <a href="{% url 'evaluacion:gestionar_servicios' %}" class="btn" style="background: #6c757d; color: white; padding: 12px 24px;">
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn" style="background: #e74c3c; color: white; padding: 12px 24px;">
+                            🗑️ Eliminar Servicio
+                        </button>
+                    </div>
+                </form>
+            {% else %}
+                <!-- No se puede eliminar -->
+                <div style="background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+                    <div style="color: #721c24; font-weight: 500; margin-bottom: 10px;">
+                        🚫 No se puede eliminar este servicio
+                    </div>
+                    <div style="color: #721c24; margin-bottom: 15px;">
+                        Este servicio está siendo utilizado y no puede ser eliminado hasta que se remueva de todas sus asignaciones.
+                    </div>
+                    
+                    <!-- Mostrar uso actual -->
+                    <div style="background: white; padding: 15px; border-radius: 4px; margin-top: 15px;">
+                        <h4 style="color: #2c3e50; margin-bottom: 15px;">Uso Actual:</h4>
+                        
+                        {% if empresas_usando.count > 0 %}
+                            <div style="margin-bottom: 15px;">
+                                <strong style="color: #495057;">Empresas que usan este servicio ({{ empresas_usando.count }}):</strong>
+                                <ul style="margin: 10px 0; padding-left: 20px;">
+                                    {% for empresa in empresas_usando|slice:":10" %}
+                                        <li style="color: #6c757d; margin-bottom: 5px;">
+                                            {{ empresa.nombre }} ({{ empresa.rnc }})
+                                        </li>
+                                    {% endfor %}
+                                    {% if empresas_usando.count > 10 %}
+                                        <li style="color: #6c757d; font-style: italic;">
+                                            ... y {{ empresas_usando.count|add:"-10" }} más
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                        
+                        {% if tipos_licencia_usando.count > 0 %}
+                            <div>
+                                <strong style="color: #495057;">Tipos de licencia que incluyen este servicio ({{ tipos_licencia_usando.count }}):</strong>
+                                <ul style="margin: 10px 0; padding-left: 20px;">
+                                    {% for tipo in tipos_licencia_usando %}
+                                        <li style="color: #6c757d; margin-bottom: 5px;">
+                                            {{ tipo.nombre }}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div style="padding-top: 20px; border-top: 1px solid #dee2e6; display: flex; gap: 15px; justify-content: flex-end;">
+                    <a href="{% url 'evaluacion:gestionar_servicios' %}" class="btn" style="background: #6c757d; color: white; padding: 12px 24px;">
+                        Volver a Servicios
+                    </a>
+                    <a href="{% url 'evaluacion:editar_servicio' servicio.id %}" class="btn" style="background: #f39c12; color: white; padding: 12px 24px;">
+                        ✏️ Editar Servicio
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

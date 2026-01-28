@@ -1,0 +1,449 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="content-header">
+        <div class="header-with-back">
+            <a href="{% url 'evaluacion:configuracion_email' %}" class="back-btn">
+                🔙 Volver a Correo de Notificaciones
+            </a>
+            <h1>📧 {{ titulo }}</h1>
+        </div>
+        <p class="subtitle">Configure los parámetros de conexión SMTP</p>
+    </div>
+
+    <div class="form-container">
+        <form method="post" class="email-config-form">
+            {% csrf_token %}
+            
+            <div class="form-section">
+                <h3>📝 Información General</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ form.nombre.id_for_label }}">{{ form.nombre.label }}</label>
+                        {{ form.nombre }}
+                        <small class="help-text">{{ form.nombre.help_text }}</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.tipo_proveedor.id_for_label }}">{{ form.tipo_proveedor.label }}</label>
+                        {{ form.tipo_proveedor }}
+                        <small class="help-text">{{ form.tipo_proveedor.help_text }}</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>🌐 Configuración SMTP</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ form.email_host.id_for_label }}">{{ form.email_host.label }}</label>
+                        {{ form.email_host }}
+                        <small class="help-text">{{ form.email_host.help_text }}</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.email_port.id_for_label }}">{{ form.email_port.label }}</label>
+                        {{ form.email_port }}
+                        <small class="help-text">{{ form.email_port.help_text }}</small>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <label>
+                            {{ form.email_use_tls }}
+                            <span class="checkbox-label">{{ form.email_use_tls.label }}</span>
+                        </label>
+                        <small class="help-text">{{ form.email_use_tls.help_text }}</small>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <label>
+                            {{ form.email_use_ssl }}
+                            <span class="checkbox-label">{{ form.email_use_ssl.label }}</span>
+                        </label>
+                        <small class="help-text">{{ form.email_use_ssl.help_text }}</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>🔐 Autenticación</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ form.email_host_user.id_for_label }}">{{ form.email_host_user.label }}</label>
+                        {{ form.email_host_user }}
+                        <small class="help-text">{{ form.email_host_user.help_text }}</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.email_host_password.id_for_label }}">{{ form.email_host_password.label }}</label>
+                        {{ form.email_host_password }}
+                        <small class="help-text">{{ form.email_host_password.help_text }}</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.default_from_email.id_for_label }}">{{ form.default_from_email.label }}</label>
+                        {{ form.default_from_email }}
+                        <small class="help-text">{{ form.default_from_email.help_text }}</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>⏱️ Configuración de Recuperación</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ form.password_reset_timeout.id_for_label }}">{{ form.password_reset_timeout.label }}</label>
+                        {{ form.password_reset_timeout }}
+                        <small class="help-text">{{ form.password_reset_timeout.help_text }}</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.max_reset_attempts.id_for_label }}">{{ form.max_reset_attempts.label }}</label>
+                        {{ form.max_reset_attempts }}
+                        <small class="help-text">{{ form.max_reset_attempts.help_text }}</small>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label for="{{ form.reset_email_subject.id_for_label }}">{{ form.reset_email_subject.label }}</label>
+                        {{ form.reset_email_subject }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>📬 Notificaciones de Nuevas Solicitudes</h3>
+                <div class="form-group full-width">
+                    <label for="{{ form.correos_notificaciones.id_for_label }}">{{ form.correos_notificaciones.label }}</label>
+                    {{ form.correos_notificaciones }}
+                    <small class="help-text">{{ form.correos_notificaciones.help_text }}</small>
+                    <small class="help-text" style="color: #dc2626; font-weight: 500;">⚠️ Los correos enviados a estas direcciones incluyen el mensaje "NO RESPONDER a este correo"</small>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>🔧 Estado</h3>
+                <div class="status-row">
+                    <label>
+                        {{ form.email_enabled }}
+                        <span class="checkbox-label">{{ form.email_enabled.label }}</span>
+                    </label>
+                    <small class="help-text">{{ form.email_enabled.help_text }}</small>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    💾 {% if es_edicion %}Actualizar{% else %}Crear{% endif %} Configuración
+                </button>
+                <a href="{% url 'evaluacion:configuracion_email' %}" class="btn btn-outline">
+                    ← Volver a Correo de Notificaciones
+                </a>
+            </div>
+        </form>
+
+        <div class="help-section">
+            <h3>📋 Guía de Proveedores SMTP</h3>
+            <div class="provider-grid">
+                <div class="provider-card">
+                    <h4>Gmail</h4>
+                    <ul>
+                        <li><strong>Host:</strong> smtp.gmail.com</li>
+                        <li><strong>Puerto:</strong> 587 (TLS)</li>
+                        <li><strong>⚠️ Importante:</strong> Requiere App Password</li>
+                        <li><strong>Cómo obtenerla:</strong> Cuenta Google > Seguridad > Contraseñas de aplicaciones</li>
+                    </ul>
+                </div>
+                <div class="provider-card">
+                    <h4>Outlook/Hotmail</h4>
+                    <ul>
+                        <li><strong>Host:</strong> smtp.office365.com</li>
+                        <li><strong>Puerto:</strong> 587 (TLS)</li>
+                        <li><strong>Autenticación:</strong> Contraseña normal</li>
+                    </ul>
+                </div>
+                <div class="provider-card">
+                    <h4>SMTP Personalizado</h4>
+                    <ul>
+                        <li><strong>Host:</strong> Tu servidor SMTP</li>
+                        <li><strong>Puerto:</strong> 587 (TLS), 465 (SSL), 25 (sin cifrado)</li>
+                        <li><strong>Configuración:</strong> Según tu proveedor</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.email-config-form {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.form-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.form-section:last-child {
+    border-bottom: none;
+}
+
+.form-section h3 {
+    color: #1f2937;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group.checkbox-group {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.checkbox-label {
+    font-weight: 500;
+}
+
+.form-group input, .form-group select, .form-group textarea {
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+}
+
+.form-group textarea {
+    font-family: inherit;
+    resize: vertical;
+}
+
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-group input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+
+.help-text {
+    color: #6b7280;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+}
+
+.status-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.status-row label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-start;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-size: 0.95rem;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+}
+
+.btn-outline {
+    background: transparent;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.btn-outline:hover {
+    background: #f9fafb;
+}
+
+.help-section {
+    background: #f8fafc;
+    padding: 2rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.help-section h3 {
+    color: #1e293b;
+    margin-bottom: 1.5rem;
+}
+
+.provider-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.provider-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.provider-card h4 {
+    color: #1e293b;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.provider-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.provider-card li {
+    padding: 0.25rem 0;
+    color: #475569;
+    font-size: 0.9rem;
+}
+
+.header-with-back {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.back-btn {
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.2s ease;
+    align-self: flex-start;
+}
+
+.back-btn:hover {
+    color: #374151;
+    text-decoration: none;
+}
+
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .provider-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .email-config-form {
+        padding: 1.5rem;
+    }
+    
+    .header-with-back {
+        gap: 0.75rem;
+    }
+}
+</style>
+
+<script>
+// Auto-configuración según el proveedor seleccionado
+document.getElementById('{{ form.tipo_proveedor.id_for_label }}').addEventListener('change', function() {
+    const proveedor = this.value;
+    const hostField = document.getElementById('{{ form.email_host.id_for_label }}');
+    const portField = document.getElementById('{{ form.email_port.id_for_label }}');
+    const tlsField = document.getElementById('{{ form.email_use_tls.id_for_label }}');
+    const sslField = document.getElementById('{{ form.email_use_ssl.id_for_label }}');
+    
+    if (proveedor === 'gmail') {
+        hostField.value = 'smtp.gmail.com';
+        portField.value = 587;
+        tlsField.checked = true;
+        sslField.checked = false;
+    } else if (proveedor === 'outlook') {
+        hostField.value = 'smtp.office365.com';
+        portField.value = 587;
+        tlsField.checked = true;
+        sslField.checked = false;
+    } else {
+        // Personalizado - limpiar campos
+        hostField.value = '';
+        portField.value = 587;
+        tlsField.checked = true;
+        sslField.checked = false;
+    }
+});
+</script>
+{% endblock %}

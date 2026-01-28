@@ -1,0 +1,272 @@
+{% extends 'base.html' %}
+
+{% block title %}Configuración | NaviPort RD{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar_evaluador.html' with active_page='config' %}
+
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div>
+                <h2 style="color: #2c3e50; margin: 0;">⚙️ Configuración del Sistema</h2>
+                <p style="color: #7f8c8d; margin: 5px 0 0 0;">{{ user.get_display_name }} • Evaluador Portuario</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <a href="{% url 'evaluacion:gestionar_empresas' %}" class="btn" style="background: #3498db; color: white;">
+                    🏢 Gestión de Empresas
+                </a>
+                <a href="{% url 'accounts:gestionar_usuarios' %}" class="btn" style="background: #2c3e50; color: white;">
+                    👥 Gestión de Usuarios
+                </a>
+                <a href="{% url 'evaluacion:gestionar_servicios' %}" class="btn" style="background: #9b59b6; color: white;">
+                    🛡️ Servicios
+                </a>
+                <a href="{% url 'evaluacion:gestionar_tipos_licencia' %}" class="btn" style="background: #f39c12; color: white;">
+                    🏷️ Licencias
+                </a>
+                <a href="{% url 'notificaciones:configuracion_correo' %}" class="btn" style="background: #e74c3c; color: white;">
+                    📧 Notificaciones por Correo
+                </a>
+                <a href="{% url 'evaluacion:gestion_puertos' %}" class="btn" style="background: #27ae60; color: white;">
+                    🏠 Catálogo de Instalaciones Portuarias
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- General Content -->
+        <div class="data-table">
+            <div class="table-header">
+                <div class="table-title">Reglas de Validación de Empresas</div>
+            </div>
+        
+        <div style="padding: 30px;">
+            <form method="POST" novalidate>
+                {% csrf_token %}
+                
+                <!-- Configuración de Preaviso -->
+                <fieldset style="border: none; margin: 0; padding: 0;">
+                    <legend style="font-size: 18px; font-weight: 600; color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #e74c3c; padding-bottom: 10px;">
+                        ⏰ Días de Preaviso de Expiración
+                    </legend>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <small style="color: #6c757d;">
+                            <strong>💡 Ayuda:</strong> Configure cuántos días antes de la expiración se deben mostrar las alertas.
+                            Los valores deben estar en orden: Crítico < Advertencia < Informativo.
+                        </small>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                        <div>
+                            <label for="{{ form.dias_preaviso_critico.id_for_label }}" style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">
+                                🔴 Preaviso Crítico (días)
+                            </label>
+                            {{ form.dias_preaviso_critico }}
+                            {% if form.dias_preaviso_critico.errors %}
+                                <div style="color: #e74c3c; font-size: 12px; margin-top: 5px;">
+                                    {{ form.dias_preaviso_critico.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <small style="color: #6c757d; font-size: 12px;">Ej: 30 días - Estado crítico</small>
+                        </div>
+                        
+                        <div>
+                            <label for="{{ form.dias_preaviso_advertencia.id_for_label }}" style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">
+                                🟠 Preaviso Advertencia (días)
+                            </label>
+                            {{ form.dias_preaviso_advertencia }}
+                            {% if form.dias_preaviso_advertencia.errors %}
+                                <div style="color: #e74c3c; font-size: 12px; margin-top: 5px;">
+                                    {{ form.dias_preaviso_advertencia.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <small style="color: #6c757d; font-size: 12px;">Ej: 60 días - Estado de advertencia</small>
+                        </div>
+                        
+                        <div>
+                            <label for="{{ form.dias_preaviso_informativo.id_for_label }}" style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">
+                                🟡 Preaviso Informativo (días)
+                            </label>
+                            {{ form.dias_preaviso_informativo }}
+                            {% if form.dias_preaviso_informativo.errors %}
+                                <div style="color: #e74c3c; font-size: 12px; margin-top: 5px;">
+                                    {{ form.dias_preaviso_informativo.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <small style="color: #6c757d; font-size: 12px;">Ej: 90 días - Estado informativo</small>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Tipo de Expiración Principal -->
+                <fieldset style="border: none; margin: 0; padding: 0;">
+                    <legend style="font-size: 18px; font-weight: 600; color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+                        📋 Tipo de Expiración a Considerar
+                    </legend>
+                    
+                    <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <small style="color: #1565c0;">
+                            <strong>📌 Importante:</strong> Seleccione qué fecha de expiración debe tener prioridad para las alertas y validaciones.
+                        </small>
+                    </div>
+                    
+                    <div style="margin-bottom: 30px;">
+                        <label for="{{ form.tipo_expiracion_principal.id_for_label }}" style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">
+                            Expiración Principal
+                        </label>
+                        {{ form.tipo_expiracion_principal }}
+                        {% if form.tipo_expiracion_principal.errors %}
+                            <div style="color: #e74c3c; font-size: 12px; margin-top: 5px;">
+                                {{ form.tipo_expiracion_principal.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small style="color: #6c757d; font-size: 12px;">
+                            Esta será la fecha utilizada para calcular los estados de las empresas
+                        </small>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                        <div>
+                            <label for="{{ form.enlace_instrucciones.id_for_label }}" style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">
+                                🔗 Enlace de Instrucciones para Renovación
+                            </label>
+                            {{ form.enlace_instrucciones }}
+                            {% if form.enlace_instrucciones.errors %}
+                                <div style="color: #e74c3c; font-size: 12px; margin-top: 5px;">
+                                    {{ form.enlace_instrucciones.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <small style="color: #6c757d; font-size: 12px;">
+                                Este enlace aparecerá en los avisos de expiración
+                            </small>
+                        </div>
+                        
+                        <div>
+                            <label for="{{ form.tiempo_respuesta_horas.id_for_label }}" style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">
+                                ⏱️ Tiempo de Respuesta (horas)
+                            </label>
+                            {{ form.tiempo_respuesta_horas }}
+                            {% if form.tiempo_respuesta_horas.errors %}
+                                <div style="color: #e74c3c; font-size: 12px; margin-top: 5px;">
+                                    {{ form.tiempo_respuesta_horas.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <small style="color: #6c757d; font-size: 12px;">
+                                Tiempo establecido en la carta compromiso
+                            </small>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Configuración Adicional -->
+                <fieldset style="border: none; margin: 0; padding: 0;">
+                    <legend style="font-size: 18px; font-weight: 600; color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #27ae60; padding-bottom: 10px;">
+                        🔧 Configuración Adicional
+                    </legend>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            {{ form.notificar_empresas_vencidas }}
+                            <label for="{{ form.notificar_empresas_vencidas.id_for_label }}" style="margin: 0; font-weight: 500; color: #495057;">
+                                🔔 Notificar empresas con licencias vencidas
+                            </label>
+                            {% if form.notificar_empresas_vencidas.errors %}
+                                <div style="color: #e74c3c; font-size: 12px; margin-left: 10px;">
+                                    {{ form.notificar_empresas_vencidas.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Botones de Acción -->
+                <div style="padding-top: 20px; border-top: 1px solid #dee2e6; display: flex; gap: 15px; justify-content: flex-end;">
+                    <a href="{% url 'evaluacion:dashboard' %}" class="btn" style="background: #6c757d; color: white; padding: 12px 24px;">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary" style="padding: 12px 24px;">
+                        💾 Guardar Configuración
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Información Actual -->
+    <div class="data-table" style="margin-top: 30px;">
+        <div class="table-header">
+            <div class="table-title">Configuración Actual</div>
+        </div>
+        
+        <div style="padding: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">📊 Días de Preaviso</h4>
+                    <ul style="margin: 0; padding-left: 20px; color: #6c757d;">
+                        <li>🔴 Crítico: {{ config.dias_preaviso_critico }} días</li>
+                        <li>🟠 Advertencia: {{ config.dias_preaviso_advertencia }} días</li>
+                        <li>🟡 Informativo: {{ config.dias_preaviso_informativo }} días</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">⚙️ Configuración</h4>
+                    <ul style="margin: 0; padding-left: 20px; color: #6c757d;">
+                        <li>📋 Expiración principal: {{ config.get_tipo_expiracion_principal_display }}</li>
+                        <li>⏱️ Tiempo de respuesta: {{ config.tiempo_respuesta_horas }} horas</li>
+                        <li>🔗 Enlace instrucciones: {% if config.enlace_instrucciones %}<a href="{{ config.enlace_instrucciones }}" target="_blank">{{ config.enlace_instrucciones }}</a>{% else %}No configurado{% endif %}</li>
+                        <li>🔔 Notificaciones: {% if config.notificar_empresas_vencidas %}Activadas{% else %}Desactivadas{% endif %}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validación en tiempo real para los días de preaviso
+    const critico = document.getElementById('{{ form.dias_preaviso_critico.id_for_label }}');
+    const advertencia = document.getElementById('{{ form.dias_preaviso_advertencia.id_for_label }}');
+    const informativo = document.getElementById('{{ form.dias_preaviso_informativo.id_for_label }}');
+    
+    function validarOrden() {
+        const valorCritico = parseInt(critico.value) || 0;
+        const valorAdvertencia = parseInt(advertencia.value) || 0;
+        const valorInformativo = parseInt(informativo.value) || 0;
+        
+        if (valorCritico >= valorAdvertencia && valorAdvertencia > 0) {
+            advertencia.style.borderColor = '#e74c3c';
+            mostrarMensaje('Los días críticos deben ser menores que los de advertencia', 'error');
+        } else {
+            advertencia.style.borderColor = '#ced4da';
+        }
+        
+        if (valorAdvertencia >= valorInformativo && valorInformativo > 0) {
+            informativo.style.borderColor = '#e74c3c';
+            mostrarMensaje('Los días de advertencia deben ser menores que los informativos', 'error');
+        } else {
+            informativo.style.borderColor = '#ced4da';
+        }
+    }
+    
+    function mostrarMensaje(texto, tipo) {
+        // Eliminar mensajes anteriores
+        const mensajesAnteriores = document.querySelectorAll('.mensaje-validacion');
+        mensajesAnteriores.forEach(m => m.remove());
+        
+        // Crear nuevo mensaje (opcional - puedes mostrar tooltips o alertas)
+        console.log(`${tipo.toUpperCase()}: ${texto}`);
+    }
+    
+    if (critico && advertencia && informativo) {
+        critico.addEventListener('blur', validarOrden);
+        advertencia.addEventListener('blur', validarOrden);
+        informativo.addEventListener('blur', validarOrden);
+    }
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Reportar Incumplimiento - NaviPort RD{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4" style="background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); min-height: 100vh;">
+    <div class="content-wrapper">
+        <!-- Header -->
+        <div class="header-section mb-4">
+            <a href="{% url 'incumplimientos:mis_reportes' %}" class="back-link">
+                <i class="fas fa-arrow-left"></i> Volver a Mis Reportes
+            </a>
+            <h1 class="page-title">Reportar Incumplimiento</h1>
+            <p class="page-subtitle">Registre un incumplimiento detectado durante el control de acceso</p>
+        </div>
+
+        <!-- Formulario -->
+        <div class="form-card">
+            <div class="form-header">
+                <i class="fas fa-exclamation-triangle"></i> Información del Incumplimiento
+            </div>
+            <div class="form-body">
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="solicitud" class="form-label">Solicitud/Autorización Relacionada *</label>
+                            <select name="solicitud" id="solicitud" class="form-select" required>
+                                <option value="">Seleccione una solicitud...</option>
+                                {% for sol in solicitudes %}
+                                <option value="{{ sol.id }}">
+                                    {{ sol.empresa.nombre }} - {{ sol.get_servicio_display }} - {{ sol.codigo_solicitud }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo" class="form-label">Tipo de Incumplimiento *</label>
+                            <select name="tipo" id="tipo" class="form-select" required>
+                                <option value="">Seleccione un tipo...</option>
+                                {% for valor, etiqueta in tipos_incumplimiento %}
+                                <option value="{{ valor }}">{{ etiqueta }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="puerto" class="form-label">Puerto *</label>
+                            <select name="puerto" id="puerto" class="form-select" required>
+                                <option value="">Seleccione un puerto...</option>
+                                {% for puerto in puertos %}
+                                <option value="{{ puerto.id }}">{{ puerto.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="lugar_puerto" class="form-label">Lugar Específico (Opcional)</label>
+                            <select name="lugar_puerto" id="lugar_puerto" class="form-select">
+                                <option value="">Seleccione un lugar...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha_incumplimiento" class="form-label">Fecha y Hora del Incumplimiento *</label>
+                            <input type="datetime-local" name="fecha_incumplimiento" id="fecha_incumplimiento" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="evidencia" class="form-label">Evidencia (Foto/Documento)</label>
+                            <input type="file" name="evidencia" id="evidencia" class="form-control" accept="image/*,.pdf,.doc,.docx">
+                            <small class="text-muted">Formatos: JPG, PNG, PDF, DOC, DOCX</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="descripcion" class="form-label">Descripción Detallada *</label>
+                        <textarea name="descripcion" id="descripcion" class="form-control" rows="4" required placeholder="Describa en detalle el incumplimiento observado..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="observaciones" class="form-label">Observaciones Adicionales</label>
+                        <textarea name="observaciones" id="observaciones" class="form-control" rows="3" placeholder="Información adicional relevante..."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <a href="{% url 'incumplimientos:mis_reportes' %}" class="btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i> Reportar Incumplimiento
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.header-section {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.back-link {
+    display: inline-block;
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 14px;
+    margin-bottom: 15px;
+    padding: 8px 15px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.back-link:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateX(-5px);
+}
+
+.page-title {
+    color: #ffffff;
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 16px;
+    margin: 0;
+}
+
+.form-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.form-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    padding: 20px 25px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.form-body {
+    padding: 30px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    color: #2c3e50;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.form-control, .form-select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    outline: none;
+    border-color: #eb3349;
+    box-shadow: 0 0 0 3px rgba(235, 51, 73, 0.1);
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 2px solid #f0f0f0;
+}
+
+.btn-primary {
+    padding: 12px 30px;
+    background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(235, 51, 73, 0.4);
+}
+
+.btn-secondary {
+    padding: 12px 30px;
+    background: #95a5a6;
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+    color: white;
+}
+</style>
+
+<script>
+// Cargar lugares del puerto seleccionado
+document.getElementById('puerto').addEventListener('change', function() {
+    const puertoId = this.value;
+    const lugarSelect = document.getElementById('lugar_puerto');
+
+    lugarSelect.innerHTML = '<option value="">Cargando...</option>';
+
+    if (puertoId) {
+        fetch(`/solicitudes/api/lugares_puerto/${puertoId}/`)
+            .then(response => response.json())
+            .then(data => {
+                lugarSelect.innerHTML = '<option value="">Seleccione un lugar...</option>';
+                data.forEach(lugar => {
+                    lugarSelect.innerHTML += `<option value="${lugar.id}">${lugar.nombre}</option>`;
+                });
+            })
+            .catch(error => {
+                lugarSelect.innerHTML = '<option value="">Error al cargar</option>';
+            });
+    } else {
+        lugarSelect.innerHTML = '<option value="">Seleccione un lugar...</option>';
+    }
+});
+
+// Establecer fecha/hora actual por defecto
+document.getElementById('fecha_incumplimiento').value = new Date().toISOString().slice(0, 16);
+</script>
+{% endblock %}

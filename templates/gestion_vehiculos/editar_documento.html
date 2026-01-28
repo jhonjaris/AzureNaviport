@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Documento - {{ documento.get_tipo_documento_display }} | NaviPort RD</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% load static %}{% static 'css/styles.css' %}">
+    <style>
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        .header-section {
+            background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+        }
+        .document-info-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+        .field-group {
+            margin-bottom: 1.5rem;
+        }
+        .field-group label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+        .required-field {
+            color: #dc3545;
+        }
+        .form-control:focus {
+            border-color: #ffc107;
+            box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+        }
+        .btn-update {
+            background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+        }
+        .btn-update:hover {
+            background: linear-gradient(135deg, #e0a800 0%, #d39e00 100%);
+            color: white;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        .file-info {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .status-badge {
+            font-size: 0.875rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'accounts:dashboard' %}">🚢 NaviPort RD</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:dashboard' %}">🏠 Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'gestion_vehiculos:dashboard' %}">🚗 Vehículos</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            👤 {{ user.first_name }} {{ user.last_name }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'accounts:logout' %}">🚪 Cerrar Sesión</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Header -->
+        <div class="header-section">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-2">✏️ Editar Documento</h2>
+                    <p class="mb-1">{{ documento.get_tipo_documento_display }} - Vehículo {{ documento.vehiculo.placa }}</p>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0" style="background: transparent;">
+                            <li class="breadcrumb-item"><a href="{% url 'gestion_vehiculos:dashboard' %}" style="color: #e9ecef;">Vehículos</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'gestion_vehiculos:detalle_vehiculo' documento.vehiculo.id %}" style="color: #e9ecef;">{{ documento.vehiculo.placa }}</a></li>
+                            <li class="breadcrumb-item active" style="color: white;">Editar Documento</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a href="{% url 'gestion_vehiculos:detalle_vehiculo' documento.vehiculo.id %}" class="btn btn-outline-light">
+                        ← Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del Documento Actual -->
+        <div class="document-info-card">
+            <h5 class="text-primary mb-3">📄 Información Actual del Documento</h5>
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>Tipo:</strong><br>
+                    {% if documento.tipo_documento == 'matricula' %}🆔{% elif documento.tipo_documento == 'seguro' %}🛡️{% elif documento.tipo_documento == 'revision_tecnica' %}🔧{% elif documento.tipo_documento == 'permiso_circulacion' %}🎫{% else %}📝{% endif %}
+                    {{ documento.get_tipo_documento_display }}
+                </div>
+                <div class="col-md-4">
+                    <strong>Estado:</strong><br>
+                    {% if documento.estado_validacion == 'validado' %}
+                        <span class="badge bg-success status-badge">✅ Validado</span>
+                    {% elif documento.estado_validacion == 'rechazado' %}
+                        <span class="badge bg-danger status-badge">❌ Rechazado</span>
+                    {% elif documento.estado_validacion == 'vencido' %}
+                        <span class="badge bg-warning status-badge">⏰ Vencido</span>
+                    {% else %}
+                        <span class="badge bg-secondary status-badge">⏳ Pendiente</span>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <strong>Subido:</strong><br>
+                    {{ documento.fecha_subida|date:"d/m/Y H:i" }}
+                </div>
+            </div>
+            {% if documento.archivo %}
+            <div class="file-info mt-3">
+                <div class="d-flex align-items-center">
+                    <span style="font-size: 2rem; margin-right: 1rem;">
+                        {% if documento.archivo.name|slice:"-4:" == ".pdf" %}📄{% else %}🖼️{% endif %}
+                    </span>
+                    <div class="flex-grow-1">
+                        <strong>Archivo actual:</strong> {{ documento.archivo.name|slice:"30:" }}<br>
+                        <small class="text-muted">
+                            <a href="{% url 'gestion_vehiculos:descargar_documento_vehiculo' documento.id %}"
+                               target="_blank" class="text-decoration-none">
+                                👁️ Ver archivo actual
+                            </a>
+                        </small>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Formulario de Edición -->
+        <div class="form-container">
+            <form method="post" enctype="multipart/form-data" id="formEditarDocumento">
+                {% csrf_token %}
+
+                <!-- Información del Documento -->
+                <div class="mb-4">
+                    <h4 class="text-primary mb-3">ℹ️ Información del Documento</h4>
+
+                    <div class="form-row">
+                        <div class="field-group">
+                            <label for="numero_documento">Número del Documento</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="numero_documento"
+                                   name="numero_documento"
+                                   value="{{ documento.numero_documento|default:'' }}"
+                                   placeholder="Número del documento (opcional)"
+                                   maxlength="50">
+                            <small class="form-text text-muted">Número de serie o identificación del documento</small>
+                        </div>
+
+                        <div class="field-group">
+                            <label for="fecha_vencimiento">Fecha de Vencimiento</label>
+                            <input type="date"
+                                   class="form-control"
+                                   id="fecha_vencimiento"
+                                   name="fecha_vencimiento"
+                                   value="{{ documento.fecha_vencimiento|date:'Y-m-d'|default:'' }}">
+                            <small class="form-text text-muted">Fecha en que vence el documento (si aplica)</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reemplazar Archivo (Opcional) -->
+                <div class="mb-4">
+                    <h4 class="text-primary mb-3">📎 Reemplazar Archivo (Opcional)</h4>
+                    <p class="text-muted mb-3">Si deseas cambiar el archivo, selecciona uno nuevo. Si no, deja este campo vacío para mantener el archivo actual.</p>
+
+                    <div class="field-group">
+                        <label for="nuevo_archivo">Nuevo Archivo</label>
+                        <input type="file"
+                               class="form-control"
+                               id="nuevo_archivo"
+                               name="nuevo_archivo"
+                               accept=".pdf,.jpg,.jpeg,.png">
+                        <small class="form-text text-muted">Formatos permitidos: PDF, JPG, PNG • Máximo 5MB</small>
+                    </div>
+
+                    <!-- Vista previa del nuevo archivo -->
+                    <div id="previewNuevoArchivo" style="display: none;" class="mt-3 p-3 border rounded bg-light">
+                        <div class="d-flex align-items-center">
+                            <span id="previewIcon" style="font-size: 2rem; margin-right: 1rem;">📄</span>
+                            <div class="flex-grow-1">
+                                <strong>Nuevo archivo:</strong> <span id="previewNombre"></span><br>
+                                <small class="text-muted">Tamaño: <span id="previewTamano"></span></small>
+                            </div>
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="limpiarArchivo()">
+                                🗑️ Quitar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                    <div>
+                        <small class="text-muted">
+                            Los campos vacíos mantendrán su valor actual
+                        </small>
+                    </div>
+                    <div>
+                        <a href="{% url 'gestion_vehiculos:detalle_vehiculo' documento.vehiculo.id %}"
+                           class="btn btn-secondary me-2">
+                            🚫 Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-update">
+                            💾 Actualizar Documento
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const nuevoArchivoInput = document.getElementById('nuevo_archivo');
+            const previewDiv = document.getElementById('previewNuevoArchivo');
+
+            // Manejo de selección de archivo
+            nuevoArchivoInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    // Validar tamaño (5MB)
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('El archivo es demasiado grande. Máximo 5MB permitido.');
+                        this.value = '';
+                        previewDiv.style.display = 'none';
+                        return;
+                    }
+
+                    // Validar tipo
+                    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+                    if (!allowedTypes.includes(file.type)) {
+                        alert('Formato de archivo no permitido. Use PDF, JPG o PNG.');
+                        this.value = '';
+                        previewDiv.style.display = 'none';
+                        return;
+                    }
+
+                    // Mostrar vista previa
+                    mostrarPreview(file);
+                } else {
+                    previewDiv.style.display = 'none';
+                }
+            });
+
+            function mostrarPreview(file) {
+                document.getElementById('previewNombre').textContent = file.name;
+                document.getElementById('previewTamano').textContent = formatFileSize(file.size);
+
+                // Cambiar icono según tipo
+                const icon = document.getElementById('previewIcon');
+                if (file.type === 'application/pdf') {
+                    icon.textContent = '📄';
+                } else if (file.type.startsWith('image/')) {
+                    icon.textContent = '🖼️';
+                }
+
+                previewDiv.style.display = 'block';
+            }
+
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            // Función para limpiar archivo
+            window.limpiarArchivo = function() {
+                nuevoArchivoInput.value = '';
+                previewDiv.style.display = 'none';
+            };
+
+            // Validar fecha de vencimiento
+            document.getElementById('fecha_vencimiento').addEventListener('change', function() {
+                const fechaSeleccionada = new Date(this.value);
+                const hoy = new Date();
+                hoy.setHours(0, 0, 0, 0);
+
+                if (fechaSeleccionada < hoy) {
+                    if (!confirm('La fecha seleccionada es anterior a hoy. ¿Estás seguro de que el documento ya está vencido?')) {
+                        this.value = '{{ documento.fecha_vencimiento|date:"Y-m-d"|default:"" }}';
+                    }
+                }
+            });
+
+            // Confirmación antes de enviar
+            document.getElementById('formEditarDocumento').addEventListener('submit', function(e) {
+                const tipoDoc = '{{ documento.get_tipo_documento_display }}';
+                const vehiculoPlaca = '{{ documento.vehiculo.placa }}';
+
+                if (!confirm(`¿Confirmar actualización del documento ${tipoDoc} del vehículo ${vehiculoPlaca}?`)) {
+                    e.preventDefault();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

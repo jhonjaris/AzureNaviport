@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% load wizard_extras %}
+
+{% block title %}Detalle Solicitud #{{ solicitud.id }} | NaviPort RD{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li>Dashboard</li>
+        <li>Solicitudes</li>
+        <li>Autorizaciones</li>
+        <li>Historial</li>
+    </ul>
+    <div class="navbar-user">
+        <span>{{ solicitud.solicitante.get_display_name }}</span>
+        <div class="user-avatar">{{ solicitud.solicitante.get_display_name|slice:':1'|upper }}{{ solicitud.solicitante.last_name|slice:':1'|upper }}</div>
+    
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <h2 style="color: #2c3e50; margin-bottom: 10px;">Detalle de Solicitud #{{ solicitud.id }}</h2>
+        <p style="color: #7f8c8d;">Empresa: {{ solicitud.empresa.nombre }} • RNC: {{ solicitud.empresa.rnc }}</p>
+    </div>
+    <div class="form-container">
+        <h3 style="color: #2c3e50; margin-bottom: 20px;">Información General</h3>
+        <table style="width:100%; font-size: 15px;">
+            <tr><td><strong>Puerto de Destino:</strong></td><td>{{ solicitud.puerto_destino }}</td></tr>
+            <tr><td><strong>Motivo del Acceso:</strong></td><td>{{ solicitud.motivo_acceso }}</td></tr>
+            <tr><td><strong>Fecha y Hora de Ingreso:</strong></td><td><span class="fecha-hora-display" data-fecha="{{ solicitud.fecha_ingreso }}" data-hora="{{ solicitud.hora_ingreso }}">{{ solicitud.fecha_ingreso }} {{ solicitud.hora_ingreso }}</span></td></tr>
+            <tr><td><strong>Fecha y Hora de Salida:</strong></td><td><span class="fecha-hora-display" data-fecha="{{ solicitud.fecha_salida }}" data-hora="{{ solicitud.hora_salida }}">{{ solicitud.fecha_salida }} {{ solicitud.hora_salida }}</span></td></tr>
+            <tr><td><strong>Descripción:</strong></td><td>{{ solicitud.descripcion }}</td></tr>
+            <tr>
+                <td><strong>Servicios Solicitados:</strong></td>
+                <td>
+                    {% if solicitud.servicios_solicitados.exists %}
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            {% for servicio in solicitud.servicios_solicitados.all %}
+                                <span style="background: #e8f5e8; color: #2d5a2d; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 500; border: 1px solid #28a745;">
+                                    {{ servicio.codigo }}: {{ servicio.nombre }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                        <small style="color: #6c757d; display: block; margin-top: 5px;">
+                            {{ solicitud.servicios_solicitados.count }} servicio(s) solicitado(s)
+                        </small>
+                    {% else %}
+                        <span style="color: #6c757d; font-style: italic;">No se especificaron servicios</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr><td><strong>Estado:</strong></td><td>
+                {% estado_con_color_para_rol solicitud user as estado_info %}
+                <span style="background: {{ estado_info.bg_color }}; color: {{ estado_info.text_color|default:'white' }}; padding: 4px 12px; border-radius: 4px; font-weight: 500;">
+                    {{ estado_info.icono }} {{ estado_info.texto }}
+                </span>
+            </td></tr>
+            <tr><td><strong>Creada el:</strong></td><td><span class="datetime-display" data-datetime="{{ solicitud.creada_el|date:'Y-m-d H:i' }}">{{ solicitud.creada_el }}</span></td></tr>
+            <tr><td><strong>Última actualización:</strong></td><td><span class="datetime-display" data-datetime="{{ solicitud.actualizada_el|date:'Y-m-d H:i' }}">{{ solicitud.actualizada_el }}</span></td></tr>
+        </table>
+    </div>
+    <div style="margin-top: 20px; display: flex; gap: 15px;">
+        <a href="{% url 'solicitudes:dashboard' %}" class="btn btn-primary">← Volver al Dashboard</a>
+        {% if solicitud.estado == 'borrador' or solicitud.estado == 'pendiente' or solicitud.estado == 'recibido' %}
+        <a href="{% url 'solicitudes:editar_solicitud' solicitud.id %}" class="btn btn-warning">✏️ Editar Solicitud</a>
+        <a href="{% url 'solicitudes:borrar_solicitud' solicitud.id %}" class="btn btn-danger">🗑️ Borrar Solicitud</a>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Función para convertir hora de 24H a 12H con AM/PM
+function convertirHora24a12(hora24) {
+    if (!hora24) return '';
+
+    try {
+        // hora24 viene como "HH:MM:SS" o "HH:MM"
+        const partes = hora24.split(':');
+        let horas = parseInt(partes[0]);
+        const minutos = partes[1];
+
+        // Determinar AM o PM
+        const periodo = horas >= 12 ? 'PM' : 'AM';
+
+        // Convertir a formato 12 horas
+        if (horas === 0) {
+            horas = 12;
+        } else if (horas > 12) {
+            horas = horas - 12;
+        }
+
+        // Formatear con ceros a la izquierda
+        const horasStr = horas.toString().padStart(2, '0');
+
+        return `${horasStr}:${minutos} ${periodo}`;
+    } catch (e) {
+        return hora24;
+    }
+}
+
+// Función para formatear fecha de YYYY-MM-DD a texto completo
+function formatearFecha(fechaStr) {
+    if (!fechaStr) return '';
+
+    try {
+        const partes = fechaStr.split('-');
+        if (partes.length === 3) {
+            const año = partes[0];
+            const mes = parseInt(partes[1]);
+            const dia = parseInt(partes[2]);
+
+            const meses = [
+                'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+                'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+            ];
+
+            return `${dia} de ${meses[mes - 1]} de ${año}`;
+        }
+    } catch (e) {
+        return fechaStr;
+    }
+
+    return fechaStr;
+}
+
+// Formatear todas las fechas y horas en la página
+document.addEventListener('DOMContentLoaded', function() {
+    // Formatear campos de fecha y hora separados
+    document.querySelectorAll('.fecha-hora-display').forEach(function(elemento) {
+        const fecha = elemento.getAttribute('data-fecha');
+        const hora = elemento.getAttribute('data-hora');
+
+        if (fecha && hora) {
+            const fechaFormateada = formatearFecha(fecha);
+            const horaFormateada = convertirHora24a12(hora);
+            elemento.textContent = `${fechaFormateada}, ${horaFormateada}`;
+        }
+    });
+
+    // Formatear campos de datetime completos (creada_el, actualizada_el)
+    document.querySelectorAll('.datetime-display').forEach(function(elemento) {
+        const datetime = elemento.getAttribute('data-datetime');
+
+        if (datetime) {
+            // datetime viene como "YYYY-MM-DD HH:MM"
+            const partes = datetime.split(' ');
+            if (partes.length === 2) {
+                const fecha = partes[0];
+                const hora = partes[1];
+                const fechaFormateada = formatearFecha(fecha);
+                const horaFormateada = convertirHora24a12(hora);
+                elemento.textContent = `${fechaFormateada}, ${horaFormateada}`;
+            }
+        }
+    });
+});
+</script>
+
+{% endblock %} 

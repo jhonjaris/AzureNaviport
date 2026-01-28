@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ persona.nombre_completo }} | NaviPort RD{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="content-area">
+    <div class="page-header">
+        <div>
+            <h2 style="color: #2c3e50; margin-bottom: 10px;">👤 {{ persona.nombre_completo }}</h2>
+            <p style="color: #7f8c8d;">Información detallada de la persona</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'gestion_personal:editar_persona' persona.id %}" class="btn btn-warning">✏️ Editar</a>
+            <a href="{% url 'gestion_personal:dashboard' %}" class="btn btn-secondary">← Volver</a>
+        </div>
+    </div>
+
+    <div class="details-grid">
+        <!-- Información personal -->
+        <div class="detail-card">
+            <div class="card-header">
+                <h3>📋 Información Personal</h3>
+            </div>
+            <div class="detail-content">
+                <div class="detail-row">
+                    <span class="detail-label">Cédula:</span>
+                    <span class="detail-value">{{ persona.cedula }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Nombre Completo:</span>
+                    <span class="detail-value">{{ persona.nombre_completo }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Empresa:</span>
+                    <span class="detail-value">
+                        <span class="badge bg-primary">
+                            {{ persona.empresa.empresa.nombre|default:'Sin empresa' }}
+                        </span>
+                    </span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Teléfono:</span>
+                    <span class="detail-value">{{ persona.telefono|default:'No especificado' }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Email:</span>
+                    <span class="detail-value">{{ persona.email|default:'No especificado' }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Fecha de Registro:</span>
+                    <span class="detail-value">{{ persona.fecha_registro|date:'d/m/Y H:i' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentos -->
+        <div class="detail-card">
+            <div class="card-header">
+                <h3>📄 Documentos</h3>
+                <a href="{% url 'gestion_personal:subir_documento_personal' persona.id %}" class="btn btn-sm btn-primary">➕ Subir</a>
+            </div>
+            <div class="detail-content">
+                {% if documentos %}
+                    <div class="documents-list">
+                        {% for documento in documentos %}
+                        <div class="document-item">
+                            <div class="document-info">
+                                <div class="document-title">{{ documento.get_tipo_documento_display }}</div>
+                                <div class="document-meta">
+                                    <span class="document-date">{{ documento.fecha_subida|date:'d/m/Y' }}</span>
+                                    <span class="document-status status-{{ documento.estado_validacion }}">
+                                        {{ documento.get_estado_validacion_display }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="document-actions">
+                                <a href="{% url 'gestion_personal:descargar_documento_personal' documento.id %}" class="btn-small btn-info">📥 Ver</a>
+                                {% if user.role in 'evaluador,supervisor,admin_tic' %}
+                                <a href="{% url 'gestion_personal:validar_documento_personal' documento.id %}" class="btn-small btn-success">✓ Validar</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state-small">
+                        <p>No hay documentos subidos</p>
+                        <a href="{% url 'gestion_personal:subir_documento_personal' persona.id %}" class="btn btn-primary">Subir Primer Documento</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.status-pendiente { background: #f39c12; color: white; }
+.status-validado { background: #27ae60; color: white; }
+.status-rechazado { background: #e74c3c; color: white; }
+.status-vencido { background: #95a5a6; color: white; }
+
+.document-status {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.documents-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.document-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+}
+
+.document-title {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.document-meta {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.document-date {
+    font-size: 14px;
+    color: #7f8c8d;
+}
+
+.document-actions {
+    display: flex;
+    gap: 8px;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Servicios | NaviPort RD{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar_evaluador.html' with active_page='config' %}
+
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+            <a href="{% url 'evaluacion:gestionar_empresas' %}" class="btn" style="background: #6c757d; color: white;">
+                ← Gestión de Empresas
+            </a>
+            <h2 style="color: #2c3e50; margin: 0;">🛡️ Gestión de Servicios</h2>
+            <div style="display: flex; gap: 10px;">
+                <a href="{% url 'evaluacion:crear_servicio' %}" class="btn btn-primary">
+                    ➕ Nuevo Servicio
+                </a>
+                <a href="{% url 'evaluacion:gestionar_tipos_licencia' %}" class="btn" style="background: #f39c12; color: white;">
+                    🏷️ Tipos de Licencia
+                </a>
+            </div>
+        </div>
+        <p style="color: #7f8c8d;">{{ user.get_display_name }} • Evaluador Portuario</p>
+    </div>
+
+    <!-- Estadísticas -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
+        <div class="stat-card">
+            <div class="stat-number" style="color: #3498db;">{{ stats.total }}</div>
+            <div class="stat-label">Total de Servicios</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color: #27ae60;">{{ stats.activos }}</div>
+            <div class="stat-label">Servicios Activos</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color: #e74c3c;">{{ stats.inactivos }}</div>
+            <div class="stat-label">Servicios Inactivos</div>
+        </div>
+    </div>
+
+    <!-- Filtros y Búsqueda -->
+    <div class="data-table">
+        <div class="table-header">
+            <div class="table-title">Servicios Registrados</div>
+        </div>
+        
+        <div style="padding: 20px; border-bottom: 1px solid #dee2e6;">
+            <form method="GET" style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap;">
+                <div style="flex: 2; min-width: 200px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057; font-size: 14px;">
+                        Búsqueda
+                    </label>
+                    <input type="text" name="q" value="{{ busqueda }}" placeholder="Buscar por código, nombre o descripción..." 
+                           class="form-control" style="width: 100%;">
+                </div>
+                
+                <div style="min-width: 150px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057; font-size: 14px;">
+                        Estado
+                    </label>
+                    <select name="estado" class="form-control">
+                        <option value="">Todos los Estados</option>
+                        <option value="activo" {% if estado_filtro == 'activo' %}selected{% endif %}>Activos</option>
+                        <option value="inactivo" {% if estado_filtro == 'inactivo' %}selected{% endif %}>Inactivos</option>
+                    </select>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-primary">
+                        🔍 Filtrar
+                    </button>
+                    {% if busqueda or estado_filtro %}
+                        <a href="{% url 'evaluacion:gestionar_servicios' %}" class="btn" style="background: #6c757d; color: white;">
+                            🗑️ Limpiar
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+
+        {% if servicios %}
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f8f9fa;">
+                        <th style="padding: 15px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">
+                            Código
+                        </th>
+                        <th style="padding: 15px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">
+                            Nombre del Servicio
+                        </th>
+                        <th style="padding: 15px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">
+                            Descripción
+                        </th>
+                        <th style="padding: 15px; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">
+                            Estado
+                        </th>
+                        <th style="padding: 15px; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">
+                            Empresas
+                        </th>
+                        <th style="padding: 15px; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">
+                            Acciones
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for servicio in servicios %}
+                    <tr style="border-bottom: 1px solid #dee2e6;">
+                        <td style="padding: 15px; font-family: 'Courier New', monospace; font-weight: bold; color: #495057;">
+                            {{ servicio.codigo }}
+                        </td>
+                        <td style="padding: 15px; font-weight: 500; color: #2c3e50;">
+                            {{ servicio.nombre }}
+                        </td>
+                        <td style="padding: 15px; color: #6c757d; max-width: 300px;">
+                            {{ servicio.descripcion|truncatechars:80 }}
+                        </td>
+                        <td style="padding: 15px; text-align: center;">
+                            {% if servicio.activo %}
+                                <span class="badge" style="background: #d4edda; color: #155724; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 500;">
+                                    ✓ Activo
+                                </span>
+                            {% else %}
+                                <span class="badge" style="background: #f8d7da; color: #721c24; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 500;">
+                                    ✗ Inactivo
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 15px; text-align: center; font-weight: 500; color: #495057;">
+                            {{ servicio.empresas_autorizadas.count }}
+                        </td>
+                        <td style="padding: 15px; text-align: center;">
+                            <div style="display: flex; gap: 5px; justify-content: center;">
+                                <a href="{% url 'evaluacion:editar_servicio' servicio.id %}" 
+                                   class="btn" style="background: #f39c12; color: white; font-size: 12px; padding: 5px 10px;">
+                                    ✏️ Editar
+                                </a>
+                                <a href="{% url 'evaluacion:eliminar_servicio' servicio.id %}" 
+                                   class="btn" style="background: #e74c3c; color: white; font-size: 12px; padding: 5px 10px;"
+                                   onclick="return confirm('¿Estás seguro de eliminar este servicio?')">
+                                    🗑️ Eliminar
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        {% if is_paginated %}
+        <div style="padding: 20px; border-top: 1px solid #dee2e6; display: flex; justify-content: between; align-items: center;">
+            <div style="color: #6c757d; font-size: 14px;">
+                Página {{ servicios.number }} de {{ servicios.paginator.num_pages }} 
+                ({{ servicios.paginator.count }} servicios en total)
+            </div>
+            <div style="display: flex; gap: 5px;">
+                {% if servicios.has_previous %}
+                    <a href="?page=1{% if busqueda %}&q={{ busqueda }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}" 
+                       class="btn" style="background: #6c757d; color: white; font-size: 12px; padding: 5px 10px;">« Primera</a>
+                    <a href="?page={{ servicios.previous_page_number }}{% if busqueda %}&q={{ busqueda }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}" 
+                       class="btn" style="background: #6c757d; color: white; font-size: 12px; padding: 5px 10px;">‹ Anterior</a>
+                {% endif %}
+                
+                {% if servicios.has_next %}
+                    <a href="?page={{ servicios.next_page_number }}{% if busqueda %}&q={{ busqueda }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}" 
+                       class="btn" style="background: #6c757d; color: white; font-size: 12px; padding: 5px 10px;">Siguiente ›</a>
+                    <a href="?page={{ servicios.paginator.num_pages }}{% if busqueda %}&q={{ busqueda }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}" 
+                       class="btn" style="background: #6c757d; color: white; font-size: 12px; padding: 5px 10px;">Última »</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div style="padding: 40px; text-align: center;">
+            <div style="color: #6c757d; font-size: 18px; margin-bottom: 10px;">
+                📄 No se encontraron servicios
+            </div>
+            <p style="color: #6c757d;">
+                {% if busqueda or estado_filtro %}
+                    No hay servicios que coincidan con los filtros aplicados.
+                {% else %}
+                    Aún no hay servicios registrados en el sistema.
+                {% endif %}
+            </p>
+            <a href="{% url 'evaluacion:crear_servicio' %}" class="btn btn-primary" style="margin-top: 10px;">
+                ➕ Crear Primer Servicio
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

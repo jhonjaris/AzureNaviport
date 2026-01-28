@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ tipo_licencia.nombre }} | NaviPort RD{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar_evaluador.html' with active_page='config' %}
+
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+            <a href="{% url 'evaluacion:gestionar_tipos_licencia' %}" class="btn" style="background: #6c757d; color: white;">
+                ← Volver
+            </a>
+            <h2 style="color: #2c3e50; margin: 0;">🏷️ {{ tipo_licencia.nombre }}</h2>
+            <div style="display: flex; gap: 10px;">
+                <a href="{% url 'evaluacion:editar_tipo_licencia' tipo_licencia.id %}" class="btn" style="background: #f39c12; color: white;">
+                    ✏️ Editar
+                </a>
+                {% if tipo_licencia.puede_eliminar %}
+                <a href="{% url 'evaluacion:eliminar_tipo_licencia' tipo_licencia.id %}" class="btn" style="background: #e74c3c; color: white;"
+                   onclick="return confirm('¿Estás seguro de eliminar este tipo de licencia?')">
+                    🗑️ Eliminar
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        <p style="color: #7f8c8d;">{{ user.get_display_name }} • Evaluador Portuario</p>
+    </div>
+
+    <!-- Información General -->
+    <div class="data-table" style="margin-bottom: 30px;">
+        <div class="table-header">
+            <div class="table-title">Información General</div>
+        </div>
+        
+        <div style="padding: 30px;">
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 30px; margin-bottom: 30px;">
+                <div>
+                    <div style="margin-bottom: 20px;">
+                        <strong style="color: #495057; display: block; margin-bottom: 5px;">Nombre:</strong>
+                        <div style="color: #2c3e50; font-size: 18px; font-weight: 500;">
+                            {{ tipo_licencia.nombre }}
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <strong style="color: #495057; display: block; margin-bottom: 5px;">Estado:</strong>
+                        {% if tipo_licencia.activo %}
+                            <span class="badge" style="background: #d4edda; color: #155724; padding: 6px 12px; border-radius: 12px; font-size: 14px; font-weight: 500;">
+                                ✓ Activo
+                            </span>
+                        {% else %}
+                            <span class="badge" style="background: #f8d7da; color: #721c24; padding: 6px 12px; border-radius: 12px; font-size: 14px; font-weight: 500;">
+                                ✗ Inactivo
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <strong style="color: #495057; display: block; margin-bottom: 5px;">Creado:</strong>
+                        <div style="color: #6c757d;">
+                            {{ tipo_licencia.created_at|date:"d/m/Y H:i" }}
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <strong style="color: #495057; display: block; margin-bottom: 5px;">Última actualización:</strong>
+                        <div style="color: #6c757d;">
+                            {{ tipo_licencia.updated_at|date:"d/m/Y H:i" }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <strong style="color: #495057; display: block; margin-bottom: 10px;">Descripción:</strong>
+                    <div style="color: #2c3e50; line-height: 1.5; background: #f8f9fa; padding: 15px; border-radius: 4px; border-left: 4px solid #f39c12;">
+                        {{ tipo_licencia.descripcion|default:"Sin descripción disponible" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
+        <div class="stat-card">
+            <div class="stat-number" style="color: #9b59b6;">{{ cantidad_servicios }}</div>
+            <div class="stat-label">Servicios Incluidos</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color: #28a745;">{{ cantidad_empresas }}</div>
+            <div class="stat-label">Empresas Asignadas</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="{% if tipo_licencia.puede_eliminar %}color: #28a745;{% else %}color: #e74c3c;{% endif %}">
+                {% if tipo_licencia.puede_eliminar %}✓{% else %}✗{% endif %}
+            </div>
+            <div class="stat-label">Puede Eliminar</div>
+        </div>
+    </div>
+
+    <!-- Servicios Incluidos -->
+    {% if servicios_incluidos %}
+    <div class="data-table" style="margin-bottom: 30px;">
+        <div class="table-header">
+            <div class="table-title">Servicios Incluidos ({{ cantidad_servicios }})</div>
+        </div>
+        
+        <div style="padding: 20px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                {% for servicio in servicios_incluidos %}
+                <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px;">
+                    <div style="display: flex; justify-content: between; align-items: start; margin-bottom: 10px;">
+                        <div style="font-family: 'Courier New', monospace; font-weight: bold; color: #9b59b6; font-size: 14px;">
+                            {{ servicio.codigo }}
+                        </div>
+                        {% if servicio.activo %}
+                            <span class="badge" style="background: #d4edda; color: #155724; padding: 2px 6px; border-radius: 8px; font-size: 10px;">
+                                ✓ Activo
+                            </span>
+                        {% else %}
+                            <span class="badge" style="background: #f8d7da; color: #721c24; padding: 2px 6px; border-radius: 8px; font-size: 10px;">
+                                ✗ Inactivo
+                            </span>
+                        {% endif %}
+                    </div>
+                    <div style="font-weight: 500; color: #2c3e50; margin-bottom: 8px;">
+                        {{ servicio.nombre }}
+                    </div>
+                    <div style="color: #6c757d; font-size: 13px;">
+                        {{ servicio.descripcion|truncatechars:100 }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Empresas Asignadas -->
+    {% if empresas_asignadas %}
+    <div class="data-table">
+        <div class="table-header">
+            <div class="table-title">Empresas Asignadas ({{ cantidad_empresas }})</div>
+        </div>
+        
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f8f9fa;">
+                        <th style="padding: 15px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">
+                            Empresa
+                        </th>
+                        <th style="padding: 15px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">
+                            RNC
+                        </th>
+                        <th style="padding: 15px; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">
+                            Estado Licencia
+                        </th>
+                        <th style="padding: 15px; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">
+                            Servicios Adicionales
+                        </th>
+                        <th style="padding: 15px; text-align: center; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">
+                            Acciones
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for empresa in empresas_asignadas %}
+                    <tr style="border-bottom: 1px solid #dee2e6;">
+                        <td style="padding: 15px; font-weight: 500; color: #2c3e50;">
+                            {{ empresa.nombre }}
+                        </td>
+                        <td style="padding: 15px; font-family: 'Courier New', monospace; color: #495057;">
+                            {{ empresa.rnc }}
+                        </td>
+                        <td style="padding: 15px; text-align: center;">
+                            {% with empresa.estado_licencia as estado %}
+                                <span class="badge" style="background: {{ estado.color }}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 500;">
+                                    {{ estado.texto }}
+                                </span>
+                            {% endwith %}
+                        </td>
+                        <td style="padding: 15px; text-align: center; font-weight: 500; color: #495057;">
+                            {{ empresa.servicios_adicionales.count }}
+                        </td>
+                        <td style="padding: 15px; text-align: center;">
+                            <a href="{% url 'evaluacion:editar_empresa' empresa.id %}" 
+                               class="btn" style="background: #17a2b8; color: white; font-size: 12px; padding: 5px 10px;">
+                                👁️ Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if not servicios_incluidos and not empresas_asignadas %}
+    <div class="data-table">
+        <div style="padding: 40px; text-align: center;">
+            <div style="color: #6c757d; font-size: 18px; margin-bottom: 10px;">
+                🏷️ Tipo de Licencia Sin Asignaciones
+            </div>
+            <p style="color: #6c757d; margin-bottom: 20px;">
+                Este tipo de licencia no tiene servicios incluidos ni empresas asignadas.
+            </p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <a href="{% url 'evaluacion:editar_tipo_licencia' tipo_licencia.id %}" class="btn" style="background: #f39c12; color: white;">
+                    ✏️ Configurar Servicios
+                </a>
+                <a href="{% url 'evaluacion:gestionar_empresas' %}" class="btn btn-primary">
+                    ➕ Ver Empresas
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

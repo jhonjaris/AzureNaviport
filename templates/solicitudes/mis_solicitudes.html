@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load notificaciones_tags %}
+{% load wizard_extras %}
+
+{% block title %}Mis Solicitudes | NaviPort RD{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'solicitudes/css/solicitudes.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li><a href="{% url 'solicitudes:dashboard' %}" style="color: inherit; text-decoration: none;">🏠 Dashboard</a></li>
+        <li><a href="{% url 'solicitudes:solicitud_wizard_inicio' %}" style="color: inherit; text-decoration: none;">➕ Nueva Solicitud</a></li>
+        <li class="active"><a href="{% url 'solicitudes:mis_solicitudes' %}" style="color: inherit; text-decoration: none;">📋 Solicitudes</a></li>
+        <li><a href="{% url 'solicitudes:mis_autorizaciones' %}" style="color: inherit; text-decoration: none;">🎫 Autorizaciones</a></li>
+        <li><a href="{% url 'solicitudes:estadisticas' %}" style="color: inherit; text-decoration: none;">📊 Estadísticas</a></li>
+        <li><a href="{% url 'accounts:ayuda' %}" style="color: inherit; text-decoration: none;">❓ Ayuda</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div style="text-align: right; margin-right: 10px;">
+            <div class="user-name">{{ user.get_display_name }}</div>
+            <div style="font-size: 14px; color: #7f8c8d;">{{ user.get_role_display_with_admin }}</div>
+        </div>
+        <div class="user-avatar">{{ user.get_display_name|slice:':1'|upper }}{{ user.last_name|slice:':1'|upper }}</div>
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+
+<!-- Barra de Notificaciones -->
+{% csrf_token %}
+{% get_notificaciones as notificaciones_lista %}
+{% if notificaciones_lista %}
+{% mostrar_notificaciones_lista notificaciones_lista user %}
+{% endif %}
+
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <h2 style="color: #2c3e50; margin-bottom: 10px;">📊 Mis Solicitudes</h2>
+        <p style="color: #7f8c8d;">{{ user.get_display_name }} • Solicitante • {{ stats.total }} solicitud{{ stats.total|pluralize:"es" }} total{{ stats.total|pluralize:"es" }}</p>
+    </div>
+
+    <!-- Estadísticas Rápidas -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px;">
+        <div class="dashboard-card" style="border-left-color: #6c757d;">
+            <div class="card-header">
+                <div class="card-icon" style="background: #6c757d;">📄</div>
+                <div>
+                    <div class="card-title" style="font-size: 36px;">{{ stats.borradores }}</div>
+                    <div class="card-subtitle" style="font-size: 16px;">Borradores</div>
+                </div>
+            </div>
+        </div>
+        <div class="dashboard-card" style="border-left-color: #f39c12;">
+            <div class="card-header">
+                <div class="card-icon" style="background: #f39c12;">⏳</div>
+                <div>
+                    <div class="card-title" style="font-size: 36px;">{{ stats.pendientes }}</div>
+                    <div class="card-subtitle" style="font-size: 16px;">En Proceso</div>
+                </div>
+            </div>
+        </div>
+        <div class="dashboard-card" style="border-left-color: #27ae60;">
+            <div class="card-header">
+                <div class="card-icon" style="background: #27ae60;">✅</div>
+                <div>
+                    <div class="card-title" style="font-size: 36px;">{{ stats.aprobadas }}</div>
+                    <div class="card-subtitle" style="font-size: 16px;">Aprobadas</div>
+                </div>
+            </div>
+        </div>
+        <div class="dashboard-card" style="border-left-color: #e74c3c;">
+            <div class="card-header">
+                <div class="card-icon" style="background: #e74c3c;">❌</div>
+                <div>
+                    <div class="card-title" style="font-size: 36px;">{{ stats.rechazadas }}</div>
+                    <div class="card-subtitle" style="font-size: 16px;">Rechazadas</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros y Acciones -->
+    <div class="form-container" style="margin-bottom: 30px;">
+        <div class="row">
+            <div class="col-md-6">
+                <form method="get" class="d-flex gap-2">
+                    <select name="estado" class="form-select" onchange="this.form.submit()">
+                        <option value="">Todos los estados</option>
+                        {% for codigo, nombre in estados_choices %}
+                            <option value="{{ codigo }}" {% if estado_filtro == codigo %}selected{% endif %}>{{ nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if estado_filtro %}
+                        <a href="{% url 'solicitudes:mis_solicitudes' %}" class="btn btn-secondary">Limpiar</a>
+                    {% endif %}
+                </form>
+            </div>
+            <div class="col-md-6 text-end">
+                <a href="{% url 'solicitudes:dashboard' %}" class="btn btn-secondary">← Dashboard</a>
+                <a href="{% url 'solicitudes:solicitud_wizard_inicio' %}" class="btn btn-primary">+ Nueva Solicitud</a>
+            </div>
+        </div>
+    </div>
+
+    {% if solicitudes %}
+    <div class="data-table">
+        <div class="table-header">
+            <div class="table-title">📋 Todas mis Solicitudes</div>
+            <div>
+                {% if estado_filtro %}
+                    <span style="color: #6c757d;">Filtrado: {{ estado_filtro|title }} ({{ solicitudes.paginator.count }})</span>
+                {% else %}
+                    <span style="color: #6c757d;">{{ solicitudes.paginator.count }} solicitud{{ solicitudes.paginator.count|pluralize:"es" }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="table-content">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID / Código</th>
+                        <th>Puerto</th>
+                        <th>Motivo</th>
+                        <th>Ingreso</th>
+                        <th>Salida</th>
+                        <th>Estado</th>
+                        <th>Creada</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for solicitud in solicitudes %}
+                    <tr {% if solicitud.estado == 'borrador' %}style="background-color: #f8f9fa; opacity: 0.8;"{% endif %}>
+                        <td>
+                            <strong>{{ solicitud.codigo|default:solicitud.id }}</strong>
+                            {% if solicitud.estado == 'borrador' %}
+                                <br><small style="color: #6c757d; font-style: italic;">📄 Borrador</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ solicitud.puerto_destino|default:"No especificado" }}</td>
+                        <td>{{ solicitud.motivo_acceso|default:"No especificado" }}</td>
+                        <td>
+                            {% if solicitud.fecha_ingreso %}
+                                {{ solicitud.fecha_ingreso|date:"d/m/Y" }}
+                                {% if solicitud.hora_ingreso %}<br><small>{{ solicitud.hora_ingreso|time:"H:i" }}</small>{% endif %}
+                            {% else %}
+                                <span style="color: #6c757d;">No definida</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if solicitud.fecha_salida %}
+                                {{ solicitud.fecha_salida|date:"d/m/Y" }}
+                                {% if solicitud.hora_salida %}<br><small>{{ solicitud.hora_salida|time:"H:i" }}</small>{% endif %}
+                            {% else %}
+                                <span style="color: #6c757d;">No definida</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% estado_con_color_para_rol solicitud user as estado_info %}
+                            <span class="status-badge" style="background: {{ estado_info.bg_color }}; color: {{ estado_info.text_color|default:'white' }};">
+                                {{ estado_info.icono }} {{ estado_info.texto }}
+                            </span>
+                        </td>
+                        <td>
+                            <span style="color: #666;">{{ solicitud.creada_el|date:"d/m/Y" }}</span>
+                            <br><small style="color: #999;">{{ solicitud.creada_el|date:"H:i" }}</small>
+                        </td>
+                        <td style="white-space: nowrap;">
+                            {% if solicitud.estado == 'borrador' %}
+                                <a href="{% url 'solicitudes:editar_solicitud' solicitud.id %}" class="btn btn-sm btn-primary" title="Continuar editando">✏️</a>
+                                <a href="{% url 'solicitudes:detalle_solicitud' solicitud.id %}" class="btn btn-sm btn-secondary" title="Ver detalles">👁️</a>
+                                <a href="{% url 'solicitudes:borrar_solicitud' solicitud.id %}" class="btn btn-sm btn-danger" title="Eliminar" onclick="return confirm('¿Eliminar este borrador?')">🗑️</a>
+                            {% elif solicitud.estado == 'documentos_faltantes' %}
+                                <a href="{% url 'solicitudes:wizard_editar' solicitud.id %}" class="btn btn-sm btn-warning" title="Completar documentación">📄 Completar</a>
+                                <a href="{% url 'solicitudes:detalle_solicitud' solicitud.id %}" class="btn btn-sm btn-secondary" title="Ver detalles">👁️</a>
+                            {% elif solicitud.estado == 'aprobada' %}
+                                <a href="{% url 'solicitudes:detalle_solicitud' solicitud.id %}" class="btn btn-sm btn-primary" title="Ver detalles">👁️ Ver</a>
+                                <a href="{% url 'solicitudes:imprimir_autorizacion' solicitud.id %}" class="btn btn-sm btn-success" title="Imprimir Autorización" target="_blank">🖨️ Imprimir</a>
+                            {% else %}
+                                <a href="{% url 'solicitudes:detalle_solicitud' solicitud.id %}" class="btn btn-sm btn-primary" title="Ver detalles">👁️ Ver</a>
+                                {% if solicitud.estado in 'borrador,pendiente' %}
+                                    <a href="{% url 'solicitudes:editar_solicitud' solicitud.id %}" class="btn btn-sm btn-secondary" title="Editar">✏️</a>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="8" style="text-align:center;">No hay solicitudes que coincidan con los filtros.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Paginación -->
+    {% if solicitudes.has_other_pages %}
+    <div class="pagination" style="text-align: center; margin: 20px 0;">
+        {% if solicitudes.has_previous %}
+            <a href="?page={{ solicitudes.previous_page_number }}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}" class="btn btn-primary">← Anterior</a>
+        {% endif %}
+        
+        <span style="margin: 0 15px;">
+            Página {{ solicitudes.number }} de {{ solicitudes.paginator.num_pages }}
+        </span>
+        
+        {% if solicitudes.has_next %}
+            <a href="?page={{ solicitudes.next_page_number }}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}" class="btn btn-primary">Siguiente →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="form-container" style="text-align: center; padding: 60px 20px;">
+        <div style="font-size: 64px; margin-bottom: 20px;">📋</div>
+        <h3 style="color: #7f8c8d; margin-bottom: 15px;">
+            {% if estado_filtro %}
+                No tienes solicitudes en estado "{{ estado_filtro|title }}"
+            {% else %}
+                No tienes solicitudes registradas
+            {% endif %}
+        </h3>
+        <p style="color: #95a5a6; margin-bottom: 30px;">
+            {% if estado_filtro %}
+                Prueba cambiando el filtro o crear una nueva solicitud.
+            {% else %}
+                Comienza creando tu primera solicitud de acceso portuario.
+            {% endif %}
+        </p>
+        <a href="{% url 'solicitudes:solicitud_wizard_inicio' %}" class="btn btn-primary" style="padding: 15px 30px;">
+            📝 Crear Nueva Solicitud
+        </a>
+        {% if estado_filtro %}
+            <br><br>
+            <a href="{% url 'solicitudes:mis_solicitudes' %}" class="btn btn-secondary">Ver Todas las Solicitudes</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

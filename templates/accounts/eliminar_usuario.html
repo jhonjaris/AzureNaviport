@@ -1,0 +1,558 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Usuario | NaviPort RD{% endblock %}
+
+{% block content %}
+<!-- Navbar dependiendo del rol -->
+{% if user.role == 'evaluador' or user.role == 'supervisor' or user.role == 'admin_tic' %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li><a href="{% url 'evaluacion:dashboard' %}" style="color: inherit; text-decoration: none;">Dashboard</a></li>
+        <li>Reportes (Futuro)</li>
+        <li><a href="{% url 'evaluacion:gestion_licencias_servicios' %}" style="color: inherit; text-decoration: none;">Licencias y Servicios</a></li>
+        <li><a href="{% url 'evaluacion:configuracion' %}" style="color: inherit; text-decoration: none;">Configuración</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div style="text-align: right; margin-right: 10px;">
+            <div style="font-weight: 500;">{{ user.get_display_name }}</div>
+            <div style="font-size: 14px; color: #7f8c8d;">{{ user.get_role_display_with_admin }}</div>
+        </div>
+        <div class="user-avatar">{{ user.get_display_name|slice:':1'|upper }}{{ user.last_name|slice:':1'|upper }}</div>
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li><a href="{% url 'solicitudes:dashboard' %}" style="color: inherit; text-decoration: none;">Dashboard</a></li>
+        <li><a href="{% url 'solicitudes:mis_solicitudes' %}" style="color: inherit; text-decoration: none;">Solicitudes</a></li>
+        <li><a href="{% url 'solicitudes:mis_autorizaciones' %}" style="color: inherit; text-decoration: none;">Autorizaciones</a></li>
+        <li><a href="{% url 'accounts:gestionar_usuarios' %}" style="color: inherit; text-decoration: none;">Gestión de Usuarios</a></li>
+    </ul>
+    <div class="navbar-user">
+        <div style="text-align: right; margin-right: 10px;">
+            <div style="font-weight: 500;">{{ user.get_display_name }}</div>
+            <div style="font-size: 14px; color: #7f8c8d;">{{ user.get_role_display_with_admin }}</div>
+        </div>
+        <div class="user-avatar">{{ user.get_display_name|slice:':1'|upper }}{{ user.last_name|slice:':1'|upper }}</div>
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="content-area">
+    <!-- Breadcrumb -->
+    <div style="margin-bottom: 20px;">
+        <a href="{% url 'accounts:gestionar_usuarios' %}" style="color: #3498db; text-decoration: none;">← Volver a Gestión de Usuarios</a>
+    </div>
+
+    <!-- Contenido principal -->
+    <div class="delete-container">
+        <div class="delete-header">
+            <div class="delete-icon">🗑️</div>
+            <h2>Eliminar Usuario</h2>
+            <p>Esta acción no se puede deshacer. ¿Estás seguro de que quieres eliminar este usuario?</p>
+        </div>
+
+        <!-- Información del usuario -->
+        <div class="user-info-card">
+            <div class="user-avatar-large">
+                {{ usuario.get_display_name|slice:':1'|upper }}{{ usuario.last_name|slice:':1'|upper }}
+            </div>
+            <div class="user-details">
+                <h3>{{ usuario.get_full_name|default:usuario.username }}</h3>
+                <div class="user-meta">
+                    <div class="meta-item">
+                        <strong>Usuario:</strong> {{ usuario.username }}
+                    </div>
+                    <div class="meta-item">
+                        <strong>Email:</strong> {{ usuario.email|default:"Sin email" }}
+                    </div>
+                    <div class="meta-item">
+                        <strong>Cédula/RNC:</strong> {{ usuario.cedula_rnc }}
+                    </div>
+                    <div class="meta-item">
+                        <strong>Rol:</strong> 
+                        <span class="badge badge-{{ usuario.role }}">{{ usuario.get_role_display }}</span>
+                    </div>
+                    {% if usuario.empresa %}
+                    <div class="meta-item">
+                        <strong>Empresa:</strong> {{ usuario.empresa.nombre }}
+                    </div>
+                    {% endif %}
+                    <div class="meta-item">
+                        <strong>Estado:</strong> 
+                        {% if usuario.is_active %}
+                            <span class="badge badge-success">Activo</span>
+                        {% else %}
+                            <span class="badge badge-danger">Inactivo</span>
+                        {% endif %}
+                    </div>
+                    {% if usuario.es_admin_empresa %}
+                    <div class="meta-item">
+                        <strong>Permisos:</strong> 
+                        <span class="badge badge-warning">👑 Admin de Empresa</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Advertencias -->
+        {% if solicitudes_count > 0 %}
+        <div class="warning-box">
+            <div class="warning-icon">⚠️</div>
+            <div class="warning-content">
+                <h4>Advertencia: Datos Relacionados</h4>
+                <p>Este usuario tiene <strong>{{ solicitudes_count }} solicitud{{ solicitudes_count|pluralize:"es" }}</strong> asociada{{ solicitudes_count|pluralize:"s" }}. Al eliminar el usuario, estas solicitudes quedarán huérfanas.</p>
+                <p>Se recomienda <strong>desactivar</strong> el usuario en lugar de eliminarlo para mantener la integridad de los datos.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="info-box">
+            <div class="info-icon">ℹ️</div>
+            <div class="info-content">
+                <h4>¿Qué pasará al eliminar este usuario?</h4>
+                <ul>
+                    <li>Se eliminará permanentemente toda la información del usuario</li>
+                    <li>No podrá iniciar sesión en el sistema</li>
+                    <li>Las solicitudes asociadas permanecerán en el sistema pero sin usuario asignado</li>
+                    <li>Esta acción <strong>no se puede deshacer</strong></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Formulario de confirmación -->
+        <form method="post" class="delete-form">
+            {% csrf_token %}
+            
+            <div class="confirmation-section">
+                <div class="confirmation-steps">
+                    <div class="step-item">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="confirmUnderstand" required>
+                            <span>Entiendo que esta acción eliminará permanentemente el usuario y no se puede deshacer</span>
+                        </label>
+                    </div>
+                    
+                    <div class="step-item" id="textConfirmStep" style="display: none;">
+                        <label for="confirmText" class="confirm-text-label">
+                            Para confirmar la eliminación, escribe <strong>"ELIMINAR"</strong> en el campo de abajo:
+                        </label>
+                        <input type="text" 
+                               id="confirmText" 
+                               class="confirm-text-input" 
+                               placeholder="Escribe ELIMINAR aquí..."
+                               autocomplete="off"
+                               spellcheck="false">
+                        <div id="textError" class="text-error" style="display: none;">
+                            Debes escribir exactamente "ELIMINAR" para continuar
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-danger" id="deleteButton" disabled>
+                    🗑️ Eliminar Usuario Permanentemente
+                </button>
+                <a href="{% url 'accounts:gestionar_usuarios' %}" class="btn btn-secondary">
+                    ❌ Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.delete-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.delete-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.delete-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+}
+
+.delete-header h2 {
+    color: #e74c3c;
+    margin-bottom: 10px;
+}
+
+.delete-header p {
+    color: #7f8c8d;
+    font-size: 16px;
+}
+
+.user-info-card {
+    background: white;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.user-avatar-large {
+    width: 80px;
+    height: 80px;
+    background: #3498db;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.user-details h3 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+
+.user-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.meta-item {
+    font-size: 14px;
+}
+
+.meta-item strong {
+    color: #2c3e50;
+}
+
+.badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.badge-solicitante { background: #3498db; color: white; }
+.badge-evaluador { background: #e74c3c; color: white; }
+.badge-supervisor { background: #9b59b6; color: white; }
+.badge-oficial_acceso { background: #f39c12; color: white; }
+.badge-admin_tic { background: #2c3e50; color: white; }
+.badge-direccion { background: #27ae60; color: white; }
+.badge-success { background: #27ae60; color: white; }
+.badge-danger { background: #e74c3c; color: white; }
+.badge-warning { background: #f39c12; color: white; }
+
+.warning-box, .info-box {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.warning-box {
+    border-left: 4px solid #f39c12;
+}
+
+.info-box {
+    border-left: 4px solid #3498db;
+}
+
+.warning-icon, .info-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.warning-content h4, .info-content h4 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.warning-content p, .info-content p {
+    color: #555;
+    margin-bottom: 10px;
+}
+
+.info-content ul {
+    color: #555;
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.info-content li {
+    margin-bottom: 5px;
+}
+
+.delete-form {
+    background: white;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.confirmation-section {
+    margin-bottom: 30px;
+    padding: 25px;
+    background: #fdf2f2;
+    border-radius: 8px;
+    border: 1px solid #f5c6cb;
+}
+
+.confirmation-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.step-item {
+    padding: 15px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
+}
+
+.step-item:has(input:checked) {
+    border-color: #f39c12;
+    box-shadow: 0 2px 8px rgba(243, 156, 18, 0.2);
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-weight: bold;
+    color: #721c24;
+    cursor: pointer;
+    line-height: 1.4;
+}
+
+.checkbox-label input[type="checkbox"] {
+    transform: scale(1.3);
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.checkbox-label span {
+    flex: 1;
+}
+
+.confirm-text-label {
+    display: block;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.confirm-text-input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.confirm-text-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    background: white;
+}
+
+.confirm-text-input.error {
+    border-color: #e74c3c;
+    background: #fdf2f2;
+    animation: shake 0.5s ease-in-out;
+}
+
+.confirm-text-input.success {
+    border-color: #27ae60;
+    background: #f0f9f0;
+    color: #27ae60;
+}
+
+.text-error {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    color: #721c24;
+    font-size: 13px;
+    font-weight: bold;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes shake {
+    0%, 20%, 40%, 60%, 80% { transform: translateX(0); }
+    10%, 30%, 50%, 70% { transform: translateX(-5px); }
+    15%, 35%, 55%, 75% { transform: translateX(5px); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.form-actions {
+    text-align: center;
+}
+
+.form-actions .btn {
+    margin: 0 10px;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+    .user-info-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .user-meta {
+        grid-template-columns: 1fr;
+    }
+    
+    .delete-container {
+        margin: 0 15px;
+    }
+}
+</style>
+
+<script>
+// Referencias a elementos
+const confirmUnderstand = document.getElementById('confirmUnderstand');
+const textConfirmStep = document.getElementById('textConfirmStep');
+const confirmText = document.getElementById('confirmText');
+const textError = document.getElementById('textError');
+const deleteButton = document.getElementById('deleteButton');
+
+// Paso 1: Mostrar campo de texto cuando se marca el checkbox
+confirmUnderstand.addEventListener('change', function() {
+    if (this.checked) {
+        textConfirmStep.style.display = 'block';
+        // Hacer focus en el campo de texto después de un pequeño delay
+        setTimeout(() => {
+            confirmText.focus();
+        }, 100);
+    } else {
+        textConfirmStep.style.display = 'none';
+        confirmText.value = '';
+        textError.style.display = 'none';
+        validateForm();
+    }
+    validateForm();
+});
+
+// Paso 2: Validar texto de confirmación en tiempo real
+confirmText.addEventListener('input', function() {
+    const value = this.value.trim();
+    
+    if (value === '') {
+        textError.style.display = 'none';
+        this.classList.remove('error', 'success');
+    } else if (value === 'ELIMINAR') {
+        textError.style.display = 'none';
+        this.classList.remove('error');
+        this.classList.add('success');
+    } else {
+        textError.style.display = 'block';
+        textError.textContent = `Has escrito "${value}". Debes escribir exactamente "ELIMINAR"`;
+        this.classList.remove('success');
+        this.classList.add('error');
+    }
+    
+    validateForm();
+});
+
+// Validar formulario completo
+function validateForm() {
+    const understandChecked = confirmUnderstand.checked;
+    const textCorrect = confirmText.value.trim() === 'ELIMINAR';
+    
+    deleteButton.disabled = !(understandChecked && textCorrect);
+    
+    // Cambiar texto del botón según el estado
+    if (!understandChecked) {
+        deleteButton.textContent = '🗑️ Eliminar Usuario Permanentemente';
+    } else if (!textCorrect) {
+        deleteButton.textContent = '🗑️ Escribe "ELIMINAR" para continuar';
+    } else {
+        deleteButton.textContent = '🗑️ CONFIRMAR ELIMINACIÓN';
+        deleteButton.style.backgroundColor = '#c0392b';
+    }
+}
+
+// Prevenir submit si no está validado
+document.querySelector('.delete-form').addEventListener('submit', function(e) {
+    const understandChecked = confirmUnderstand.checked;
+    const textCorrect = confirmText.value.trim() === 'ELIMINAR';
+    
+    if (!understandChecked || !textCorrect) {
+        e.preventDefault();
+        
+        if (!understandChecked) {
+            alert('Debes marcar el checkbox de confirmación.');
+            confirmUnderstand.focus();
+        } else if (!textCorrect) {
+            alert('Debes escribir exactamente "ELIMINAR" para continuar.');
+            confirmText.focus();
+            confirmText.select();
+        }
+        
+        return false;
+    }
+    
+    // Confirmación final antes del submit
+    const finalConfirm = confirm(`¿ÚLTIMA CONFIRMACIÓN: Estás completamente seguro de eliminar al usuario "{{ usuario.username }}"?\n\nEsta acción NO se puede deshacer.`);
+    if (!finalConfirm) {
+        e.preventDefault();
+        return false;
+    }
+    
+    // Cambiar botón a loading
+    deleteButton.textContent = '⏳ Eliminando...';
+    deleteButton.disabled = true;
+});
+
+// Inicializar validación
+validateForm();
+</script>
+{% endblock %}

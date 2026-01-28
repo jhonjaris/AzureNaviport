@@ -1,0 +1,251 @@
+{% load notificaciones_tags %}
+
+{% if notificaciones %}
+<div id="notificaciones-container" style="position: relative; z-index: 1000;">
+    {% for notificacion in notificaciones %}
+    <div class="notificacion-bar notificacion-{{ notificacion.tipo }}" 
+         id="notificacion-{{ notificacion.id }}"
+         data-notificacion-id="{{ notificacion.id }}">
+        <div class="notificacion-content">
+            <div class="notificacion-icono">
+                {{ notificacion.icono }}
+            </div>
+            <div class="notificacion-mensaje">
+                <div class="notificacion-titulo">
+                    {{ notificacion.titulo }}
+                </div>
+                <div class="notificacion-texto">
+                    {{ notificacion.mensaje }}
+                    {% if notificacion.enlace_accion %}
+                        <a href="{{ notificacion.enlace_accion }}" 
+                           target="_blank" 
+                           class="notificacion-enlace">
+                            {{ notificacion.texto_enlace|default:"Ver más" }}
+                        </a>
+                    {% endif %}
+                </div>
+                {% if notificacion.fecha_expiracion %}
+                <div class="notificacion-fecha">
+                    <small>Fecha de expiración: {{ notificacion.fecha_expiracion|date:"d/m/Y" }}</small>
+                </div>
+                {% endif %}
+            </div>
+            <div class="notificacion-acciones">
+                <button type="button" 
+                        class="btn-cerrar-notificacion" 
+                        onclick="cerrarNotificacion({{ notificacion.id }})"
+                        title="Cerrar notificación">
+                    ✕
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+.notificacion-bar {
+    padding: 12px 20px;
+    margin: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    animation: slideDown 0.3s ease-out;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.notificacion-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.notificacion-icono {
+    font-size: 18px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.notificacion-mensaje {
+    flex: 1;
+    min-width: 0;
+}
+
+.notificacion-titulo {
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: inherit;
+}
+
+.notificacion-texto {
+    margin-bottom: 2px;
+    color: inherit;
+    opacity: 0.9;
+}
+
+.notificacion-fecha {
+    margin-top: 4px;
+    opacity: 0.7;
+}
+
+.notificacion-enlace {
+    color: inherit !important;
+    text-decoration: underline !important;
+    font-weight: 500;
+    margin-left: 8px;
+}
+
+.notificacion-enlace:hover {
+    opacity: 0.8;
+}
+
+.notificacion-acciones {
+    flex-shrink: 0;
+}
+
+.btn-cerrar-notificacion {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+}
+
+.btn-cerrar-notificacion:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Colores por tipo de notificación */
+.notificacion-critico {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+}
+
+.notificacion-advertencia {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+    box-shadow: 0 2px 8px rgba(243, 156, 18, 0.3);
+}
+
+.notificacion-informativo {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+}
+
+.notificacion-vencido {
+    background: linear-gradient(135deg, #34495e, #2c3e50);
+    color: white;
+    box-shadow: 0 2px 8px rgba(52, 73, 94, 0.3);
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .notificacion-bar {
+        padding: 10px 15px;
+        font-size: 13px;
+    }
+    
+    .notificacion-content {
+        gap: 8px;
+    }
+    
+    .notificacion-icono {
+        font-size: 16px;
+    }
+    
+    .notificacion-enlace {
+        display: block;
+        margin-left: 0;
+        margin-top: 4px;
+    }
+}
+
+/* Animación de cierre */
+.notificacion-closing {
+    animation: slideUp 0.3s ease-in forwards;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+        max-height: 200px;
+    }
+    to {
+        transform: translateY(-100%);
+        opacity: 0;
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+}
+</style>
+
+<script>
+function cerrarNotificacion(notificacionId) {
+    const elemento = document.getElementById('notificacion-' + notificacionId);
+    if (!elemento) return;
+    
+    // Agregar clase de animación de cierre
+    elemento.classList.add('notificacion-closing');
+    
+    // Hacer petición AJAX para marcar como cerrada en el servidor
+    fetch('{% url "accounts:cerrar_notificacion" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            'notificacion_id': notificacionId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Esperar a que termine la animación antes de remover
+            setTimeout(() => {
+                elemento.remove();
+                
+                // Si no quedan notificaciones, ocultar el contenedor
+                const container = document.getElementById('notificaciones-container');
+                if (container && container.children.length === 0) {
+                    container.style.display = 'none';
+                }
+            }, 300);
+        }
+    })
+    .catch(error => {
+        console.error('Error al cerrar notificación:', error);
+        // Remover visualmente aunque falle la petición
+        setTimeout(() => elemento.remove(), 300);
+    });
+}
+
+// Auto-refresh de notificaciones cada 5 minutos (opcional)
+setTimeout(() => {
+    window.location.reload();
+}, 300000); // 5 minutos
+</script>
+{% endif %}

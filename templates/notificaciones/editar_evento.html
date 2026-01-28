@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Editar Evento - {{ evento.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="content-header mb-4">
+        <div class="header-with-back">
+            <a href="{% url 'notificaciones:gestionar_eventos' %}" class="back-btn">
+                🔙 Volver a Eventos
+            </a>
+            <h1>✏️ Editar Evento</h1>
+        </div>
+        <p class="subtitle">Modifique la configuración del evento <strong>{{ evento.nombre }}</strong></p>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5><i class="fas fa-edit"></i> Información del Evento</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+
+                <!-- Código (solo lectura) -->
+                <div class="mb-3">
+                    <label class="form-label">Código del Evento</label>
+                    <input type="text" class="form-control" value="{{ evento.codigo }}" disabled>
+                    <small class="text-muted">El código no se puede modificar</small>
+                </div>
+
+                <!-- Nombre -->
+                <div class="mb-3">
+                    <label for="nombre" class="form-label">Nombre del Evento</label>
+                    <input type="text" class="form-control" id="nombre" name="nombre"
+                           value="{{ evento.nombre }}" required>
+                    <small class="text-muted">Nombre descriptivo del evento</small>
+                </div>
+
+                <!-- Descripción -->
+                <div class="mb-3">
+                    <label for="descripcion" class="form-label">Descripción</label>
+                    <textarea class="form-control" id="descripcion" name="descripcion"
+                              rows="3">{{ evento.descripcion }}</textarea>
+                    <small class="text-muted">Descripción opcional del evento</small>
+                </div>
+
+                <!-- Asunto del Email -->
+                <div class="mb-3">
+                    <label for="asunto_email" class="form-label">Asunto del Email</label>
+                    <input type="text" class="form-control" id="asunto_email" name="asunto_email"
+                           value="{{ evento.asunto_email }}" required>
+                    <small class="text-muted">Puede usar variables como {solicitud_codigo}, {empresa_nombre}, etc.</small>
+                </div>
+
+                <!-- Template HTML -->
+                <div class="mb-3">
+                    <label for="template_html" class="form-label">Plantilla HTML (opcional)</label>
+                    <input type="text" class="form-control" id="template_html" name="template_html"
+                           value="{{ evento.template_html }}" placeholder="notificaciones/emails/solicitud_recibida.html">
+                    <small class="text-muted">Ruta a la plantilla HTML en templates/. Dejar vacío para usar mensaje de texto plano.</small>
+                </div>
+
+                <!-- Mensaje de Texto Plano -->
+                <div class="mb-3">
+                    <label for="mensaje_texto_plano" class="form-label">Mensaje en Texto Plano</label>
+                    <textarea class="form-control" id="mensaje_texto_plano" name="mensaje_texto_plano"
+                              rows="8" style="font-family: monospace;">{{ evento.mensaje_texto_plano }}</textarea>
+                    <small class="text-muted">Mensaje alternativo en texto plano. Puede usar variables como en el asunto.</small>
+                </div>
+
+                <!-- Estado -->
+                <div class="mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="activo" name="activo"
+                               {% if evento.activo %}checked{% endif %}>
+                        <label class="form-check-label" for="activo">
+                            <strong>Evento activo</strong>
+                        </label>
+                        <br>
+                        <small class="text-muted">Desmarque para deshabilitar las notificaciones de este evento</small>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                    <a href="{% url 'notificaciones:gestionar_destinatarios' evento.id %}" class="btn btn-info">
+                        <i class="fas fa-users"></i> Gestionar Destinatarios
+                    </a>
+                    <a href="{% url 'notificaciones:gestionar_eventos' %}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Destinatarios Actuales -->
+    <div class="card mt-4">
+        <div class="card-header bg-info text-white">
+            <h5><i class="fas fa-users"></i> Destinatarios Actuales ({{ destinatarios.count }})</h5>
+        </div>
+        <div class="card-body">
+            {% if destinatarios %}
+            <ul class="list-group">
+                {% for destinatario in destinatarios %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        {% if destinatario.tipo_destinatario == 'rol' %}
+                            <i class="fas fa-user-tag"></i> <strong>Rol:</strong> {{ destinatario.get_rol_display }}
+                        {% else %}
+                            <i class="fas fa-envelope"></i> <strong>Email:</strong> {{ destinatario.email_especifico }}
+                        {% endif %}
+                    </div>
+                    <div>
+                        {% if destinatario.activo %}
+                            <span class="badge bg-success">Activo</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inactivo</span>
+                        {% endif %}
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            <div class="mt-3">
+                <a href="{% url 'notificaciones:gestionar_destinatarios' evento.id %}" class="btn btn-sm btn-info">
+                    <i class="fas fa-edit"></i> Editar Destinatarios
+                </a>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No hay destinatarios configurados para este evento.</p>
+            <div class="mt-3">
+                <a href="{% url 'notificaciones:gestionar_destinatarios' evento.id %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus"></i> Agregar Destinatarios
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Variables Disponibles -->
+    <div class="alert alert-info mt-4">
+        <h6><i class="fas fa-info-circle"></i> Variables Disponibles para Plantillas</h6>
+        <p>Puede usar las siguientes variables en el asunto y mensaje:</p>
+        <ul class="mb-0">
+            <li><code>{solicitud_codigo}</code> - Código de la solicitud</li>
+            <li><code>{empresa_nombre}</code> - Nombre de la empresa</li>
+            <li><code>{fecha}</code> - Fecha actual</li>
+            <li><code>{evaluador_nombre}</code> - Nombre del evaluador (para asignaciones)</li>
+            <li><code>{motivo}</code> - Motivo (para rechazos)</li>
+        </ul>
+    </div>
+</div>
+
+<style>
+.header-with-back {
+    margin-bottom: 10px;
+}
+.back-btn {
+    display: inline-block;
+    color: #6c757d;
+    text-decoration: none;
+    margin-bottom: 5px;
+    font-size: 14px;
+}
+.back-btn:hover {
+    color: #495057;
+}
+.subtitle {
+    color: #6c757d;
+    margin-top: 5px;
+}
+</style>
+{% endblock %}

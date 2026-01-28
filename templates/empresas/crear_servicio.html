@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if servicio %}Editar Servicio{% else %}Crear Servicio{% endif %} | NaviPort RD{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'empresas/css/empresas.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li><a href="{% url 'evaluacion:dashboard' %}" style="color: inherit; text-decoration: none;">Dashboard</a></li>
+        <li>Evaluaciones</li>
+        <li>Reportes</li>
+        <li><a href="{% url 'empresas:registrar_empresa' %}" style="color: inherit; text-decoration: none;">Registrar Empresa</a></li>
+        <li>Configuración</li>
+    </ul>
+    <div class="navbar-user">
+        <div style="text-align: right; margin-right: 10px;">
+            <div style="font-weight: 500;">{{ user.get_display_name }}</div>
+            <div style="font-size: 14px; color: #7f8c8d;">{{ user.get_role_display_with_admin }}</div>
+        </div>
+        <div class="user-avatar">{{ user.get_display_name|slice:':1'|upper }}{{ user.last_name|slice:':1'|upper }}</div>
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <h2 style="color: #2c3e50; margin-bottom: 10px;">
+            {% if servicio %}✏️ Editar Servicio{% else %}➕ Crear Nuevo Servicio{% endif %}
+        </h2>
+        <p style="color: #7f8c8d;">{{ user.get_display_name }} • {% if user.role == 'evaluador' %}Evaluador Portuario{% else %}Supervisor{% endif %}</p>
+    </div>
+
+    <div class="form-container" style="max-width: 600px;">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="mb-4">
+                <label for="{{ form.nombre.id_for_label }}" class="form-label">{{ form.nombre.label }} *</label>
+                {{ form.nombre }}
+                {% if form.nombre.errors %}
+                    <div class="text-danger">{{ form.nombre.errors }}</div>
+                {% endif %}
+                <div class="form-text">Nombre descriptivo del servicio (ej: Transporte de Contenedores, Manejo de Carga, etc.)</div>
+            </div>
+
+            <div class="mb-4">
+                <label for="{{ form.descripcion.id_for_label }}" class="form-label">{{ form.descripcion.label }}</label>
+                {{ form.descripcion }}
+                {% if form.descripcion.errors %}
+                    <div class="text-danger">{{ form.descripcion.errors }}</div>
+                {% endif %}
+                <div class="form-text">Descripción detallada del servicio (opcional)</div>
+            </div>
+
+            <div class="mb-4">
+                <div class="form-check">
+                    {{ form.activo }}
+                    <label class="form-check-label" for="{{ form.activo.id_for_label }}">
+                        {{ form.activo.label }}
+                    </label>
+                </div>
+                {% if form.activo.errors %}
+                    <div class="text-danger">{{ form.activo.errors }}</div>
+                {% endif %}
+                <div class="form-text">Los servicios inactivos no aparecerán disponibles para nuevas empresas</div>
+            </div>
+
+            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
+                <a href="{% url 'empresas:listar_servicios' %}" class="btn btn-secondary" style="padding: 12px 25px;">
+                    ↩️ Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary" style="padding: 12px 25px;">
+                    {% if servicio %}💾 Actualizar Servicio{% else %}🔧 Crear Servicio{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {% if servicio %}
+    <div class="form-container" style="max-width: 600px; margin-top: 30px; background: #f8f9fa;">
+        <h5 style="color: #2c3e50; margin-bottom: 15px;">📊 Información del Servicio</h5>
+        <div class="row">
+            <div class="col-md-6">
+                <strong>Creado el:</strong><br>
+                <span style="color: #666;">{{ servicio.created_at|date:"d/m/Y H:i" }}</span>
+            </div>
+            <div class="col-md-6">
+                <strong>Empresas que ofrecen este servicio:</strong><br>
+                <span class="badge bg-info">{{ servicio.empresaservicio_set.count }} empresa{{ servicio.empresaservicio_set.count|pluralize:"s" }}</span>
+            </div>
+        </div>
+        
+        {% if servicio.empresaservicio_set.exists %}
+        <div class="mt-3">
+            <strong>Empresas autorizadas:</strong><br>
+            <div style="margin-top: 10px;">
+                {% for empresa in servicio.empresaservicio_set.all %}
+                    <span class="badge bg-secondary me-1 mb-1">{{ empresa.nombre }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

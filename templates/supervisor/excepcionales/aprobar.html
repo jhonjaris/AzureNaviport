@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}Aprobar Solicitud Excepcional{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'supervisor:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'supervisor:lista_empresas_excepcionales' %}">Empresas Excepcionales</a></li>
+            <li class="breadcrumb-item active">Aprobar Permiso</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Información de la Empresa -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-building"></i> Información de la Empresa</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Nombre:</strong> {{ empresa.nombre }}</p>
+                            <p><strong>RNC:</strong> {{ empresa.rnc }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Email:</strong> {{ empresa.email }}</p>
+                            <p><strong>Representante:</strong> {{ empresa.representante_legal.get_full_name }}</p>
+                        </div>
+                    </div>
+
+                    {% if aprobacion_activa %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Advertencia:</strong> Esta empresa ya tiene una aprobación excepcional activa desde el
+                            {{ aprobacion_activa.fecha_aprobacion|date:"d/m/Y H:i" }}.
+                            <a href="{% url 'supervisor:historial_excepcionales' empresa.id %}" class="alert-link">
+                                Ver historial
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Formulario de Aprobación -->
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-check-circle"></i> Aprobar Solicitud Excepcional</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="formAprobar">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="motivo" class="form-label">
+                                Motivo de la Aprobación <span class="text-danger">*</span>
+                            </label>
+                            <textarea name="motivo" id="motivo" class="form-control" rows="5" required
+                                      placeholder="Describa detalladamente el motivo por el cual se aprueba esta solicitud excepcional..."
+                                      minlength="10"></textarea>
+                            <small class="form-text text-muted">
+                                Mínimo 10 caracteres. Sea específico sobre las razones que justifican esta aprobación.
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="observaciones" class="form-label">Observaciones Adicionales</label>
+                            <textarea name="observaciones" id="observaciones" class="form-control" rows="3"
+                                      placeholder="Información adicional relevante (opcional)..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="fecha_vencimiento" class="form-label">
+                                Fecha de Vencimiento (Opcional)
+                            </label>
+                            <input type="date" name="fecha_vencimiento" id="fecha_vencimiento" class="form-control">
+                            <small class="form-text text-muted">
+                                Dejar vacío si el permiso es indefinido. Si se especifica, el permiso se revocará automáticamente
+                                después de esta fecha.
+                            </small>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Importante:</strong> Al aprobar esta solicitud:
+                            <ul class="mb-0 mt-2">
+                                <li>La empresa podrá realizar solicitudes excepcionales</li>
+                                <li>Se enviará una notificación por email a los administradores de la empresa</li>
+                                <li>Quedará registrado en el historial de aprobaciones</li>
+                                <li>Puede ser revocado en cualquier momento</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'supervisor:lista_empresas_excepcionales' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check"></i> Aprobar Permiso Excepcional
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Validación en el cliente
+document.getElementById('formAprobar').addEventListener('submit', function(e) {
+    const motivo = document.getElementById('motivo').value.trim();
+
+    if (motivo.length < 10) {
+        e.preventDefault();
+        alert('El motivo debe tener al menos 10 caracteres.');
+        document.getElementById('motivo').focus();
+        return false;
+    }
+
+    // Confirmación
+    if (!confirm('¿Está seguro de aprobar el permiso excepcional para esta empresa?')) {
+        e.preventDefault();
+        return false;
+    }
+});
+</script>
+{% endblock %}

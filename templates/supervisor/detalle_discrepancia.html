@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalle Discrepancia {{ discrepancia.autorizacion }} | NaviPort RD{% endblock %}
+
+{% block content %}
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="logo">NP</div>
+        NaviPort RD
+    </div>
+    <ul class="navbar-menu">
+        <li>Dashboard</li>
+        <li>Escalamientos</li>
+        <li>Discrepancias</li>
+        <li>Reportes</li>
+    </ul>
+    <div class="navbar-user">
+        <span>Supervisor</span>
+        <div class="user-avatar">SP</div>
+    
+        <div class="user-dropdown">
+            <a href="{% url 'accounts:logout' %}" class="logout-link">🚪 Salir</a>
+        </div>
+    </div>
+</div>
+<div class="content-area">
+    <div style="margin-bottom: 30px;">
+        <h2 style="color: #2c3e50; margin-bottom: 10px;">Detalle de Discrepancia {{ discrepancia.autorizacion }}</h2>
+        <p style="color: #7f8c8d;">Puerto: {{ discrepancia.puerto }} • Oficial: {{ discrepancia.oficial }}</p>
+    </div>
+    <div class="form-container" style="max-width: 600px; margin: 0 auto;">
+        <table style="width:100%; font-size: 15px;">
+            <tr><td><strong>Autorización:</strong></td><td>{{ discrepancia.autorizacion }}</td></tr>
+            <tr><td><strong>Puerto:</strong></td><td>{{ discrepancia.puerto }}</td></tr>
+            <tr><td><strong>Problema:</strong></td><td>{{ discrepancia.problema }}</td></tr>
+            <tr><td><strong>Oficial:</strong></td><td>{{ discrepancia.oficial }}</td></tr>
+            <tr><td><strong>Estado:</strong></td><td>{{ discrepancia.estado }}</td></tr>
+        </table>
+        <div style="margin-top: 30px; text-align: center;">
+            <a href="{% url 'supervisor:dashboard' %}" class="btn btn-primary">← Volver al Dashboard</a>
+            <form method="post" action="{% url 'supervisor:gestionar_discrepancia' discrepancia.autorizacion %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-warning" style="margin-left: 20px;">Gestionar Discrepancia</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

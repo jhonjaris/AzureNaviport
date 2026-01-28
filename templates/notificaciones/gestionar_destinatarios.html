@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Gestionar Destinatarios - {{ evento.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="content-header mb-4">
+        <div class="header-with-back">
+            <a href="{% url 'notificaciones:editar_evento' evento.id %}" class="back-btn">
+                🔙 Volver al Evento
+            </a>
+            <h1>👥 Gestionar Destinatarios</h1>
+        </div>
+        <p class="subtitle">Configure quién recibe notificaciones del evento <strong>{{ evento.nombre }}</strong></p>
+    </div>
+
+    <!-- Agregar Nuevo Destinatario -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5><i class="fas fa-plus"></i> Agregar Destinatario</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" id="formAgregar">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="agregar">
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="tipo_destinatario" class="form-label">Tipo de Destinatario</label>
+                        <select class="form-select" id="tipo_destinatario" name="tipo_destinatario" required>
+                            <option value="">Seleccione...</option>
+                            <option value="rol">Por Rol (todos los usuarios con ese rol)</option>
+                            <option value="email">Email Específico</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6 mb-3" id="campoRol" style="display: none;">
+                        <label for="rol" class="form-label">Rol</label>
+                        <select class="form-select" id="rol" name="rol">
+                            <option value="">Seleccione un rol...</option>
+                            {% for rol_value, rol_label in roles_choices %}
+                            <option value="{{ rol_value }}">{{ rol_label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-6 mb-3" id="campoEmail" style="display: none;">
+                        <label for="email_especifico" class="form-label">Email Específico</label>
+                        <input type="email" class="form-control" id="email_especifico" name="email_especifico"
+                               placeholder="correo@ejemplo.com">
+                    </div>
+
+                    <div class="col-md-2 mb-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-plus"></i> Agregar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Destinatarios -->
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <h5><i class="fas fa-list"></i> Destinatarios Configurados ({{ destinatarios.count }})</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if destinatarios %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 20%;">Tipo</th>
+                            <th style="width: 50%;">Destinatario</th>
+                            <th style="width: 15%;">Estado</th>
+                            <th style="width: 15%;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for destinatario in destinatarios %}
+                        <tr>
+                            <td>
+                                {% if destinatario.tipo_destinatario == 'rol' %}
+                                    <span class="badge bg-primary">
+                                        <i class="fas fa-user-tag"></i> Por Rol
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-envelope"></i> Email
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if destinatario.tipo_destinatario == 'rol' %}
+                                    <strong>{{ destinatario.get_rol_display }}</strong>
+                                    <br><small class="text-muted">Todos los usuarios con este rol activos</small>
+                                {% else %}
+                                    <strong>{{ destinatario.email_especifico }}</strong>
+                                    <br><small class="text-muted">Email específico</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if destinatario.activo %}
+                                    <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <form method="POST" class="d-inline" onsubmit="return confirm('¿Está seguro de eliminar este destinatario?');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="eliminar">
+                                    <input type="hidden" name="destinatario_id" value="{{ destinatario.id }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-4 text-center text-muted">
+                <i class="fas fa-inbox fa-3x mb-3"></i>
+                <p>No hay destinatarios configurados para este evento.</p>
+                <p class="mb-0"><small>Use el formulario de arriba para agregar destinatarios.</small></p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Información de Ayuda -->
+    <div class="alert alert-info mt-4">
+        <h6><i class="fas fa-info-circle"></i> Ayuda</h6>
+        <ul class="mb-0">
+            <li><strong>Por Rol:</strong> Envía el email a todos los usuarios activos que tengan ese rol en el sistema.</li>
+            <li><strong>Email Específico:</strong> Envía el email a una dirección de correo específica, incluso si no es un usuario del sistema.</li>
+            <li><strong>Múltiples destinatarios:</strong> Puede agregar tanto destinatarios por rol como emails específicos. El sistema eliminará duplicados automáticamente.</li>
+        </ul>
+    </div>
+
+    <!-- Botón de Volver -->
+    <div class="mt-4">
+        <a href="{% url 'notificaciones:gestionar_eventos' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver a Lista de Eventos
+        </a>
+    </div>
+</div>
+
+<style>
+.header-with-back {
+    margin-bottom: 10px;
+}
+.back-btn {
+    display: inline-block;
+    color: #6c757d;
+    text-decoration: none;
+    margin-bottom: 5px;
+    font-size: 14px;
+}
+.back-btn:hover {
+    color: #495057;
+}
+.subtitle {
+    color: #6c757d;
+    margin-top: 5px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoDestinatario = document.getElementById('tipo_destinatario');
+    const campoRol = document.getElementById('campoRol');
+    const campoEmail = document.getElementById('campoEmail');
+    const inputRol = document.getElementById('rol');
+    const inputEmail = document.getElementById('email_especifico');
+
+    function toggleCampos() {
+        const tipo = tipoDestinatario.value;
+
+        if (tipo === 'rol') {
+            campoRol.style.display = 'block';
+            campoEmail.style.display = 'none';
+            inputRol.required = true;
+            inputEmail.required = false;
+            inputEmail.value = '';
+        } else if (tipo === 'email') {
+            campoRol.style.display = 'none';
+            campoEmail.style.display = 'block';
+            inputRol.required = false;
+            inputEmail.required = true;
+            inputRol.value = '';
+        } else {
+            campoRol.style.display = 'none';
+            campoEmail.style.display = 'none';
+            inputRol.required = false;
+            inputEmail.required = false;
+        }
+    }
+
+    tipoDestinatario.addEventListener('change', toggleCampos);
+    toggleCampos();
+});
+</script>
+{% endblock %}
